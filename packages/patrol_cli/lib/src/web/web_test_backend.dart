@@ -450,6 +450,8 @@ class WebTestBackend {
                   'PATROL_WEB_RETRIES': options.retries.toString(),
                 if (options.video != null)
                   'PATROL_WEB_VIDEO': options.video.toString(),
+                if (options.trace != null)
+                  'PATROL_WEB_TRACE': options.trace.toString(),
                 if (options.timeout != null)
                   'PATROL_WEB_TIMEOUT': options.timeout.toString(),
                 if (options.workers != null)

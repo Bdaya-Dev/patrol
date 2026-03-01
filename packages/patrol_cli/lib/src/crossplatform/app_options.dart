@@ -396,6 +396,7 @@ class WebAppOptions {
     this.reportDir,
     this.retries,
     this.video,
+    this.trace,
     this.timeout,
     this.workers,
     this.reporter,
@@ -417,6 +418,9 @@ class WebAppOptions {
   final String? reportDir;
   final int? retries;
   final String? video;
+
+  /// Trace mode for Playwright. Valid values: off, on, retain-on-failure, on-first-retry, on-all-retries.
+  final String? trace;
   final int? timeout;
   final int? workers;
   final String? reporter;

@@ -301,6 +301,7 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       reportDir: stringArg('web-report-dir'),
       retries: intArg('web-retries'),
       video: stringArg('web-video'),
+      trace: stringArg('web-trace'),
       timeout: intArg('web-timeout'),
       workers: intArg('web-workers'),
       reporter: stringArg('web-reporter'),
