@@ -42,6 +42,11 @@ export const patrolTest = base.extend({
     // Go to the page and wait for domcontentloaded before we start injecting things
     await page.goto("/", { waitUntil: "domcontentloaded" })
 
+    // Inject immediately upon load just to ensure tests have it right now
+    await page.evaluate(() => {
+      window.__patrol__isInitialised = true
+    })
+
     await initialise(page)
 
     await use(page)

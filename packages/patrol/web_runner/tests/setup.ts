@@ -32,9 +32,20 @@ async function setup(config: FullConfig) {
     window.__patrol__isInitialised = true
   })
 
+  // Expose platform handler bindings before navigation to prevent race condition
+  // during Flutter booting/initialization logic
+  const { exposePatrolPlatformHandler } = await import('./patrolPlatformHandler')
+  await exposePatrolPlatformHandler(page)
+
   // We want to initialize the platform handler and things *before* we potentially miss the boat
   // during load.
   await page.goto(baseURL, { waitUntil: "domcontentloaded" })
+
+  // Inject a small script to guarantee the variable is set *right now* in case domcontentloaded 
+  // already cleared the context or something.
+  await page.evaluate(() => {
+    window.__patrol__isInitialised = true
+  })
 
   await initialise(page)
 
