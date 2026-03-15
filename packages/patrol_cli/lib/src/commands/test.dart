@@ -317,6 +317,7 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       headless: stringArg('web-headless'),
       webPort: intArg('web-port'),
       serverTimeout: intArg('web-server-timeout'),
+      initTimeout: intArg('web-init-timeout'),
       browserArgs: stringArg('web-browser-args'),
     );
 

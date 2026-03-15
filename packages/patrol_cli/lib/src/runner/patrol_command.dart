@@ -349,6 +349,13 @@ abstract class PatrolCommand extends Command<int> {
         valueHelp: 'number',
       )
       ..addOption(
+        'web-init-timeout',
+        help:
+            'Maximum time in milliseconds for Flutter to initialise during web tests. '
+            'Defaults to 120000 (2 minutes).',
+        valueHelp: 'number',
+      )
+      ..addOption(
         'web-browser-args',
         help: 'Custom browser launch arguments. JSON array of strings.',
         valueHelp: '\'["--no-sandbox", "--disable-gpu"]\'',
