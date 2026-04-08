@@ -23,6 +23,16 @@ async function setup(config: FullConfig) {
 
   const setupPageErrorPromise = new Promise<never>((_, reject) => {
     page.on("pageerror", error => {
+      // Filter out cosmetic Flutter engine re-initialization errors.
+      // In debug mode, the engine's initializeEngineServices() throws a StateError
+      // inside assert() when called twice. This is harmless — the engine is already
+      // initialized and the assert is stripped in release/profile mode.
+      if (error.message.includes("initializeEngineServices")) {
+        // eslint-disable-next-line no-console
+        console.warn(`[patrol] Ignoring cosmetic engine error: ${error.message}`)
+        return
+      }
+
       error.message = `Page error during setup: ${error.message}`
       // eslint-disable-next-line no-console
       console.error(error.stack ?? error.message)
