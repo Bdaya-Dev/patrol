@@ -124,8 +124,13 @@ class WebTestBackend {
     final flutterProcess = await _startFlutterWebServer(options, develop: true);
 
     StdinModes? previousStdinModes;
-    if (io.stdin.hasTerminal) {
-      previousStdinModes = flutterTool.enableInteractiveMode();
+    try {
+      if (io.stdin.hasTerminal) {
+        previousStdinModes = flutterTool.enableInteractiveMode();
+      }
+    } on io.StdinException {
+      // MCP or CI environments may report hasTerminal=true but fail
+      // to access terminal modes. Safe to continue without interactive mode.
     }
 
     try {
