@@ -383,12 +383,10 @@ Future<int> _runStdio(McpServer server) async {
 class _ExitSignal {
   _ExitSignal() {
     _sigintSubscription = ProcessSignal.sigint.watch().listen(_handleSignal);
-    // SIGTERM not supported on Windows — skip if unavailable.
-    try {
+    // SIGTERM not supported on Windows.
+    if (!Platform.isWindows) {
       _sigtermSubscription =
           ProcessSignal.sigterm.watch().listen(_handleSignal);
-    } on SignalException {
-      _sigtermSubscription = null;
     }
   }
 
