@@ -314,6 +314,13 @@ final class PatrolSession {
     // hot restart in develop mode).
     _runDevelopSession(developService, options, exitCompleter, logger);
 
+    // Start CDP connection attempts early so we capture browser console errors
+    // (e.g. engine initialization failures, assertions) that fire within the
+    // first seconds of Chrome starting.  The retry loop inside _tryConnectCdp
+    // handles the fact that the debugger port won't be available until Chrome
+    // is actually running (~20-30 s into the build).
+    unawaited(_tryConnectCdp());
+
     return null;
   }
 
@@ -509,11 +516,6 @@ final class PatrolSession {
         _testState == TestState.finishedFailed) {
       return getStatus();
     }
-
-    // Try to connect CDP early to capture browser console errors.
-    // The debugger port may not be available yet (Chrome still starting),
-    // so failures are non-fatal.
-    unawaited(_tryConnectCdp());
 
     _finishCompleter ??= Completer<void>();
 
