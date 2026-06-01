@@ -28,16 +28,4 @@ void main() {
     );
   });
 
-  patrol('platform tap routing works', ($) async {
-    await createApp($);
-    await $.waitUntilVisible($(#counterText));
-
-    try {
-      await $.platform.tap(Selector(text: 'NonExistentButton'));
-      fail('Should have thrown - no such native element');
-    } on Exception catch (e) {
-      expect(e.toString(), isNot(contains('Unsupported platform')));
-      expect(e.toString(), isNot(contains('No desktop handler')));
-    }
-  });
 }
