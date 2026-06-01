@@ -124,19 +124,13 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: |
-            cd ${{ inputs.working-directory }}
-            ARGS="-d emulator-5554"
-            if [ -n "${{ inputs.test-target }}" ]; then
-              ARGS="$ARGS --target ${{ inputs.test-target }}"
-            fi
-            if [ "${{ inputs.verbose }}" = "true" ]; then
-              ARGS="$ARGS --verbose"
-            fi
-            if [ "${{ inputs.coverage }}" = "true" ]; then
-              ARGS="$ARGS --coverage"
-            fi
-            patrol test $ARGS
+          script: >-
+            cd ${{ inputs.working-directory }} &&
+            patrol test
+            -d emulator-5554
+            ${{ inputs.test-target != '' && format('--target {0}', inputs.test-target) || '' }}
+            ${{ inputs.verbose && '--verbose' || '' }}
+            ${{ inputs.coverage && '--coverage' || '' }}
 
       - name: Upload coverage
         if: inputs.coverage && always()
