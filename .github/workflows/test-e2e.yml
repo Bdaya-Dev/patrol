@@ -60,12 +60,11 @@ jobs:
     with:
       platforms: 'android'
       working-directory: 'dev/e2e_app'
-      test-target: 'patrol_test/desktop/desktop_app_test.dart'
+      test-target: 'patrol_test/smoke/'
       patrol-cli-setup: >-
         dart pub global activate melos &&
         melos bootstrap &&
         dart pub global activate --source path packages/patrol_cli
-      coverage: true
       verbose: true
 
   e2e-ios:
@@ -73,12 +72,11 @@ jobs:
     with:
       platforms: 'ios'
       working-directory: 'dev/e2e_app'
-      test-target: 'patrol_test/desktop/desktop_app_test.dart'
+      test-target: 'patrol_test/smoke/'
       patrol-cli-setup: >-
         dart pub global activate melos &&
         melos bootstrap &&
         dart pub global activate --source path packages/patrol_cli
-      coverage: true
       verbose: true
 
   e2e-macos:
@@ -91,7 +89,6 @@ jobs:
         dart pub global activate melos &&
         melos bootstrap &&
         dart pub global activate --source path packages/patrol_cli
-      coverage: true
       verbose: true
 
   analyze-native:
