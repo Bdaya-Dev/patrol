@@ -34,7 +34,7 @@ on:
         type: string
         default: ''
       coverage:
-        description: 'Collect code coverage'
+        description: 'Collect code coverage (Android, iOS, macOS only)'
         required: false
         type: boolean
         default: false
@@ -73,31 +73,66 @@ permissions:
   contents: read
 
 jobs:
-  detect-platforms:
+  setup:
     runs-on: ubuntu-latest
     outputs:
-      run-android: ${{ contains(inputs.platforms, 'android') }}
-      run-ios: ${{ contains(inputs.platforms, 'ios') }}
-      run-macos: ${{ contains(inputs.platforms, 'macos') }}
-      run-web: ${{ contains(inputs.platforms, 'web') }}
-      run-linux: ${{ contains(inputs.platforms, 'linux') }}
-      run-windows: ${{ contains(inputs.platforms, 'windows') }}
+      matrix: ${{ steps.parse.outputs.matrix }}
     steps:
-      - run: echo "Detecting platforms from '${{ inputs.platforms }}'"
+      - id: parse
+        run: |
+          MATRIX=$(echo '${{ inputs.platforms }}' | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | jq -R . | jq -sc .)
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          echo "Platforms: $MATRIX"
 
-  test-android:
-    needs: detect-platforms
-    if: needs.detect-platforms.outputs.run-android == 'true'
-    runs-on: ubuntu-latest
+  test:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJson(needs.setup.outputs.matrix) }}
+        include:
+          - platform: android
+            runner: ubuntu-latest
+          - platform: ios
+            runner: macos-latest
+          - platform: macos
+            runner: macos-latest
+          - platform: web
+            runner: ubuntu-latest
+          - platform: linux
+            runner: ubuntu-latest
+          - platform: windows
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
+      # --- Platform-specific pre-setup ---
+      - name: Install Linux build dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libstdc++-12-dev \
+            libatspi2.0-dev at-spi2-core dbus-x11 xvfb xdotool
+
+      - uses: actions/setup-node@v4
+        if: matrix.platform == 'web'
+        with:
+          node-version: '20'
+
+      # --- Flutter setup (all platforms) ---
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ inputs.flutter-version }}
           channel: ${{ inputs.flutter-channel }}
           cache: true
+
+      - name: Precache platform artifacts
+        if: matrix.platform == 'linux' || matrix.platform == 'windows'
+        run: flutter precache --${{ matrix.platform }}
 
       - name: Install patrol_cli
         run: ${{ inputs.patrol-cli-setup }}
@@ -106,7 +141,23 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.setup-command }}
 
+      # --- iOS simulator boot ---
+      - name: Boot iOS Simulator
+        if: matrix.platform == 'ios'
+        run: |
+          DEVICE="${{ inputs.ios-simulator }}"
+          RUNTIME_ID=$(xcrun simctl list runtimes iOS -j | python3 -c "
+          import json,sys
+          runtimes = json.load(sys.stdin)['runtimes']
+          print(runtimes[-1]['identifier'])
+          ")
+          UDID=$(xcrun simctl create "patrol-test" "$DEVICE" "$RUNTIME_ID")
+          xcrun simctl boot "$UDID" || true
+          echo "PATROL_IOS_UDID=$UDID" >> $GITHUB_ENV
+
+      # --- Android: build APKs ---
       - name: Build Android test APKs
+        if: matrix.platform == 'android'
         working-directory: ${{ inputs.working-directory }}
         run: |
           ARGS=""
@@ -115,7 +166,9 @@ jobs:
           fi
           patrol build android $ARGS
 
+      # --- Run tests (platform-specific) ---
       - name: Run Android tests on emulator
+        if: matrix.platform == 'android'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ inputs.android-api-level }}
@@ -132,47 +185,8 @@ jobs:
             ${{ inputs.verbose && '--verbose' || '' }}
             ${{ inputs.coverage && '--coverage' || '' }}
 
-      - name: Upload coverage
-        if: inputs.coverage && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-android
-          path: ${{ inputs.working-directory }}/coverage/
-
-  test-ios:
-    needs: detect-platforms
-    if: needs.detect-platforms.outputs.run-ios == 'true'
-    runs-on: macos-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ inputs.flutter-version }}
-          channel: ${{ inputs.flutter-channel }}
-          cache: true
-
-      - name: Install patrol_cli
-        run: ${{ inputs.patrol-cli-setup }}
-
-      - name: Install dependencies
-        working-directory: ${{ inputs.working-directory }}
-        run: ${{ inputs.setup-command }}
-
-      - name: Boot iOS Simulator
-        run: |
-          DEVICE="${{ inputs.ios-simulator }}"
-          RUNTIME_ID=$(xcrun simctl list runtimes iOS -j | python3 -c "
-          import json,sys
-          runtimes = json.load(sys.stdin)['runtimes']
-          print(runtimes[-1]['identifier'])
-          ")
-          UDID=$(xcrun simctl create "patrol-test" "$DEVICE" "$RUNTIME_ID")
-          xcrun simctl boot "$UDID" || true
-          echo "PATROL_IOS_UDID=$UDID" >> $GITHUB_ENV
-
       - name: Run iOS tests
+        if: matrix.platform == 'ios'
         working-directory: ${{ inputs.working-directory }}
         run: |
           ARGS="-d $PATROL_IOS_UDID"
@@ -187,39 +201,8 @@ jobs:
           fi
           patrol test $ARGS
 
-      - name: Upload coverage
-        if: inputs.coverage && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-ios
-          path: ${{ inputs.working-directory }}/coverage/
-
-      - name: Shutdown simulator
-        if: always()
-        run: xcrun simctl shutdown "$PATROL_IOS_UDID" || true
-
-  test-macos:
-    needs: detect-platforms
-    if: needs.detect-platforms.outputs.run-macos == 'true'
-    runs-on: macos-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ inputs.flutter-version }}
-          channel: ${{ inputs.flutter-channel }}
-          cache: true
-
-      - name: Install patrol_cli
-        run: ${{ inputs.patrol-cli-setup }}
-
-      - name: Install dependencies
-        working-directory: ${{ inputs.working-directory }}
-        run: ${{ inputs.setup-command }}
-
       - name: Run macOS tests
+        if: matrix.platform == 'macos'
         working-directory: ${{ inputs.working-directory }}
         run: |
           ARGS="-d macos"
@@ -234,39 +217,8 @@ jobs:
           fi
           patrol test $ARGS
 
-      - name: Upload coverage
-        if: inputs.coverage && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-macos
-          path: ${{ inputs.working-directory }}/coverage/
-
-  test-web:
-    needs: detect-platforms
-    if: needs.detect-platforms.outputs.run-web == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ inputs.flutter-version }}
-          channel: ${{ inputs.flutter-channel }}
-          cache: true
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install patrol_cli
-        run: ${{ inputs.patrol-cli-setup }}
-
-      - name: Install dependencies
-        working-directory: ${{ inputs.working-directory }}
-        run: ${{ inputs.setup-command }}
-
       - name: Run web tests
+        if: matrix.platform == 'web'
         working-directory: ${{ inputs.working-directory }}
         run: |
           ARGS="-d chrome --web-headless true --web-locale en-US"
@@ -278,39 +230,8 @@ jobs:
           fi
           patrol test $ARGS
 
-  test-linux:
-    needs: detect-platforms
-    if: needs.detect-platforms.outputs.run-linux == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Linux build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            clang cmake ninja-build pkg-config \
-            libgtk-3-dev liblzma-dev libstdc++-12-dev \
-            libatspi2.0-dev at-spi2-core dbus-x11 xvfb xdotool
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ inputs.flutter-version }}
-          channel: ${{ inputs.flutter-channel }}
-          cache: true
-
-      - name: Precache Linux artifacts
-        run: flutter precache --linux
-
-      - name: Install patrol_cli
-        run: ${{ inputs.patrol-cli-setup }}
-
-      - name: Install dependencies
-        working-directory: ${{ inputs.working-directory }}
-        run: ${{ inputs.setup-command }}
-
       - name: Run Linux tests
+        if: matrix.platform == 'linux'
         working-directory: ${{ inputs.working-directory }}
         timeout-minutes: 10
         run: |
@@ -323,31 +244,8 @@ jobs:
           fi
           dbus-run-session -- xvfb-run -a patrol test $ARGS
 
-  test-windows:
-    needs: detect-platforms
-    if: needs.detect-platforms.outputs.run-windows == 'true'
-    runs-on: windows-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ inputs.flutter-version }}
-          channel: ${{ inputs.flutter-channel }}
-          cache: true
-
-      - name: Precache Windows artifacts
-        run: flutter precache --windows
-
-      - name: Install patrol_cli
-        run: ${{ inputs.patrol-cli-setup }}
-
-      - name: Install dependencies
-        working-directory: ${{ inputs.working-directory }}
-        run: ${{ inputs.setup-command }}
-
       - name: Run Windows tests
+        if: matrix.platform == 'windows'
         shell: pwsh
         working-directory: ${{ inputs.working-directory }}
         timeout-minutes: 10
@@ -360,3 +258,16 @@ jobs:
             $args += "--verbose"
           }
           patrol test @args
+
+      # --- Coverage upload ---
+      - name: Upload coverage
+        if: inputs.coverage && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.platform }}
+          path: ${{ inputs.working-directory }}/coverage/
+
+      # --- Cleanup ---
+      - name: Shutdown iOS simulator
+        if: matrix.platform == 'ios' && always()
+        run: xcrun simctl shutdown "$PATROL_IOS_UDID" || true
