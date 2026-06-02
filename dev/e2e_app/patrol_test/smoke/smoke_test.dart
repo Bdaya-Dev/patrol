@@ -73,7 +73,10 @@ void main() {
     );
 
     await $.tap($(#backButton));
-    await $.waitUntilVisible($(#counterText));
+    await $.scrollUntilVisible(
+      finder: $(#counterText),
+      scrollDirection: AxisDirection.up,
+    );
     expect($(#counterText).text, '0');
   });
 
