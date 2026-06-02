@@ -7,6 +7,7 @@ import 'package:dispose_scope/dispose_scope.dart';
 import 'package:package_config/package_config.dart';
 import 'package:patrol_cli/src/base/logger.dart';
 import 'package:patrol_cli/src/base/process.dart';
+import 'package:patrol_cli/src/coverage/vm_connection_details.dart';
 import 'package:patrol_cli/src/crossplatform/app_options.dart';
 import 'package:patrol_cli/src/crossplatform/flutter_tool.dart';
 import 'package:patrol_cli/src/devices.dart';
@@ -35,6 +36,13 @@ class WebTestBackend {
   /// The Chrome DevTools debugger port discovered during [develop].
   int? get webDebuggerPort => _webDebuggerPort;
 
+  final _vmConnectionController =
+      StreamController<VMConnectionDetails>.broadcast();
+
+  /// Stream of VM service connection details for coverage collection.
+  Stream<VMConnectionDetails> get vmConnectionStream =>
+      _vmConnectionController.stream;
+
   Future<void> build(WebAppOptions options) async {
     _logger.detail('Building web app for testing...');
 
@@ -62,23 +70,39 @@ class WebTestBackend {
     bool showFlutterLogs = false,
     bool hideTestSteps = false,
     bool clearTestSteps = false,
+    bool coverageEnabled = false,
   }) async {
     _logger
       ..detail('Starting web test execution...')
       ..info('Building Flutter web app...');
 
-    // Start Flutter web server
+    // Start Flutter web server (use chrome+DWDS when coverage enabled)
     final flutterProcess = await _startFlutterWebServer(
       options,
       develop: false,
+      coverageEnabled: coverageEnabled,
     );
 
     try {
-      // Wait for server to be ready and get the URL
-      final baseUrl = await _waitForWebServer(
-        flutterProcess,
-        serverTimeout: options.serverTimeout,
-      );
+      String baseUrl;
+      String? debuggerPort;
+
+      if (coverageEnabled) {
+        // Chrome mode: capture debugger port (for Playwright CDP) and
+        // VM service URI (for CoverageTool) from Flutter's stdout
+        debuggerPort = await _waitForWebDebugger(
+          flutterProcess,
+          serverTimeout: options.serverTimeout,
+        );
+        _webDebuggerPort = int.parse(debuggerPort);
+        // The app is served on localhost; extract the URL from Flutter output
+        baseUrl = 'http://localhost:${options.webPort ?? 8080}';
+      } else {
+        baseUrl = await _waitForWebServer(
+          flutterProcess,
+          serverTimeout: options.serverTimeout,
+        );
+      }
 
       // Run Playwright tests
       await _runPlaywrightTests(
@@ -87,6 +111,7 @@ class WebTestBackend {
         showFlutterLogs: showFlutterLogs,
         hideTestSteps: hideTestSteps,
         clearTestSteps: clearTestSteps,
+        debuggerPort: debuggerPort,
       );
     } finally {
       // Clean up Flutter process gracefully
@@ -180,16 +205,21 @@ class WebTestBackend {
   Future<Process> _startFlutterWebServer(
     WebAppOptions options, {
     required bool develop,
+    bool coverageEnabled = false,
   }) async {
-    _logger.detail('Starting Flutter web server...');
+    final useChrome = develop || coverageEnabled;
+    _logger.detail(
+      'Starting Flutter web server (${useChrome ? "chrome" : "web-server"})...',
+    );
 
     final process = await _processManager.start([
       options.flutter.command.executable,
       ...options.flutter.command.arguments,
       'run',
       '-d',
-      if (develop) 'chrome' else 'web-server',
+      if (useChrome) 'chrome' else 'web-server',
       ...develop ? ['--verbose'] : [],
+      if (coverageEnabled && !develop) '--web-browser-flag=--headless=new',
       if (options.webPort != null) '--web-port=${options.webPort}',
       '--target=${options.flutter.target}',
       '--${options.flutter.buildMode.name}',
@@ -326,7 +356,14 @@ class WebTestBackend {
         .listen((line) {
           _logger.detail('Flutter: $line');
 
-          // [CHROME]: DevTools listening on ws://127.0.0.1:38861/devtools/browser/431953d3-ef67-428f-9321-9317256022d0
+          // Capture VM service URI for coverage collection
+          final vmDetails = VMConnectionDetails.tryExtractFromLogs(line);
+          if (vmDetails != null) {
+            _logger.detail('Captured VM service URI from web debugger');
+            _vmConnectionController.add(vmDetails);
+          }
+
+          // [CHROME]: DevTools listening on ws://127.0.0.1:38861/devtools/browser/...
           final urlMatch = RegExp(
             r'DevTools listening on ws://[^/]+:(\d+)',
           ).firstMatch(line);
@@ -436,6 +473,7 @@ class WebTestBackend {
     required bool showFlutterLogs,
     required bool hideTestSteps,
     required bool clearTestSteps,
+    String? debuggerPort,
   }) async {
     _logger.info('Running Playwright tests against: $baseUrl');
     final completer = Completer<void>();
@@ -465,6 +503,7 @@ class WebTestBackend {
               environment: {
                 ...Platform.environment,
                 'BASE_URL': baseUrl,
+                'PATROL_DEBUGGER_PORT': ?debuggerPort,
                 'PATROL_TEST_RESULTS_DIR': testResultsDir,
                 'PATROL_TEST_REPORT_DIR': testReportDir,
                 if (options.retries != null)

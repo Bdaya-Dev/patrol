@@ -362,6 +362,7 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
     if (coverageEnabled) {
       final isDesktop = device.targetPlatform == TargetPlatform.linux ||
           device.targetPlatform == TargetPlatform.windows;
+      final isWeb = device.targetPlatform == TargetPlatform.web;
 
       unawaited(
         _coverageTool.run(
@@ -371,8 +372,11 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
           ignoreGlobs: ignoreGlobs,
           flutterCommand: flutterCommand,
           includeWorkspacePackages: coverageWorkspace,
-          vmConnectionStream:
-              isDesktop ? _desktopTestBackend.vmConnectionStream : null,
+          vmConnectionStream: isDesktop
+              ? _desktopTestBackend.vmConnectionStream
+              : isWeb
+                  ? _webTestBackend.vmConnectionStream
+                  : null,
           packagesRegExps: switch ((
             coveragePackagesRegExps.length,
             coverageWorkspace,
@@ -397,6 +401,7 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       webOpts,
       uninstall: uninstall,
       device: device,
+      coverageEnabled: coverageEnabled,
       showFlutterLogs: boolArg('show-flutter-logs'),
       hideTestSteps: boolArg('hide-test-steps'),
       clearTestSteps: boolArg('clear-test-steps'),
@@ -485,6 +490,7 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
     WebAppOptions web, {
     required bool uninstall,
     required Device device,
+    required bool coverageEnabled,
     required bool showFlutterLogs,
     required bool hideTestSteps,
     required bool clearTestSteps,
@@ -531,6 +537,7 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
           showFlutterLogs: showFlutterLogs,
           hideTestSteps: hideTestSteps,
           clearTestSteps: clearTestSteps,
+          coverageEnabled: coverageEnabled,
         );
       case TargetPlatform.linux:
       case TargetPlatform.windows:

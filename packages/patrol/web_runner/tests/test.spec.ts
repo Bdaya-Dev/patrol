@@ -1,4 +1,4 @@
-import { test as base } from "@playwright/test"
+import { chromium, test as base } from "@playwright/test"
 import { initialise } from "./initialise"
 import { logger } from "./logger"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
@@ -9,8 +9,22 @@ if (tests.length === 0) {
   logger.error("PATROL_TESTS env is empty")
 }
 
+const debuggerPort = process.env.PATROL_DEBUGGER_PORT
+
 export const patrolTest = base.extend({
-  page: async ({ page }, use) => {
+  page: async ({ page: defaultPage }, use) => {
+    let page = defaultPage
+    let cdpBrowser: Awaited<ReturnType<typeof chromium.connectOverCDP>> | null = null
+
+    if (debuggerPort) {
+      // Coverage mode: connect to Flutter's Chrome via CDP so DWDS can
+      // collect coverage from the same isolate that runs the tests.
+      logger.info("Connecting to Flutter Chrome via CDP on port %s", debuggerPort)
+      cdpBrowser = await chromium.connectOverCDP(`http://localhost:${debuggerPort}`)
+      const context = cdpBrowser.contexts()[0]
+      page = context.pages()[0] ?? await context.newPage()
+    }
+
     page.on("console", message => {
       const text = message.text()
       if (text.startsWith("PATROL_LOG")) {
@@ -39,8 +53,10 @@ export const patrolTest = base.extend({
 
     await exposePatrolPlatformHandler(page)
 
-    // Go to the page and wait for domcontentloaded before we start injecting things
-    await page.goto("/", { waitUntil: "domcontentloaded" })
+    if (!debuggerPort) {
+      // Standard mode: navigate to the web-server URL
+      await page.goto("/", { waitUntil: "domcontentloaded" })
+    }
 
     // Inject immediately upon load just to ensure tests have it right now
     await page.evaluate(() => {
