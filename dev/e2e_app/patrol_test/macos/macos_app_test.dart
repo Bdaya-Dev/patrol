@@ -28,28 +28,22 @@ void main() {
     );
   }, tags: ['macos']);
 
-  patrol('taps around test to skip', skip: true, ($) async {
+  patrol('counter controls and navigation', ($) async {
     await createApp($);
     await $.waitUntilVisible($(#counterText));
-
     expect($(#counterText).text, '0');
 
     await $(FloatingActionButton).tap();
+    await $(FloatingActionButton).tap();
+    expect($(#counterText).text, '2');
 
-    expect($(#counterText).text, '1');
-
-    await $(#textField).enterText('Hello, Flutter!');
-    expect($('Hello, Flutter!'), findsOneWidget);
+    await $(#tile1).scrollTo().tap();
+    expect($(#counterText).text, '12');
 
     await $('Open scrolling screen').scrollTo().tap();
     await $.waitUntilVisible($(#topText));
-
     await $.scrollUntilVisible(finder: $(#bottomText));
-
     await $.tap($(#backButton));
-    await $.scrollUntilVisible(
-      finder: $(#counterText),
-      scrollDirection: AxisDirection.up,
-    );
+    await $.waitUntilVisible($(#counterText));
   }, tags: ['macos']);
 }

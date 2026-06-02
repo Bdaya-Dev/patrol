@@ -44,4 +44,45 @@ void main() {
     expect($(#counterText).text, '2');
   });
 
+  patrol('text field entry and replacement', ($) async {
+    await createApp($);
+    await $.waitUntilVisible($(#counterText));
+
+    await $(#textField).enterText('first input');
+    expect($('first input'), findsOneWidget);
+
+    await $(#textField).enterText('replaced');
+    expect($('replaced'), findsOneWidget);
+    expect($('first input'), findsNothing);
+  });
+
+  patrol('scrolling screen with scroll directions', ($) async {
+    await createApp($);
+    await $.waitUntilVisible($(#counterText));
+
+    await $('Open scrolling screen').scrollTo().tap();
+    await $.waitUntilVisible($(#topText));
+    expect($('Some text at the top'), findsOneWidget);
+
+    await $.scrollUntilVisible(finder: $(#bottomText));
+    expect($('Some text at the bottom'), findsOneWidget);
+
+    await $.scrollUntilVisible(
+      finder: $(#topText),
+      scrollDirection: AxisDirection.up,
+    );
+
+    await $.tap($(#backButton));
+    await $.waitUntilVisible($(#counterText));
+    expect($(#counterText).text, '0');
+  });
+
+  patrol('finder evaluation on visible widgets', ($) async {
+    await createApp($);
+    await $.waitUntilVisible($(#counterText));
+
+    expect($(#counterText).evaluate(), isNotEmpty);
+    expect($(FloatingActionButton).evaluate(), isNotEmpty);
+    expect($(#textField).evaluate(), isNotEmpty);
+  });
 }
