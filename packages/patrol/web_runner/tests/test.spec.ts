@@ -25,8 +25,11 @@ export const patrolTest = base.extend({
       page = context.pages()[0] ?? await context.newPage()
 
       // The app is already running and initialized in Flutter's Chrome.
-      // Only add console/error listeners — skip init scripts, handler
-      // exposure, and navigation since they conflict with the live app.
+      // Skip init scripts, navigation, and initialise() — they conflict
+      // with the live app. But DO expose the platform handler so web
+      // tests (dark mode, dialogs, cookies, etc.) can call back.
+      await exposePatrolPlatformHandler(page)
+
       page.on("console", message => {
         const text = message.text()
         if (text.startsWith("PATROL_LOG")) {
