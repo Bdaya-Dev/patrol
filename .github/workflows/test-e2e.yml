@@ -44,7 +44,9 @@ jobs:
       coverage: true
       verbose: true
 
-  # Web coverage uses V8 JS coverage from Playwright (not DWDS getSourceReport).
+  # Web coverage: V8 JS coverage infrastructure ready in test.spec.ts but
+  # COVERAGE_ENABLED dart-define causes binding to block 30s per test.
+  # Need to decouple web V8 coverage from Dart-side coverage protocol.
   e2e-web:
     uses: ./.github/workflows/patrol-test.yml
     with:
@@ -55,7 +57,6 @@ jobs:
         dart pub global activate melos &&
         melos bootstrap &&
         dart pub global activate --source path packages/patrol_cli
-      coverage: true
       verbose: true
 
   e2e-android:
@@ -71,13 +72,14 @@ jobs:
       coverage: true
       verbose: true
 
+  # iOS coverage: VM URIs go to simulator syslog (not xcodebuild stdout).
+  # Need to capture from the `log stream` process, not xcodebuild.
   e2e-ios:
     uses: ./.github/workflows/patrol-test.yml
     with:
       platforms: 'ios'
       working-directory: 'dev/e2e_app'
       test-target: 'patrol_test/smoke/'
-      coverage: true
       patrol-cli-setup: >-
         dart pub global activate melos &&
         melos bootstrap &&
