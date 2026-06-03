@@ -133,8 +133,12 @@ if (collectCoverage) {
       return
     }
 
-    logger.info("Processing %d V8 coverage entries...", allCoverageEntries.length)
-    const { processV8Coverage } = await import("./v8-coverage")
-    await processV8Coverage(allCoverageEntries)
+    try {
+      logger.info("Processing %d V8 coverage entries...", allCoverageEntries.length)
+      const { processV8Coverage } = await import("./v8-coverage")
+      await processV8Coverage(allCoverageEntries)
+    } catch (err) {
+      logger.warn("V8 coverage processing failed (non-fatal): %s", err)
+    }
   })
 }
