@@ -229,20 +229,8 @@
           NSLog(@"App uninstallation completed, launching fresh app instance");                                 \
         }                                                                                                       \
                                                                                                                 \
-        XCUIApplication *app = [[XCUIApplication alloc] init];                                                   \
-        if (app.state != XCUIApplicationStateNotRunning) {                                                      \
-          [app terminate];                                                                                      \
-          NSTimeInterval deadline = [[NSDate date] timeIntervalSince1970] + 30.0;                               \
-          while (app.state != XCUIApplicationStateNotRunning) {                                                 \
-            if ([[NSDate date] timeIntervalSince1970] > deadline) {                                             \
-              NSLog(@"App did not terminate within 10s, force continuing");                                     \
-              break;                                                                                            \
-            }                                                                                                   \
-            [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];                  \
-          }                                                                                                     \
-        }                                                                                                       \
         server.appReady = NO;                                                                                   \
-        [app launch];                                                                                           \
+        [[[XCUIApplication alloc] init] launch];                                                                \
         while (!server.appReady) {                                                                              \
           [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];                    \
         }                                                                                                       \
