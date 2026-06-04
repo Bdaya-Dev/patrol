@@ -9,7 +9,6 @@ import 'package:path/path.dart' show join;
 import 'package:patrol_cli/src/base/exceptions.dart';
 import 'package:patrol_cli/src/base/logger.dart';
 import 'package:patrol_cli/src/base/process.dart';
-import 'package:patrol_cli/src/coverage/vm_connection_details.dart';
 import 'package:patrol_cli/src/crossplatform/app_options.dart';
 import 'package:patrol_cli/src/devices.dart';
 import 'package:platform/platform.dart';
@@ -75,11 +74,6 @@ class MacOSTestBackend {
   final Directory _rootDirectory;
   final DisposeScope _disposeScope;
   final Logger _logger;
-
-  final _vmConnectionController = StreamController<VMConnectionDetails>();
-
-  Stream<VMConnectionDetails> get vmConnectionStream =>
-      _vmConnectionController.stream;
 
   Future<void> build(MacOSAppOptions options) async {
     await _disposeScope.run((scope) async {
@@ -157,20 +151,6 @@ class MacOSTestBackend {
       final subject = '${options.description} on ${device.description}';
       final task = _logger.task('Running $subject');
 
-      // Capture VM URIs from system log (xcodebuild stdout doesn't include them)
-      final syslogProcess =
-          await _processManager.start(['log', 'stream'], runInShell: true)
-            ..disposedBy(scope);
-      syslogProcess
-          .listenStdOut((line) {
-            final vmDetails = VMConnectionDetails.tryExtractFromLogs(line);
-            if (vmDetails != null) {
-              _logger.detail('Captured VM service URI from syslog');
-              _vmConnectionController.add(vmDetails);
-            }
-          })
-          .disposedBy(scope);
-
       final resultsPath = resultBundlePath(
         timestamp: DateTime.now().millisecondsSinceEpoch,
       );
@@ -200,8 +180,6 @@ class MacOSTestBackend {
       process.listenStdErr((l) => _logger.err('\t$l')).disposedBy(scope);
 
       final exitCode = await process.exitCode;
-      await _vmConnectionController.close();
-      syslogProcess.kill();
 
       if (exitCode == 0) {
         task.complete('Completed executing $subject');

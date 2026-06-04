@@ -124,24 +124,37 @@ class CoverageTool {
                 logger.detail('Skipping discovery VM URI');
                 return <String, coverage.HitMap>{};
               }
+              final service = await vmServiceConnectUri(
+                details.webSocketUri.toString(),
+              );
+              Timer? cleanupTimer;
               try {
-                final data = await coverage
-                    .collect(details.uri, false, false, false, packages)
-                    .timeout(
-                      const Duration(seconds: 10),
-                      onTimeout: () {
-                        logger.warn(
-                          'Proactive coverage timed out for ${details.uri}',
-                        );
-                        return {'coverage': <Map<String, dynamic>>[]};
-                      },
-                    );
+                cleanupTimer = Timer(const Duration(seconds: 5), () {
+                  logger.warn(
+                    'Proactive coverage timed out, closing connection',
+                  );
+                  service.dispose();
+                });
+                final data = await coverage.collect(
+                  details.uri,
+                  false,
+                  false,
+                  false,
+                  packages,
+                  serviceOverrideForTesting: service,
+                );
+                cleanupTimer.cancel();
                 return coverage.HitMap.parseJson(
                   data['coverage'] as List<Map<String, dynamic>>,
                 );
               } on Exception catch (e) {
+                cleanupTimer?.cancel();
                 logger.warn('Proactive coverage failed for ${details.uri}: $e');
                 return <String, coverage.HitMap>{};
+              } finally {
+                try {
+                  await service.dispose();
+                } catch (_) {}
               }
             })
             .listen((cov) {

@@ -371,7 +371,9 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
         TargetPlatform.linux || TargetPlatform.windows =>
           _desktopTestBackend.vmConnectionStream,
         TargetPlatform.iOS => _iosTestBackend.vmConnectionStream,
-        TargetPlatform.macOS => _macosTestBackend.vmConnectionStream,
+        // macOS: neither xcodebuild stdout nor syslog contain VM URIs.
+        // Fall back to flutter logs which uses console log on macOS.
+
         TargetPlatform.android => _androidTestBackend.vmConnectionStream,
         _ => null,
       };
