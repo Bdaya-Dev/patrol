@@ -56,6 +56,7 @@ class CoverageTool {
     required FlutterCommand flutterCommand,
     bool includeWorkspacePackages = false,
     Stream<VMConnectionDetails>? vmConnectionStream,
+    bool proactive = false,
   }) async {
     final homeDirectory =
         _platform.environment['HOME'] ?? _platform.environment['USERPROFILE'];
@@ -105,27 +106,63 @@ class CoverageTool {
             .asBroadcastStream();
       }
 
-      final totalTestCount = await vmConnectionDetailsStream
-          .asyncMap(_collectTotalTestCount)
-          .first;
-      logger.info('Total test count: $totalTestCount');
+      if (proactive) {
+        // Proactive mode: collect immediately from each VM URI without
+        // waiting for extension events. Used on iOS where COVERAGE_ENABLED
+        // is skipped to avoid keeping the VM service alive.
+        var count = 0;
+        final coverageCollectionCompleter = Completer<void>()
+          ..disposedBy(scope, null);
+        vmConnectionDetailsStream
+            .asyncMap((details) async {
+              try {
+                final data = await coverage.collect(
+                  details.uri,
+                  false,
+                  false,
+                  false,
+                  packages,
+                );
+                return coverage.HitMap.parseJson(
+                  data['coverage'] as List<Map<String, dynamic>>,
+                );
+              } on Exception catch (e) {
+                logger.warn('Proactive coverage failed for ${details.uri}: $e');
+                return <String, coverage.HitMap>{};
+              }
+            })
+            .listen((cov) {
+              hitMap.merge(cov);
+              logger.info('Collected proactive coverage ${++count}');
+            })
+          ..onDone(coverageCollectionCompleter.complete)
+          ..disposedBy(scope);
+        await coverageCollectionCompleter.future;
+      } else {
+        final totalTestCount = await vmConnectionDetailsStream
+            .asyncMap(_collectTotalTestCount)
+            .first;
+        logger.info('Total test count: $totalTestCount');
 
-      var count = 0;
-      final coverageCollectionCompleter = Completer<void>()
-        ..disposedBy(scope, null);
-      vmConnectionDetailsStream
-          .take(totalTestCount)
-          .asyncMap(
-            (details) =>
-                _collectFromVM(packages: packages, connectionDetails: details),
-          )
-          .listen((coverage) {
-            hitMap.merge(coverage);
-            logger.info('Collected ${++count} / $totalTestCount coverages');
-          })
-        ..onDone(coverageCollectionCompleter.complete)
-        ..disposedBy(scope);
-      await coverageCollectionCompleter.future;
+        var count = 0;
+        final coverageCollectionCompleter = Completer<void>()
+          ..disposedBy(scope, null);
+        vmConnectionDetailsStream
+            .take(totalTestCount)
+            .asyncMap(
+              (details) => _collectFromVM(
+                packages: packages,
+                connectionDetails: details,
+              ),
+            )
+            .listen((cov) {
+              hitMap.merge(cov);
+              logger.info('Collected ${++count} / $totalTestCount coverages');
+            })
+          ..onDone(coverageCollectionCompleter.complete)
+          ..disposedBy(scope);
+        await coverageCollectionCompleter.future;
+      }
 
       logger.info('All coverage gathered, saving');
       final report = hitMap.formatLcov(
