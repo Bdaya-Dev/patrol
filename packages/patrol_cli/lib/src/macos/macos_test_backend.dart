@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Process;
+import 'dart:io' show File, Process;
 
 import 'package:dispose_scope/dispose_scope.dart';
-import 'package:file/file.dart';
+import 'package:file/file.dart' hide File;
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' show join;
 import 'package:patrol_cli/src/base/exceptions.dart';
 import 'package:patrol_cli/src/base/logger.dart';
 import 'package:patrol_cli/src/base/process.dart';
+import 'package:patrol_cli/src/coverage/vm_connection_details.dart';
 import 'package:patrol_cli/src/crossplatform/app_options.dart';
 import 'package:patrol_cli/src/devices.dart';
 import 'package:platform/platform.dart';
@@ -74,6 +75,40 @@ class MacOSTestBackend {
   final Directory _rootDirectory;
   final DisposeScope _disposeScope;
   final Logger _logger;
+
+  final _vmConnectionController = StreamController<VMConnectionDetails>();
+
+  Stream<VMConnectionDetails> get vmConnectionStream =>
+      _vmConnectionController.stream;
+
+  static const _vmServiceInfoPath = '/tmp/patrol_vm_service.json';
+
+  Timer? _filePoller;
+
+  void _startPollingVmServiceFile() {
+    String? lastUri;
+    _filePoller = Timer.periodic(const Duration(seconds: 1), (_) {
+      final file = File(_vmServiceInfoPath);
+      if (!file.existsSync()) {
+        return;
+      }
+      try {
+        final content = file.readAsStringSync();
+        final json = jsonDecode(content) as Map<String, dynamic>;
+        final uri = json['uri'] as String?;
+        if (uri != null && uri != lastUri) {
+          lastUri = uri;
+          final details = VMConnectionDetails.tryExtractFromLogs(
+            'listening on $uri',
+          );
+          if (details != null) {
+            _logger.detail('Captured VM service URI from file');
+            _vmConnectionController.add(details);
+          }
+        }
+      } catch (_) {}
+    });
+  }
 
   Future<void> build(MacOSAppOptions options) async {
     await _disposeScope.run((scope) async {
@@ -151,6 +186,13 @@ class MacOSTestBackend {
       final subject = '${options.description} on ${device.description}';
       final task = _logger.task('Running $subject');
 
+      // Delete stale VM service info file and start polling for new ones
+      final infoFile = File(_vmServiceInfoPath);
+      if (infoFile.existsSync()) {
+        infoFile.deleteSync();
+      }
+      _startPollingVmServiceFile();
+
       final resultsPath = resultBundlePath(
         timestamp: DateTime.now().millisecondsSinceEpoch,
       );
@@ -180,6 +222,8 @@ class MacOSTestBackend {
       process.listenStdErr((l) => _logger.err('\t$l')).disposedBy(scope);
 
       final exitCode = await process.exitCode;
+      _filePoller?.cancel();
+      await _vmConnectionController.close();
 
       if (exitCode == 0) {
         task.complete('Completed executing $subject');

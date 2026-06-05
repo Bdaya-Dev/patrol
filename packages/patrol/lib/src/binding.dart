@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io' as io;
 import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
@@ -78,6 +79,16 @@ class PatrolBinding extends LiveTestWidgetsFlutterBinding {
       if (nameOfRequestedTest == _currentDartTest) {
         if (const bool.fromEnvironment('COVERAGE_ENABLED')) {
           try {
+            final serviceInfo = await Service.getInfo();
+            final serverUri = serviceInfo.serverUri;
+            if (serverUri != null) {
+              final infoFile = io.File('/tmp/patrol_vm_service.json');
+              await infoFile.writeAsString(
+                jsonEncode({'uri': serverUri.toString()}),
+              );
+              logger('Wrote VM service URI to ${infoFile.path}');
+            }
+
             postEvent('waitForCoverageCollection', {
               'mainIsolateId': Service.getIsolateId(Isolate.current),
             });
