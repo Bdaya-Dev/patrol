@@ -42,7 +42,7 @@ on:
         description: 'Android emulator API level'
         required: false
         type: number
-        default: 34
+        default: 35
       ios-simulator:
         description: 'iOS simulator device name'
         required: false
@@ -170,9 +170,11 @@ jobs:
         with:
           api-level: ${{ inputs.android-api-level }}
           arch: x86_64
+          target: google_apis
           profile: pixel_7
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          emulator-options: -no-snapshot-load -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 2048
+          emulator-boot-timeout: 900
           disable-animations: true
           script: >-
             cd ${{ inputs.working-directory }} &&
