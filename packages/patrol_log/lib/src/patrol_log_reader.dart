@@ -244,6 +244,9 @@ class PatrolLogReader {
             );
           }
         case StepEntry():
+          if (_singleEntries.isEmpty) {
+            break;
+          }
           _singleEntries.last.addEntry(entry);
           if (!hideTestSteps) {
             // Clear the previous line it's not the new step, or increment counter

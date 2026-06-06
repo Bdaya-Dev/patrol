@@ -102,6 +102,9 @@ class WebTestBackend {
         clearTestSteps: clearTestSteps,
         coverageEnabled: coverageEnabled,
         webIsolation: webIsolation,
+        coverageDir: coverageEnabled
+            ? '${Directory.current.path}/coverage'
+            : null,
       );
     } finally {
       // Clean up Flutter process gracefully
@@ -492,6 +495,7 @@ class WebTestBackend {
     String? debuggerPort,
     bool coverageEnabled = false,
     String webIsolation = 'context',
+    String? coverageDir,
   }) async {
     _logger.info('Running Playwright tests against: $baseUrl');
     final completer = Completer<void>();
@@ -522,8 +526,10 @@ class WebTestBackend {
                 ...Platform.environment,
                 'BASE_URL': baseUrl,
                 'PATROL_DEBUGGER_PORT': ?debuggerPort,
-                if (coverageEnabled)
+                if (coverageEnabled) ...{
                   'PATROL_WEB_COVERAGE': 'true',
+                  'PATROL_WEB_COVERAGE_DIR': coverageDir!,
+                },
                 'PATROL_WEB_ISOLATION': webIsolation,
                 'PATROL_TEST_RESULTS_DIR': testResultsDir,
                 'PATROL_TEST_REPORT_DIR': testReportDir,
