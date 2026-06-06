@@ -65,17 +65,18 @@ export const patrolTest = base.extend<
       return
     }
     const mod = await import("monocart-coverage-reports")
+    const defaultEntryExcludes = /\/(dart_sdk|canvaskit|ddc_module_loader|dwds)\//
+    const customFilter = process.env.PATROL_WEB_COVERAGE_FILTER
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const reporter: CoverageReporter = new (mod.default as any)({
       outputDir: coverageDir,
       reports: ["v8", "lcovonly"],
       name: "patrol_lcov",
-      entryFilter: (entry: { url: string }) =>
-        /packages\/(patrol|patrol_finders)\//.test(entry.url),
-      sourceFilter: (sourcePath: string) =>
-        /packages\/(patrol|patrol_finders)\//.test(sourcePath),
-      sourcePath: (filePath: string) =>
-        filePath.replace(/^.*?(packages\/)/, "$1"),
+      entryFilter: (entry: { url: string }) => {
+        if (defaultEntryExcludes.test(entry.url)) return false
+        if (customFilter) return new RegExp(customFilter).test(entry.url)
+        return true
+      },
     })
     await use(reporter)
     await reporter.generate()
