@@ -3,8 +3,7 @@ import { initialise } from "./initialise"
 import { logger } from "./logger"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
 import { PatrolTestEntry } from "./types"
-import * as fs from "fs"
-import * as path from "path"
+import CoverageReport from "monocart-coverage-reports"
 
 const tests: PatrolTestEntry[] = process.env.PATROL_TESTS ? JSON.parse(process.env.PATROL_TESTS) : []
 if (tests.length === 0) {
@@ -14,18 +13,14 @@ if (tests.length === 0) {
 const debuggerPort = process.env.PATROL_DEBUGGER_PORT
 const collectCoverage = !!process.env.PATROL_WEB_COVERAGE
 const coverageDir = process.env.PATROL_WEB_COVERAGE_DIR || "coverage"
-let coverageFileIndex = 0
 
-function saveCoverageEntries(entries: unknown[]) {
-  try {
-    if (!fs.existsSync(coverageDir)) fs.mkdirSync(coverageDir, { recursive: true })
-    const filePath = path.join(coverageDir, `v8-coverage-${coverageFileIndex++}.json`)
-    fs.writeFileSync(filePath, JSON.stringify(entries))
-    logger.info("Saved %d V8 coverage entries to %s", entries.length, filePath)
-  } catch (err) {
-    logger.warn("Failed to save V8 coverage: %s", err)
-  }
-}
+const mcr = collectCoverage
+  ? new CoverageReport({
+      outputDir: coverageDir,
+      reports: ["lcovonly"],
+      name: "patrol_lcov",
+    })
+  : null
 
 export const patrolTest = base.extend({
   page: async ({ page: defaultPage }, use) => {
@@ -65,9 +60,9 @@ export const patrolTest = base.extend({
 
       if (collectCoverage) await page.coverage.startJSCoverage()
       await use(page)
-      if (collectCoverage) {
+      if (collectCoverage && mcr) {
         const entries = await page.coverage.stopJSCoverage()
-        saveCoverageEntries(entries)
+        await mcr.add(entries)
       }
       return
     }
@@ -139,4 +134,11 @@ for (const { name, skip, tags } of tests) {
     if (!collectCoverage) await page.close()
   })
 }
+
+patrolTest.afterAll(async () => {
+  if (mcr) {
+    await mcr.generate()
+    logger.info("Generated LCOV coverage report in %s", coverageDir)
+  }
+})
 
