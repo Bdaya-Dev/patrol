@@ -253,17 +253,19 @@ class CoverageTool {
       return {};
     }
 
-    final result = <String, coverage.HitMap>{}
-      ..merge(
-        await _collectAndMarkTestCompleted(
-          connectionDetails: connectionDetails,
-          packages: packages,
-          mainIsolateId: mainIsolateId,
-        ),
-      );
-    await serviceClient.dispose();
-
-    return result;
+    try {
+      final result = <String, coverage.HitMap>{}
+        ..merge(
+          await _collectAndMarkTestCompleted(
+            connectionDetails: connectionDetails,
+            packages: packages,
+            mainIsolateId: mainIsolateId,
+          ),
+        );
+      return result;
+    } finally {
+      await serviceClient.dispose();
+    }
   }
 
   Future<Map<String, coverage.HitMap>> _collectAndMarkTestCompleted({
@@ -278,7 +280,7 @@ class CoverageTool {
       _logger.warn('coverage.collect() timed out after 5s, closing connection');
       service.dispose();
     });
-    Map<String, dynamic> data;
+    Map<String, dynamic>? data;
     try {
       data = await coverage.collect(
         connectionDetails.uri,
@@ -292,27 +294,32 @@ class CoverageTool {
     } on Exception catch (e) {
       cleanupTimer.cancel();
       _logger.warn('coverage.collect() failed: $e');
-      try {
-        await service.dispose();
-      } catch (_) {}
-      return {};
     }
 
-    final socket =
-        await io.WebSocket.connect(connectionDetails.webSocketUri.toString())
-          ..add(
-            jsonEncode({
-              'jsonrpc': '2.0',
-              'id': 21,
-              'method': 'ext.patrol.markTestCompleted',
-              'params': {
-                'isolateId': mainIsolateId,
-                'command': 'markTestCompleted',
-              },
-            }),
-          );
-    await socket.close();
+    // Always send markTestCompleted so the binding unblocks, even if
+    // coverage collection failed or timed out.
+    try {
+      final socket =
+          await io.WebSocket.connect(connectionDetails.webSocketUri.toString())
+            ..add(
+              jsonEncode({
+                'jsonrpc': '2.0',
+                'id': 21,
+                'method': 'ext.patrol.markTestCompleted',
+                'params': {
+                  'isolateId': mainIsolateId,
+                  'command': 'markTestCompleted',
+                },
+              }),
+            );
+      await socket.close();
+    } on Exception catch (e) {
+      _logger.warn('markTestCompleted failed: $e');
+    }
 
+    if (data == null) {
+      return {};
+    }
     return coverage.HitMap.parseJson(
       data['coverage'] as List<Map<String, dynamic>>,
     );
