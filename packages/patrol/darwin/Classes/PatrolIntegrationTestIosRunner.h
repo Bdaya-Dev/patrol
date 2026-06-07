@@ -230,15 +230,7 @@
         }                                                                                                       \
                                                                                                                 \
         server.appReady = NO;                                                                                   \
-        {                                                                                                       \
-          XCUIApplication *app = [[XCUIApplication alloc] init];                                                \
-          int pid = app.processID;                                                                              \
-          if (pid > 0) {                                                                                        \
-            kill(pid, SIGKILL);                                                                                 \
-            [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];                  \
-          }                                                                                                     \
-          [app launch];                                                                                         \
-        }                                                                                                       \
+        [[[XCUIApplication alloc] init] launch];                                                                \
         while (!server.appReady) {                                                                              \
           [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];                    \
         }                                                                                                       \
