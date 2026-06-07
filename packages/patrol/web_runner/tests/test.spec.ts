@@ -18,6 +18,30 @@ const isolationMode = process.env.PATROL_WEB_ISOLATION || "context"
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CoverageReporter = { add: (entries: any[]) => Promise<void>; generate: () => Promise<void> }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resolveSourceMaps(entries: any[]) {
+  for (const entry of entries) {
+    if (entry.source && !entry.sourceMap) {
+      const match = entry.source.match(/\/\/[#@]\s*sourceMappingURL=(\S+)/)
+      if (match) {
+        const mapUrl = new URL(match[1], entry.url).toString()
+        try {
+          const res = await fetch(mapUrl)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.sources && !data.sourcesContent) {
+              data.sourcesContent = data.sources.map(() => "")
+            }
+            entry.sourceMap = data
+          }
+        } catch {
+          // Source map fetch failed — coverage will use JS paths
+        }
+      }
+    }
+  }
+}
+
 async function setupPage(page: Page) {
   page.on("console", message => {
     const text = message.text()
@@ -72,7 +96,6 @@ export const patrolTest = base.extend<
       outputDir: coverageDir,
       reports: ["v8", "lcovonly"],
       name: "patrol_lcov",
-      logging: "debug",
       entryFilter: (entry: { url: string }) => {
         if (defaultEntryExcludes.test(entry.url)) return false
         if (customFilter) return new RegExp(customFilter).test(entry.url)
@@ -130,6 +153,7 @@ export const patrolTest = base.extend<
       await use(page)
       if (coverageReporter) {
         const entries = await page.coverage.stopJSCoverage()
+        await resolveSourceMaps(entries)
         await coverageReporter.add(entries)
       }
       return
@@ -145,12 +169,7 @@ export const patrolTest = base.extend<
     await use(page)
     if (coverageReporter) {
       const entries = await page.coverage.stopJSCoverage()
-      // Debug: check source map presence in V8 coverage entries
-      for (const e of entries.slice(0, 3)) {
-        const hasSM = e.source?.includes("sourceMappingURL") ?? false
-        const smMatch = e.source?.match(/\/\/[#@]\s*sourceMappingURL=(.+)/)
-        process.stderr.write(`[SRCMAP] ${e.url}: source=${!!e.source} (${e.source?.length ?? 0}b), smURL=${smMatch?.[1] ?? "NONE"}\n`)
-      }
+      await resolveSourceMaps(entries)
       await coverageReporter.add(entries)
     }
 
