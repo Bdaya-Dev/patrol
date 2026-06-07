@@ -145,16 +145,12 @@ export const patrolTest = base.extend<
     await use(page)
     if (coverageReporter) {
       const entries = await page.coverage.stopJSCoverage()
-      // Debug: write source map info to file for investigation
-      const fs = await import("fs")
-      const debugLines = entries.slice(0, 5).map(e => {
-        const hasSource = !!e.source
+      // Debug: check source map presence in V8 coverage entries
+      for (const e of entries.slice(0, 3)) {
         const hasSM = e.source?.includes("sourceMappingURL") ?? false
         const smMatch = e.source?.match(/\/\/[#@]\s*sourceMappingURL=(.+)/)
-        return `${e.url}: source=${hasSource} (${e.source?.length ?? 0} bytes), sourceMappingURL=${hasSM} -> ${smMatch?.[1] ?? "none"}`
-      })
-      fs.mkdirSync(coverageDir, { recursive: true })
-      fs.writeFileSync(`${coverageDir}/debug-sourcemap.txt`, debugLines.join("\n"))
+        process.stderr.write(`[SRCMAP] ${e.url}: source=${!!e.source} (${e.source?.length ?? 0}b), smURL=${smMatch?.[1] ?? "NONE"}\n`)
+      }
       await coverageReporter.add(entries)
     }
 
