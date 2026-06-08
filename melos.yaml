@@ -1,5 +1,5 @@
 name: patrol_plus
-repository: https://github.com/ahmednfwela/patrol
+repository: https://github.com/Bdaya-Dev/patrol
 packages:
   - packages/**
 

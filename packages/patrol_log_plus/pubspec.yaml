@@ -3,8 +3,8 @@ description: >
   Log package for Patrol, a powerful Flutter-native UI testing framework.
 version: 5.0.0
 homepage: https://patrol.leancode.co
-repository: https://github.com/ahmednfwela/patrol/tree/master/packages/patrol_log_plus
-issue_tracker: https://github.com/ahmednfwela/patrol/issues
+repository: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_log_plus
+issue_tracker: https://github.com/Bdaya-Dev/patrol/issues
 documentation: https://patrol.leancode.co
 topics: [test, log, patrol]
 
