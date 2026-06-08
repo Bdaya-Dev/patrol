@@ -1,4 +1,4 @@
-import 'package:patrol/src/global_state.dart' as global_state;
+import 'package:patrol_plus/src/global_state.dart' as global_state;
 
 import '../common.dart';
 

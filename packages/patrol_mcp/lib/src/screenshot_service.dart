@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:logging/logging.dart' as logging;
 import 'package:mcp_dart/mcp_dart.dart';
-import 'package:patrol_cli/patrol_cli.dart' show Device, TargetPlatform;
+import 'package:patrol_cli_plus/patrol_cli.dart' show Device, TargetPlatform;
 
 import 'cdp_service.dart';
 

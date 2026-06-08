@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'packages/patrol_gen/**'
+      - 'packages/patrol_gen_plus/**'
 
 jobs:
   prepare:
@@ -18,7 +18,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/patrol_gen
+        working-directory: packages/patrol_gen_plus
 
     steps:
       - name: Clone repository

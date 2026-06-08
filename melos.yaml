@@ -1,5 +1,5 @@
-name: patrol
-repository: https://github.com/leancodepl/patrol
+name: patrol_plus
+repository: https://github.com/ahmednfwela/patrol
 packages:
   - packages/**
 

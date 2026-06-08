@@ -64,10 +64,10 @@ on:
         type: string
         default: 'flutter pub get'
       patrol-cli-setup:
-        description: 'Command to install patrol_cli. Override to activate from source (e.g., "dart pub global activate --source path packages/patrol_cli")'
+        description: 'Command to install patrol_cli. Override to activate from source (e.g., "dart pub global activate --source path packages/patrol_cli_plus")'
         required: false
         type: string
-        default: 'dart pub global activate patrol_cli'
+        default: 'dart pub global activate patrol_cli_plus'
 
 permissions:
   contents: read

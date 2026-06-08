@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'packages/patrol/**'
+      - 'packages/patrol_plus/**'
 
 jobs:
   prepare-android-on-windows:
@@ -20,7 +20,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/patrol/example/android
+        working-directory: packages/patrol_plus/example/android
 
     steps:
       - name: Clone repository
@@ -42,7 +42,7 @@ jobs:
         run: flutter precache --android
 
       - name: Generate Gradle wrapper
-        working-directory: packages/patrol/example
+        working-directory: packages/patrol_plus/example
         run: flutter build apk --config-only
 
       - name: ktlint check
@@ -70,7 +70,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/patrol/example/android
+        working-directory: packages/patrol_plus/example/android
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -104,7 +104,7 @@ jobs:
         run: flutter precache --android
 
       - name: Generate Gradle wrapper
-        working-directory: packages/patrol/example
+        working-directory: packages/patrol_plus/example
         run: flutter build apk --config-only
 
       - name: Run unit tests
@@ -138,7 +138,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/patrol/darwin
+        working-directory: packages/patrol_plus/darwin
 
     steps:
       - name: Clone repository
@@ -178,7 +178,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/patrol
+        working-directory: packages/patrol_plus
 
     steps:
       - name: Clone repository
@@ -219,7 +219,7 @@ jobs:
 
       - name: flutter pub get (example app)
         if: success() || failure()
-        working-directory: ./packages/patrol/example
+        working-directory: ./packages/patrol_plus/example
         run: flutter pub get
 
       - name: Check if files are regenerated from schema

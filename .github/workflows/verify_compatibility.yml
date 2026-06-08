@@ -4,13 +4,13 @@ on:
   push:
     branches: [ master ]
     paths:
-      - 'packages/patrol_cli/lib/src/compatibility_checker/version_compatibility.dart'
-      - 'packages/patrol_cli/test/compatibility_checker/version_compatibility_test.dart'
+      - 'packages/patrol_cli_plus/lib/src/compatibility_checker/version_compatibility.dart'
+      - 'packages/patrol_cli_plus/test/compatibility_checker/version_compatibility_test.dart'
   pull_request:
     branches: [ master ]
     paths:
-      - 'packages/patrol_cli/lib/src/compatibility_checker/version_compatibility.dart'
-      - 'packages/patrol_cli/test/compatibility_checker/version_compatibility_test.dart'
+      - 'packages/patrol_cli_plus/lib/src/compatibility_checker/version_compatibility.dart'
+      - 'packages/patrol_cli_plus/test/compatibility_checker/version_compatibility_test.dart'
 
 jobs:
   verify:
@@ -24,17 +24,17 @@ jobs:
     
     - name: Install dependencies
       run: |
-        cd packages/patrol_cli
+        cd packages/patrol_cli_plus
         dart pub get
     
     - name: Run compatibility tests
       run: |
-        cd packages/patrol_cli
+        cd packages/patrol_cli_plus
         dart test test/compatibility_checker/version_compatibility_test.dart
     
     - name: Generate compatibility table
       run: |
-        cd packages/patrol_cli
+        cd packages/patrol_cli_plus
         dart run lib/src/compatibility_checker/generate_compatibility_table.dart
     
     - name: Verify tables are up to date

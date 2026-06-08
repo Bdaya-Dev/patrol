@@ -36,10 +36,10 @@ dev_dependencies:
     sdk: flutter
   gpx: ^2.3.0
   leancode_lint: ^17.0.0
-  patrol:
-    path: ../../packages/patrol
-  patrol_cli:
-    path: ../../packages/patrol_cli
+  patrol_plus:
+    path: ../../packages/patrol_plus
+  patrol_cli_plus:
+    path: ../../packages/patrol_cli_plus
 
 flutter:
   uses-material-design: true
@@ -47,7 +47,7 @@ flutter:
     - assets/gpx.gpx
     - assets/iframe_content.html
 
-patrol:
+patrol_plus:
   app_name: Patrol example
   android:
     package_name: pl.leancode.patrol.e2e_app

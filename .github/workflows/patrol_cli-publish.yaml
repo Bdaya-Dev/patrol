@@ -2,7 +2,7 @@ name: patrol_cli publish
 
 on:
   push:
-    tags: ['patrol_cli-v*']
+    tags: ['patrol_cli_plus-v*']
 
 jobs:
   publish:
@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Check if versions are defined consistently
-        working-directory: packages/patrol_cli
+        working-directory: packages/patrol_cli_plus
         run: ./check_versions
 
       # This step adds the auth token for pub.dev
@@ -36,7 +36,7 @@ jobs:
         id: pub_release
         uses: leancodepl/mobile-tools/.github/actions/pub-release@pub-release-v1
         with:
-          path: packages/patrol_cli
+          path: packages/patrol_cli_plus
 
   notify:
     name: Notify on Slack

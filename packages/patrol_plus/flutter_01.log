@@ -1,0 +1,76 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter analyze
+
+## exception
+
+_Exception: Exception: analysis server exited with code -1073740791 and output:
+[stderr]   pc 0x000002e7b7d0746f fp 0x000000fe41afe8a0 sp 0x000000fe41afe860 [Optimized] _BufferingStreamSubscription@5048458._sendData@5048458+0xc3
+[stderr]   pc 0x000002e7b8120985 fp 0x000000fe41afe8c0 sp 0x000000fe41afe8b0 [Optimized] _DelayedData@5048458.perform+0x59
+[stderr]   pc 0x000002e7b782f6a4 fp 0x000000fe41afe8e8 sp 0x000000fe41afe8d0 [Optimized] _PendingEvents@5048458.handleNext+0xc8
+[stderr]   pc 0x000002e7b782f5c7 fp 0x000000fe41afe8f8 sp 0x000000fe41afe8f8 [Optimized] _PendingEvents@5048458.schedule.<anonymous closure>+0x43
+[stderr]   pc 0x000002e7b781caaf fp 0x000000fe41afe970 sp 0x000000fe41afe908 [Optimized] _rootRun@5048458+0x63
+[stderr]   pc 0x000002e7b781cb9c fp 0x000000fe41afe9a8 sp 0x000000fe41afe980 [Optimized] _rootRun@5048458+0x88
+[stderr]   pc 0x000002e7b801e51a fp 0x000000fe41afea08 sp 0x000000fe41afe9b8 [Optimized] _CustomZone@5048458.run+0x19e
+[stderr]   pc 0x000002e7b810c810 fp 0x000000fe41afea88 sp 0x000000fe41afea18 [Optimized] _CustomZone@5048458.runGuarded+0x38
+[stderr]   pc 0x000002e7b8021a17 fp 0x000000fe41afea98 sp 0x000000fe41afea98 [Optimized] _CustomZone@5048458.bindCallbackGuarded.<anonymous closure>+0x23
+[stderr]   pc 0x000002e7b781cad8 fp 0x000000fe41afeb10 sp 0x000000fe41afeaa8 [Optimized] _rootRun@5048458+0x8c
+[stderr]   pc 0x000002e7b781cb9c fp 0x000000fe41afeb48 sp 0x000000fe41afeb20 [Optimized] _rootRun@5048458+0x88
+[stderr]   pc 0x000002e7b801e51a fp 0x000000fe41afeba8 sp 0x000000fe41afeb58 [Optimized] _CustomZone@5048458.run+0x19e
+[stderr]   pc 0x000002e7b810c810 fp 0x000000fe41afec28 sp 0x000000fe41afebb8 [Optimized] _CustomZone@5048458.runGuarded+0x38
+[stderr]   pc 0x000002e7b8021a17 fp 0x000000fe41afec38 sp 0x000000fe41afec38 [Optimized] _CustomZone@5048458.bindCallbackGuarded.<anonymous closure>+0x23
+[stderr]   pc 0x000002e7b77e6c4f fp 0x000000fe41afec58 sp 0x000000fe41afec48 [Optimized] _microtaskLoop@5048458+0xd7
+[stderr]   pc 0x000002e7b77e6ac1 fp 0x000000fe41afeca8 sp 0x000000fe41afec68 [Optimized] _startMicrotaskLoop@5048458+0x29
+[stderr]   pc 0x000002e7b77e6a87 fp 0x000000fe41afecb8 sp 0x000000fe41afecb8 [Optimized] _startMicrotaskLoop@5048458+0x13
+[stderr]   pc 0x000002e7b77e26c1 fp 0x000000fe41afecd0 sp 0x000000fe41afecc8 [Optimized] _runPendingImmediateCallback@1026248+0x4d
+[stderr]   pc 0x000002e7b77e265d fp 0x000000fe41afecf8 sp 0x000000fe41afece0 [Optimized] _RawReceivePort@1026248._handleMessage@1026248+0xcd
+[stderr]   pc 0x000002e7b392c6cb fp 0x000000fe41afee20 sp 0x000000fe41afed08 [Stub] Entry frame
+
+```
+```
+
+## flutter doctor
+
+```
+[✓] Flutter (Channel stable, 3.44.0, on Microsoft Windows [Version 10.0.26200.8524], locale en-AE) [8.0s]
+    • Flutter version 3.44.0 on channel stable at C:\tools\flutter
+    • Upstream repository https://github.com/flutter/flutter.git
+    • Framework revision 559ffa3f75 (3 weeks ago), 2026-05-15 14:13:13 -0700
+    • Engine revision 4c525dac5e
+    • Dart version 3.12.0
+    • DevTools version 2.57.0
+    • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, enable-swift-package-manager, omit-legacy-version-file, enable-lldb-debugging, enable-uiscene-migration
+
+[✓] Windows Version (11 Pro 64-bit, 25H2, 2009) [35.9s]
+
+[✓] Android toolchain - develop for Android devices (Android SDK version 36.1.0) [18.5s]
+    • Android SDK at C:\Users\ahmed\AppData\Local\Android\sdk
+    • Emulator version 36.3.10.0 (build_id 14472402) (CL:N/A)
+    • Platform android-36, build-tools 36.1.0
+    • Java binary at: C:\Program Files\Android\Android Studio\jbr\bin\java
+      This JDK is specified in your Flutter configuration.
+      To change the current JDK, run: `flutter config --jdk-dir="path/to/jdk"`.
+    • Java version OpenJDK Runtime Environment (build 21.0.8+-14196175-b1038.72)
+    • All Android licenses accepted.
+
+[✓] Chrome - develop for the web [2.9s]
+    • Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe
+
+[✓] Visual Studio - develop Windows apps (Visual Studio Community 2026 18.4.3) [2.9s]
+    • Visual Studio at C:\Program Files\Microsoft Visual Studio\18\Community
+    • Visual Studio Community 2026 version 18.4.11626.88
+    • Windows 10 SDK version 10.0.26100.0
+
+[✓] Connected device (3 available) [5.6s]
+    • Windows (desktop) • windows • windows-x64    • Microsoft Windows [Version 10.0.26200.8524]
+    • Chrome (web)      • chrome  • web-javascript • Google Chrome 148.0.7778.217
+    • Edge (web)        • edge    • web-javascript • Microsoft Edge 148.0.3967.96
+
+[✓] Network resources [3.0s]
+    • All expected network resources are available.
+
+• No issues found!
+```

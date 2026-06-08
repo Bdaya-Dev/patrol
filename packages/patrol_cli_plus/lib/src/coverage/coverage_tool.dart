@@ -1,0 +1,474 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io' as io;
+
+import 'package:adb_plus/adb.dart';
+import 'package:coverage/coverage.dart' as coverage;
+import 'package:dispose_scope/dispose_scope.dart';
+import 'package:file/file.dart';
+import 'package:glob/glob.dart';
+import 'package:package_config/package_config.dart';
+import 'package:patrol_cli_plus/src/base/exceptions.dart';
+import 'package:patrol_cli_plus/src/base/logger.dart';
+import 'package:patrol_cli_plus/src/coverage/device_to_host_port_transformer.dart';
+import 'package:patrol_cli_plus/src/coverage/vm_connection_details.dart';
+import 'package:patrol_cli_plus/src/devices.dart';
+import 'package:patrol_cli_plus/src/runner/flutter_command.dart';
+import 'package:platform/platform.dart';
+import 'package:process/process.dart';
+import 'package:vm_service/vm_service.dart';
+import 'package:vm_service/vm_service_io.dart';
+import 'package:yaml/yaml.dart';
+
+class CoverageTool {
+  CoverageTool({
+    required FileSystem fs,
+    required Directory rootDirectory,
+    required ProcessManager processManager,
+    required Platform platform,
+    required Adb adb,
+    required DisposeScope parentDisposeScope,
+    required Logger logger,
+  }) : _fs = fs,
+       _rootDirectory = rootDirectory,
+       _processManager = processManager,
+       _platform = platform,
+       _adb = adb,
+       _logger = logger,
+       _disposeScope = DisposeScope() {
+    _disposeScope.disposedBy(parentDisposeScope);
+  }
+
+  final FileSystem _fs;
+  final Directory _rootDirectory;
+  final ProcessManager _processManager;
+  final Platform _platform;
+  final Adb _adb;
+  final Logger _logger;
+  final DisposeScope _disposeScope;
+
+  Future<void> run({
+    required Device device,
+    required Set<RegExp> packagesRegExps,
+    required TargetPlatform platform,
+    required Logger logger,
+    required Set<Glob> ignoreGlobs,
+    required FlutterCommand flutterCommand,
+    bool includeWorkspacePackages = false,
+    Stream<VMConnectionDetails>? vmConnectionStream,
+    bool proactive = false,
+  }) async {
+    final homeDirectory =
+        _platform.environment['HOME'] ?? _platform.environment['USERPROFILE'];
+    final hitMap = <String, coverage.HitMap>{};
+
+    // Resolved once per run; the package_config.json contents do not change
+    // mid-run and we'd otherwise re-walk + re-parse for every test isolate.
+    final packages = await _getCoveragePackages(
+      packagesRegExps,
+      includeWorkspacePackages: includeWorkspacePackages,
+    );
+
+    await _disposeScope.run((scope) async {
+      final Stream<VMConnectionDetails> vmConnectionDetailsStream;
+
+      final portTransformer = DeviceToHostPortTransformer(
+        device: device,
+        devicePlatform: platform,
+        adb: _adb,
+        logger: logger,
+      );
+
+      if (vmConnectionStream != null) {
+        vmConnectionDetailsStream = vmConnectionStream
+            .transform(portTransformer)
+            .asBroadcastStream();
+      } else {
+        final logsProcess =
+            await _processManager.start(
+                [
+                  flutterCommand.executable,
+                  ...flutterCommand.arguments,
+                  'logs',
+                  '-d',
+                  device.id,
+                ],
+                workingDirectory: homeDirectory,
+                runInShell: true,
+              )
+              ..disposedBy(scope);
+
+        vmConnectionDetailsStream = logsProcess.stdout
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .map(VMConnectionDetails.tryExtractFromLogs)
+            .where((details) => details != null)
+            .cast<VMConnectionDetails>()
+            .transform(portTransformer)
+            .asBroadcastStream();
+      }
+
+      if (proactive) {
+        // Proactive mode: collect immediately from each VM URI without
+        // waiting for extension events. Used on iOS where COVERAGE_ENABLED
+        // is skipped to avoid keeping the VM service alive.
+        // Skip the first URI (discovery phase — no test runs, no coverage).
+        var count = 0;
+        var skippedFirst = false;
+        final coverageCollectionCompleter = Completer<void>()
+          ..disposedBy(scope, null);
+        vmConnectionDetailsStream
+            .asyncMap((details) async {
+              if (!skippedFirst) {
+                skippedFirst = true;
+                logger.detail('Skipping discovery VM URI');
+                return <String, coverage.HitMap>{};
+              }
+              final service = await vmServiceConnectUri(
+                details.webSocketUri.toString(),
+              );
+              Timer? cleanupTimer;
+              try {
+                cleanupTimer = Timer(const Duration(seconds: 5), () {
+                  logger.warn(
+                    'Proactive coverage timed out, closing connection',
+                  );
+                  service.dispose();
+                });
+                final data = await coverage.collect(
+                  details.uri,
+                  false,
+                  false,
+                  false,
+                  packages,
+                  serviceOverrideForTesting: service,
+                );
+                cleanupTimer.cancel();
+                return coverage.HitMap.parseJson(
+                  data['coverage'] as List<Map<String, dynamic>>,
+                );
+              } on Exception catch (e) {
+                cleanupTimer?.cancel();
+                logger.warn('Proactive coverage failed for ${details.uri}: $e');
+                return <String, coverage.HitMap>{};
+              } finally {
+                try {
+                  await service.dispose();
+                } catch (_) {}
+              }
+            })
+            .listen((cov) {
+              hitMap.merge(cov);
+              logger.info('Collected proactive coverage ${++count}');
+            })
+          ..onDone(coverageCollectionCompleter.complete)
+          ..disposedBy(scope);
+        await coverageCollectionCompleter.future;
+      } else {
+        // Event-based mode: skip the first VM URI (test discovery phase) and
+        // collect coverage from each subsequent URI via waitForCoverageCollection
+        // events until the stream closes.
+        var skippedFirst = false;
+        var count = 0;
+        final coverageCollectionCompleter = Completer<void>()
+          ..disposedBy(scope, null);
+        vmConnectionDetailsStream
+            .asyncMap((details) async {
+              if (!skippedFirst) {
+                skippedFirst = true;
+                logger.detail('Skipping discovery VM URI');
+                return <String, coverage.HitMap>{};
+              }
+              try {
+                return await _collectFromVM(
+                  packages: packages,
+                  connectionDetails: details,
+                );
+              } on Exception catch (e) {
+                logger.warn('Coverage collection failed: $e');
+                return <String, coverage.HitMap>{};
+              }
+            })
+            .listen((cov) {
+              if (cov.isNotEmpty) {
+                hitMap.merge(cov);
+                logger.info('Collected coverage ${++count}');
+              }
+            })
+          ..onDone(coverageCollectionCompleter.complete)
+          ..disposedBy(scope);
+        await coverageCollectionCompleter.future;
+      }
+
+      logger.info('All coverage gathered, saving');
+      final report = hitMap.formatLcov(
+        await coverage.Resolver.create(packagePath: _rootDirectory.path),
+        ignoreGlobs: ignoreGlobs,
+      );
+      await _saveReport(report);
+    });
+  }
+
+  Future<Map<String, coverage.HitMap>> _collectFromVM({
+    required Set<String> packages,
+    required VMConnectionDetails connectionDetails,
+  }) async {
+    final serviceClient = await vmServiceConnectUri(
+      connectionDetails.webSocketUri.toString(),
+    );
+    _disposeScope.addDispose(serviceClient.dispose);
+
+    // Poll for ext.patrol.coverageReady service extension.
+    // Unlike postEvent (fire-and-forget), registered extensions are
+    // discoverable via isolate.extensionRPCs after the fact.
+    String? mainIsolateId;
+    final deadline = DateTime.now().add(const Duration(seconds: 15));
+    while (DateTime.now().isBefore(deadline)) {
+      try {
+        final vm = await serviceClient.getVM();
+        for (final isolateRef in vm.isolates ?? <IsolateRef>[]) {
+          final isolate = await serviceClient.getIsolate(isolateRef.id!);
+          if (isolate.extensionRPCs?.contains('ext.patrol.coverageReady') ??
+              false) {
+            final response = await serviceClient.callServiceExtension(
+              'ext.patrol.coverageReady',
+              isolateId: isolateRef.id,
+            );
+            mainIsolateId = response.json?['mainIsolateId'] as String?;
+            break;
+          }
+        }
+      } on Exception {
+        // VM might not be ready yet
+      }
+      if (mainIsolateId != null) {
+        break;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+
+    if (mainIsolateId == null) {
+      _logger.warn('ext.patrol.coverageReady not found within 15s');
+      await serviceClient.dispose();
+      return {};
+    }
+
+    // Dispose the polling connection BEFORE collecting coverage.
+    // markTestCompleted (inside _collectAndMarkTestCompleted) unblocks the
+    // binding, which triggers XCTest to launch the next test. If this
+    // connection is still open at that point, terminate() fails.
+    await serviceClient.dispose();
+
+    return <String, coverage.HitMap>{}
+      ..merge(
+        await _collectAndMarkTestCompleted(
+          connectionDetails: connectionDetails,
+          packages: packages,
+          mainIsolateId: mainIsolateId,
+        ),
+      );
+  }
+
+  Future<Map<String, coverage.HitMap>> _collectAndMarkTestCompleted({
+    required VMConnectionDetails connectionDetails,
+    required Set<String> packages,
+    required String mainIsolateId,
+  }) async {
+    final service = await vmServiceConnectUri(
+      connectionDetails.webSocketUri.toString(),
+    );
+    final cleanupTimer = Timer(const Duration(seconds: 3), () {
+      _logger.warn('coverage.collect() timed out after 3s, closing connection');
+      service.dispose();
+    });
+    Map<String, dynamic>? data;
+    try {
+      data = await coverage.collect(
+        connectionDetails.uri,
+        false,
+        false,
+        false,
+        packages,
+        serviceOverrideForTesting: service,
+      );
+      cleanupTimer.cancel();
+    } on Exception catch (e) {
+      cleanupTimer.cancel();
+      _logger.warn('coverage.collect() failed: $e');
+    }
+
+    // Always send markTestCompleted so the binding unblocks, even if
+    // coverage collection failed or timed out.
+    try {
+      final socket =
+          await io.WebSocket.connect(connectionDetails.webSocketUri.toString())
+            ..add(
+              jsonEncode({
+                'jsonrpc': '2.0',
+                'id': 21,
+                'method': 'ext.patrol.markTestCompleted',
+                'params': {
+                  'isolateId': mainIsolateId,
+                  'command': 'markTestCompleted',
+                },
+              }),
+            );
+      await socket.close();
+    } on Exception catch (e) {
+      _logger.warn('markTestCompleted failed: $e');
+    }
+
+    if (data == null) {
+      return {};
+    }
+    return coverage.HitMap.parseJson(
+      data['coverage'] as List<Map<String, dynamic>>,
+    );
+  }
+
+  Future<void> _saveReport(String report) async {
+    final coverageDirectory = _fs.directory('coverage');
+
+    if (!coverageDirectory.existsSync()) {
+      await coverageDirectory.create();
+    }
+
+    await coverageDirectory.childFile('patrol_lcov.info').writeAsString(report);
+  }
+
+  Future<Set<String>> _getCoveragePackages(
+    Set<RegExp> packagesRegExps, {
+    required bool includeWorkspacePackages,
+  }) async {
+    final packageConfigFile = findPackageConfigFile(_rootDirectory);
+    if (packageConfigFile == null) {
+      throwToolExit(
+        "Couldn't find .dart_tool/package_config.json in "
+        '${_rootDirectory.path} or any parent directory. '
+        'Run `flutter pub get` first.',
+      );
+    }
+    final packageConfig = await loadPackageConfig(packageConfigFile);
+
+    final packagesToInclude = {
+      for (final regExp in packagesRegExps)
+        ...packageConfig.packages.map((e) => e.name).where(regExp.hasMatch),
+    };
+
+    if (includeWorkspacePackages) {
+      // package_config.json lives in <workspace-root>/.dart_tool/, so the
+      // workspace root is two levels up.
+      final workspaceRoot = packageConfigFile.parent.parent;
+      final members = findWorkspaceMemberPackages(workspaceRoot);
+      if (members.isEmpty) {
+        _logger.warn(
+          'No `workspace:` entries found in ${workspaceRoot.path}/pubspec.yaml; '
+          '--coverage-workspace had no effect.',
+        );
+      } else {
+        _logger.detail('Workspace member packages: $members');
+        packagesToInclude.addAll(members);
+      }
+    }
+
+    _logger.detail('Packages included in coverage: $packagesToInclude');
+
+    return packagesToInclude;
+  }
+}
+
+/// Returns the names of every member package declared under the top-level
+/// `workspace:` key in `<workspaceRoot>/pubspec.yaml`.
+///
+/// Each entry in `workspace:` is a path relative to [workspaceRoot]; the
+/// `name:` field of that path's `pubspec.yaml` is the package name. Members
+/// without a readable `pubspec.yaml` are silently skipped, since pub itself
+/// will already have surfaced that error during `pub get`.
+///
+/// Returns an empty set when [workspaceRoot] has no `pubspec.yaml`, when its
+/// `workspace:` key is missing, or when the file isn't a YAML map.
+Set<String> findWorkspaceMemberPackages(Directory workspaceRoot) {
+  final root = _tryLoadYamlMap(workspaceRoot.childFile('pubspec.yaml'));
+  if (root == null) {
+    return const {};
+  }
+  final members = root['workspace'];
+  if (members is! Iterable) {
+    return const {};
+  }
+
+  final names = <String>{};
+  for (final entry in members) {
+    if (entry is! String) {
+      continue;
+    }
+    // pubspec.yaml `workspace:` entries are always POSIX-style relative paths,
+    // so split on `/` and walk children to stay platform-agnostic.
+    var memberDir = workspaceRoot;
+    for (final segment in entry.split('/')) {
+      if (segment.isEmpty || segment == '.') {
+        continue;
+      }
+      memberDir = memberDir.childDirectory(segment);
+    }
+    final memberYaml = _tryLoadYamlMap(memberDir.childFile('pubspec.yaml'));
+    if (memberYaml == null) {
+      continue;
+    }
+    final name = memberYaml['name'];
+    if (name is String && name.isNotEmpty) {
+      names.add(name);
+    }
+  }
+  return names;
+}
+
+/// Reads [file] as YAML and returns its top-level map, or `null` when the
+/// file is missing, the contents fail to parse, or the root is not a map.
+///
+/// We treat a malformed `pubspec.yaml` the same as a missing one because pub
+/// itself surfaces the underlying error during `pub get`; the coverage flow
+/// should degrade gracefully rather than crash mid-test.
+Map<dynamic, dynamic>? _tryLoadYamlMap(File file) {
+  if (!file.existsSync()) {
+    return null;
+  }
+  try {
+    final parsed = loadYaml(file.readAsStringSync());
+    return parsed is Map ? parsed : null;
+  } on YamlException {
+    return null;
+  }
+}
+
+/// Walks up from [directory] looking for `.dart_tool/package_config.json`.
+///
+/// In a Pub workspace the file lives at the workspace root, not in each
+/// member package. Returns `null` if no config is found up to the filesystem
+/// root.
+File? findPackageConfigFile(Directory directory) {
+  var current = directory;
+  while (true) {
+    final candidate = current
+        .childDirectory('.dart_tool')
+        .childFile('package_config.json');
+    if (candidate.existsSync()) {
+      return candidate;
+    }
+    final parent = current.parent;
+    if (parent.path == current.path) {
+      return null;
+    }
+    current = parent;
+  }
+}
+
+extension<T> on Completer<T> {
+  void disposedBy(DisposeScope disposeScope, T disposeValue) {
+    disposeScope.addDispose(() {
+      if (!isCompleted) {
+        complete(disposeValue);
+      }
+    });
+  }
+}

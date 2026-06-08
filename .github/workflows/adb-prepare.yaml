@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'packages/adb/**'
+      - 'packages/adb_plus/**'
 
 jobs:
   main:
@@ -18,7 +18,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/adb
+        working-directory: packages/adb_plus
 
     steps:
       - name: Clone repository

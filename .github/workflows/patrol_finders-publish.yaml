@@ -2,7 +2,7 @@ name: patrol_finders publish
 
 on:
   push:
-    tags: ['patrol_finders-v*']
+    tags: ['patrol_finders_plus-v*']
 
 jobs:
   publish:
@@ -43,7 +43,7 @@ jobs:
         id: pub_release
         uses: leancodepl/mobile-tools/.github/actions/pub-release@pub-release-v1
         with:
-          path: packages/patrol_finders
+          path: packages/patrol_finders_plus
 
   notify:
     name: Notify on Slack

@@ -1,5 +1,5 @@
 name: cli_tests
-description: Scripts to test patrol_cli.
+description: Scripts to test patrol_cli_plus.
 
 environment:
   sdk: '>=3.8.0 <4.0.0'

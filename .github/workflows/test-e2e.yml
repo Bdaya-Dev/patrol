@@ -4,16 +4,16 @@ on:
   push:
     branches: [master]
     paths:
-      - 'packages/patrol/**'
-      - 'packages/patrol_cli/**'
+      - 'packages/patrol_plus/**'
+      - 'packages/patrol_cli_plus/**'
       - 'dev/e2e_app/**'
       - '.github/workflows/test-e2e.yml'
       - '.github/workflows/patrol-test.yml'
   pull_request:
     branches: [master]
     paths:
-      - 'packages/patrol/**'
-      - 'packages/patrol_cli/**'
+      - 'packages/patrol_plus/**'
+      - 'packages/patrol_cli_plus/**'
       - 'dev/e2e_app/**'
       - '.github/workflows/test-e2e.yml'
       - '.github/workflows/patrol-test.yml'
@@ -40,7 +40,7 @@ jobs:
       patrol-cli-setup: >-
         dart pub global activate melos &&
         melos bootstrap &&
-        dart pub global activate --source path packages/patrol_cli
+        dart pub global activate --source path packages/patrol_cli_plus
       coverage: true
       verbose: true
 
@@ -53,7 +53,7 @@ jobs:
       patrol-cli-setup: >-
         dart pub global activate melos &&
         melos bootstrap &&
-        dart pub global activate --source path packages/patrol_cli
+        dart pub global activate --source path packages/patrol_cli_plus
       coverage: true
       verbose: true
 
@@ -66,7 +66,7 @@ jobs:
       patrol-cli-setup: >-
         dart pub global activate melos &&
         melos bootstrap &&
-        dart pub global activate --source path packages/patrol_cli
+        dart pub global activate --source path packages/patrol_cli_plus
       coverage: true
       verbose: true
 
@@ -80,7 +80,7 @@ jobs:
       patrol-cli-setup: >-
         dart pub global activate melos &&
         melos bootstrap &&
-        dart pub global activate --source path packages/patrol_cli
+        dart pub global activate --source path packages/patrol_cli_plus
       verbose: true
 
   e2e-macos:
@@ -92,7 +92,7 @@ jobs:
       patrol-cli-setup: >-
         dart pub global activate melos &&
         melos bootstrap &&
-        dart pub global activate --source path packages/patrol_cli
+        dart pub global activate --source path packages/patrol_cli_plus
       coverage: true
       verbose: true
 
@@ -111,8 +111,8 @@ jobs:
             --error-exitcode=1 \
             --suppress=missingInclude \
             --suppress=unknownMacro \
-            packages/patrol/windows/patrol_plugin.cpp \
-            packages/patrol/windows/patrol_plugin_c_api.cpp
+            packages/patrol_plus/windows/patrol_plugin.cpp \
+            packages/patrol_plus/windows/patrol_plugin_c_api.cpp
 
       - name: Analyze Linux C plugin
         run: |
@@ -120,7 +120,7 @@ jobs:
             --error-exitcode=1 \
             --suppress=missingInclude \
             --suppress=unknownMacro \
-            packages/patrol/linux/patrol_plugin.cc
+            packages/patrol_plus/linux/patrol_plugin.cc
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -140,7 +140,7 @@ jobs:
           melos bootstrap
 
       - name: Run patrol_cli unit tests with branch coverage
-        working-directory: packages/patrol_cli
+        working-directory: packages/patrol_cli_plus
         run: |
           dart pub global activate coverage
           dart pub global run coverage:test_with_coverage \
@@ -151,6 +151,6 @@ jobs:
         if: always()
         uses: codecov/codecov-action@v4
         with:
-          files: packages/patrol_cli/coverage/lcov.info
+          files: packages/patrol_cli_plus/coverage/lcov.info
           flags: patrol_cli
           fail_ci_if_error: false

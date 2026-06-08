@@ -2,7 +2,7 @@ name: patrol_log publish
 
 on:
   push:
-    tags: ['patrol_log-v*']
+    tags: ['patrol_log_plus-v*']
 
 jobs:
   publish:
@@ -43,7 +43,7 @@ jobs:
         id: pub_release
         uses: leancodepl/mobile-tools/.github/actions/pub-release@pub-release-v1
         with:
-          path: packages/patrol_log
+          path: packages/patrol_log_plus
 
   notify:
     name: Notify on Slack

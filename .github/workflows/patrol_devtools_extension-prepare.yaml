@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'packages/patrol_devtools_extension/**'
+      - 'packages/patrol_devtools_extension_plus/**'
 
 jobs:
   prepare:
@@ -19,7 +19,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/patrol_devtools_extension
+        working-directory: packages/patrol_devtools_extension_plus
 
     steps:
       - name: Clone repository

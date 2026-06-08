@@ -6,8 +6,8 @@ description: >
 version: 0.2.0
 publish_to: none
 homepage: https://patrol.leancode.co
-repository: https://github.com/leancodepl/patrol/tree/master/packages/patrol_mcp
-issue_tracker: https://github.com/leancodepl/patrol/issues
+repository: https://github.com/ahmednfwela/patrol/tree/master/packages/patrol_mcp
+issue_tracker: https://github.com/ahmednfwela/patrol/issues
 documentation: https://patrol.leancode.co
 topics: [test, e2e, flutter-test, claude, ai]
 
@@ -15,15 +15,15 @@ environment:
   sdk: ">=3.8.0 <4.0.0"
 
 dependencies:
-  adb: ^0.6.0
+  adb_plus: ^5.0.0
   args: ^2.7.0
   dispose_scope: ^2.1.0
   image: ^4.5.4
   logging: ^1.3.0
   mcp_dart: ^2.1.0
   path: ^1.9.1
-  patrol_cli:
-    path: ../patrol_cli
+  patrol_cli_plus:
+    path: ../patrol_cli_plus
 
 dev_dependencies:
   leancode_lint: ^17.0.0
