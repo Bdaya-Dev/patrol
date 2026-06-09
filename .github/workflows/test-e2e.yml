@@ -30,6 +30,9 @@ concurrency:
 # import dart:ui_web which is unavailable on non-web platforms, so each
 # platform group must use a test-target that only includes compatible tests.
 
+# patrol-cli-setup is duplicated across jobs because workflow_call inputs
+# cannot reference env vars — this is a GitHub Actions limitation.
+
 jobs:
   e2e-desktop:
     uses: ./.github/workflows/patrol-test.yml
@@ -76,11 +79,11 @@ jobs:
       platforms: 'ios'
       working-directory: 'dev/e2e_app'
       test-target: 'patrol_test/e2e/'
-      coverage: true
       patrol-cli-setup: >-
         dart pub global activate melos &&
         melos bootstrap &&
         dart pub global activate --source path packages/patrol_cli_plus
+      coverage: true
       verbose: true
 
   e2e-macos:
@@ -100,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install cppcheck
         run: sudo apt-get update && sudo apt-get install -y cppcheck
@@ -126,11 +129,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.38.x'
           channel: stable
           cache: true
 
@@ -149,7 +151,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: packages/patrol_cli_plus/coverage/lcov.info
           flags: patrol_cli

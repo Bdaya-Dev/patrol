@@ -95,7 +95,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # --- Platform-specific pre-setup ---
       - name: Install Linux build dependencies
@@ -182,7 +182,7 @@ jobs:
             -d emulator-5554
             ${{ inputs.test-target != '' && format('--target {0}', inputs.test-target) || '' }}
             ${{ inputs.verbose && '--verbose' || '' }}
-            ${{ inputs.coverage && '--coverage --coverage-package patrol --coverage-package patrol_finders' || '' }}
+            ${{ inputs.coverage && '--coverage --coverage-package patrol_plus --coverage-package patrol_finders_plus' || '' }}
 
       - name: Run iOS tests
         if: matrix.platform == 'ios'
@@ -196,7 +196,7 @@ jobs:
             ARGS="$ARGS --verbose"
           fi
           if [ "${{ inputs.coverage }}" = "true" ]; then
-            ARGS="$ARGS --coverage --coverage-package patrol --coverage-package patrol_finders"
+            ARGS="$ARGS --coverage --coverage-package patrol_plus --coverage-package patrol_finders_plus"
           fi
           patrol test $ARGS
 
@@ -212,7 +212,7 @@ jobs:
             ARGS="$ARGS --verbose"
           fi
           if [ "${{ inputs.coverage }}" = "true" ]; then
-            ARGS="$ARGS --coverage --coverage-package patrol --coverage-package patrol_finders"
+            ARGS="$ARGS --coverage --coverage-package patrol_plus --coverage-package patrol_finders_plus"
           fi
           patrol test $ARGS
 
@@ -228,7 +228,7 @@ jobs:
             ARGS="$ARGS --verbose"
           fi
           if [ "${{ inputs.coverage }}" = "true" ]; then
-            ARGS="$ARGS --coverage --coverage-package patrol --coverage-package patrol_finders"
+            ARGS="$ARGS --coverage --coverage-package patrol_plus --coverage-package patrol_finders_plus"
           fi
           patrol test $ARGS
 
@@ -245,7 +245,7 @@ jobs:
             ARGS="$ARGS --verbose"
           fi
           if [ "${{ inputs.coverage }}" = "true" ]; then
-            ARGS="$ARGS --coverage --coverage-package patrol --coverage-package patrol_finders"
+            ARGS="$ARGS --coverage --coverage-package patrol_plus --coverage-package patrol_finders_plus"
           fi
           dbus-run-session -- xvfb-run -a patrol test $ARGS
 
