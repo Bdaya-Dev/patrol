@@ -266,6 +266,7 @@ jobs:
             $args += @("--coverage", "--coverage-package", "patrol_plus", "--coverage-package", "patrol_finders_plus")
           }
           patrol_plus test @args
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       # --- Coverage upload ---
       - name: Upload coverage to Codecov

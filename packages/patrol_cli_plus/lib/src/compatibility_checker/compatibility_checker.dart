@@ -92,7 +92,7 @@ Check the compatibility table at: https://patrol.leancode.co/documentation/compa
       process
           .listenStdOut(
             (line) {
-              if (line.startsWith('- patrol ')) {
+              if (line.startsWith('- patrol_plus ')) {
                 packageCompleter.maybeComplete(line.split(' ').last);
               }
             },
