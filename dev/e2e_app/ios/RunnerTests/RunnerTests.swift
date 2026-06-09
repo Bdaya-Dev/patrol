@@ -1,5 +1,5 @@
 import XCTest
-import patrol
+import patrol_plus
 
 final class RunnerTests: XCTestCase {
   func testSample() {
@@ -240,11 +240,11 @@ final class RunnerTests: XCTestCase {
   }
 }
 
-private func createEmptyIOSSelector() -> patrol.IOSSelector {
+private func createEmptyIOSSelector() -> patrol_plus.IOSSelector {
   let jsonString = "{}"
 
   let jsonData = jsonString.data(using: .utf8)!
   let decoder = JSONDecoder()
 
-  return try! decoder.decode(patrol.IOSSelector.self, from: jsonData)
+  return try! decoder.decode(patrol_plus.IOSSelector.self, from: jsonData)
 }
