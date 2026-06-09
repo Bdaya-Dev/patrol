@@ -82,10 +82,10 @@ void main() {
         ..createSync()
         ..writeAsStringSync('''
 packages:
-  patrol:
+  patrol_plus:
     dependency: "direct dev"
     description:
-      name: patrol
+      name: patrol_plus
       sha256: "9d4aac7cbaf383a96abc992a3acc81f6796ab0dba922825ee0d5a2633bed61ce"
       url: "https://pub.dev"
     source: hosted
@@ -119,7 +119,7 @@ packages:
       );
       expect(
         capturedMessage,
-        contains('dart pub global activate patrol_cli 3.8.0'),
+        contains('dart pub global activate patrol_cli_plus 3.8.0'),
       );
       expect(
         capturedMessage,
@@ -162,10 +162,10 @@ packages:
           ..createSync()
           ..writeAsStringSync('''
 packages:
-  patrol:
+  patrol_plus:
     dependency: "direct main"
     description:
-      name: patrol
+      name: patrol_plus
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
@@ -174,7 +174,7 @@ packages:
 
         when(
           () => pubUpdater.getLatestVersion(any()),
-        ).thenAnswer((_) async => '5.0.0');
+        ).thenAnswer((_) async => '6.0.0');
 
         String? capturedMessage;
         when(() => logger.info(any())).thenAnswer((invocation) {
@@ -188,7 +188,7 @@ packages:
         expect(result, equals(0));
 
         expect(capturedMessage, contains('Update available!'));
-        expect(capturedMessage, contains('${constants.version} → 5.0.0'));
+        expect(capturedMessage, contains('${constants.version} → 6.0.0'));
         expect(
           capturedMessage,
           contains(

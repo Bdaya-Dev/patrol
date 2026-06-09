@@ -385,7 +385,7 @@ To install a specific version of Patrol CLI, run:
     final commandName = topLevelResults.command?.name;
 
     if (_wantsUpdateCheck(commandName)) {
-      final latestVersion = await _pubUpdater.getLatestVersion('patrol_cli');
+      final latestVersion = await _pubUpdater.getLatestVersion('patrol_cli_plus');
       const currentVersion = constants.version;
 
       await _checkForUpdates(

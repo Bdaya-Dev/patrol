@@ -46,7 +46,7 @@ void _test(Platform platform) {
       test('reads top-level arguments', () {
         fs.file('pubspec.yaml').writeAsStringSync('''
 $_pubspecBase
-patrol:
+patrol_plus:
   app_name: Example
   flavor: dev
 ''');
@@ -60,7 +60,7 @@ patrol:
       test('reads `android` block', () {
         fs.file('pubspec.yaml').writeAsStringSync('''
 $_pubspecBase
-patrol:
+patrol_plus:
   android:
     app_name: Example
     package_name: com.example.app
@@ -73,7 +73,7 @@ patrol:
       test('reads `ios` block', () {
         fs.file('pubspec.yaml').writeAsStringSync('''
 $_pubspecBase
-patrol:
+patrol_plus:
   ios:
     app_name: The Example
     bundle_id: com.example.ExampleApp
@@ -86,7 +86,7 @@ patrol:
       test('overrides global values with platform-specific ones', () {
         fs.file('pubspec.yaml').writeAsStringSync('''
 $_pubspecBase
-patrol:
+patrol_plus:
   app_name: Example
   flavor: dev
   android:
