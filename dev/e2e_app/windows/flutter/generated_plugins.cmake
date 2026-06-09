@@ -8,12 +8,11 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
   flutter_timezone
   geolocator_windows
-  patrol
+  patrol_plus
   permission_handler_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
-  jni
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

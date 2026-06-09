@@ -10,7 +10,7 @@
 #include <file_selector_linux/file_selector_plugin.h>
 #include <flutter_timezone/flutter_timezone_plugin.h>
 #include <gtk/gtk_plugin.h>
-#include <patrol/patrol_plugin.h>
+#include <patrol_plus/patrol_plugin.h>
 
 void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) file_saver_registrar =
@@ -25,7 +25,7 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) gtk_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "GtkPlugin");
   gtk_plugin_register_with_registrar(gtk_registrar);
-  g_autoptr(FlPluginRegistrar) patrol_registrar =
+  g_autoptr(FlPluginRegistrar) patrol_plus_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "PatrolPlugin");
-  patrol_plugin_register_with_registrar(patrol_registrar);
+  patrol_plugin_register_with_registrar(patrol_plus_registrar);
 }
