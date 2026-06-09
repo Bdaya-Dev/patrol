@@ -263,12 +263,20 @@ jobs:
             $args += "--verbose"
           }
           if ("${{ inputs.coverage }}" -eq "true") {
-            $args += @("--coverage", "--coverage-package", "patrol", "--coverage-package", "patrol_finders")
+            $args += @("--coverage", "--coverage-package", "patrol_plus", "--coverage-package", "patrol_finders_plus")
           }
           patrol test @args
 
       # --- Coverage upload ---
-      - name: Upload coverage
+      - name: Upload coverage to Codecov
+        if: inputs.coverage && always()
+        uses: codecov/codecov-action@v5
+        with:
+          files: ${{ inputs.working-directory }}/coverage/lcov.info
+          flags: e2e-${{ matrix.platform }}
+          fail_ci_if_error: false
+
+      - name: Upload coverage artifact
         if: inputs.coverage && always()
         uses: actions/upload-artifact@v7
         with:

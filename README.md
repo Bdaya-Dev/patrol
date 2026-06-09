@@ -1,12 +1,11 @@
 # Patrol
 
-[![patrol on pub.dev][patrol_badge]][patrol_link]
-[![patrol_cli on pub.dev][patrol_cli_badge]][patrol_cli_link]
-[![patrol_finders on pub.dev][patrol_finders_badge]][patrol_finders_link]
+[![codecov](https://codecov.io/gh/Bdaya-Dev/patrol/branch/master/graph/badge.svg)](https://codecov.io/gh/Bdaya-Dev/patrol)
+[![patrol_plus on pub.dev][patrol_badge]][patrol_link]
+[![patrol_cli_plus on pub.dev][patrol_cli_badge]][patrol_cli_link]
+[![patrol_finders_plus on pub.dev][patrol_finders_badge]][patrol_finders_link]
 [![patrol_discord]][patrol_discord_link]
 [![code style][leancode_lint_badge]][leancode_lint_link]
-[![patrol_github_stars]][patrol_github_link]
-[![patrol_x]][patrol_x_link]
 
 A powerful, multiplatform E2E UI testing framework for Flutter apps that overcomes the limitations of integration_test by handling native interactions. Developed by LeanCode since 2022, battle-tested and shaped by production-grade experience.
 
@@ -212,23 +211,19 @@ We are **top-tier experts** focused on Flutter Enterprise solutions.
 
 </div>
 
-[patrol_badge]: https://img.shields.io/pub/v/patrol?label=patrol
-[patrol_finders_badge]: https://img.shields.io/pub/v/patrol_finders?label=patrol_finders
-[patrol_cli_badge]: https://img.shields.io/pub/v/patrol_cli?label=patrol_cli
+[patrol_badge]: https://img.shields.io/pub/v/patrol_plus?label=patrol_plus
+[patrol_finders_badge]: https://img.shields.io/pub/v/patrol_finders_plus?label=patrol_finders_plus
+[patrol_cli_badge]: https://img.shields.io/pub/v/patrol_cli_plus?label=patrol_cli_plus
 [leancode_lint_badge]: https://img.shields.io/badge/code%20style-leancode__lint-black
-[patrol_github_stars]: https://img.shields.io/github/stars/leancodepl/patrol
-[patrol_x]: https://img.shields.io/twitter/follow/patrol_leancode
 [patrol_discord]: https://img.shields.io/discord/1167030497612922931?color=blue&logo=discord
-[patrol_link]: https://pub.dev/packages/patrol
-[patrol_finders_link]: https://pub.dev/packages/patrol_finders
-[patrol_cli_link]: https://pub.dev/packages/patrol_cli
+[patrol_link]: https://pub.dev/packages/patrol_plus
+[patrol_finders_link]: https://pub.dev/packages/patrol_finders_plus
+[patrol_cli_link]: https://pub.dev/packages/patrol_cli_plus
 [leancode_lint_link]: https://pub.dev/packages/leancode_lint
-[patrol_x_link]: https://x.com/patrol_leancode
-[patrol_github_link]: https://github.com/leancodepl/patrol
 [patrol_discord_link]: https://discord.gg/ukBK5t4EZg
-[github_patrol]: https://github.com/leancodepl/patrol/tree/master/packages/patrol
-[github_patrol_cli]: https://github.com/leancodepl/patrol/tree/master/packages/patrol_cli
-[github_workflows]: https://github.com/leancodepl/patrol/blob/master/.github/WORKFLOWS.md
+[github_patrol]: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_plus
+[github_patrol_cli]: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_cli_plus
+[github_workflows]: https://github.com/Bdaya-Dev/patrol/blob/master/.github/WORKFLOWS.md
 [docs]: https://patrol.leancode.co/?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme
 [docs_finders]: https://patrol.leancode.co/finders/overview
 [promo_graphics]: assets/promo_banner.png
