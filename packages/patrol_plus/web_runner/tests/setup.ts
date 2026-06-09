@@ -62,8 +62,18 @@ async function setup(config: FullConfig) {
 
   await initialise(page)
 
+  // Discovery budget: how long we wait for the Flutter app to boot and register
+  // its tests via window.__patrol__getTests(). Heavy apps (large WASM bundles) on
+  // slow CI runners routinely need more than the 120s default, so honour
+  // --web-init-timeout (PATROL_WEB_INIT_TIMEOUT) here instead of hardcoding it —
+  // otherwise the budget is stuck at 120s and a slow boot spuriously discovers 0
+  // tests ("Total: 0").
+  const initTimeout = process.env.PATROL_WEB_INIT_TIMEOUT
+    ? parseInt(process.env.PATROL_WEB_INIT_TIMEOUT)
+    : 120000
+
   try {
-    const testEntriesResponse = await discoverTestTree(page, setupPageErrorPromise)
+    const testEntriesResponse = await discoverTestTree(page, setupPageErrorPromise, initTimeout)
 
     const patrolTests = mapEntry(testEntriesResponse.group)
     process.env.PATROL_TESTS = JSON.stringify(patrolTests)
@@ -83,11 +93,24 @@ async function setup(config: FullConfig) {
  * first truthy value, so it occasionally captured that empty snapshot, set
  * `PATROL_TESTS=[]`, and produced 0 Playwright tests — a flaky "no tests found"
  * (exit 1) that poisoned the entire shard. We therefore poll until the tree is
- * non-empty (bounded by the same 120s timeout). If the timeout elapses we fall
- * back to a single direct read so a *genuinely* empty suite still resolves to
- * `[]` instead of surfacing the timeout.
+ * non-empty, bounded by [initTimeout] (configurable via --web-init-timeout /
+ * PATROL_WEB_INIT_TIMEOUT, default 120s).
+ *
+ * If the budget elapses with the tree STILL empty, we fail LOUDLY with an
+ * actionable message rather than silently setting `PATROL_TESTS=[]` and yielding a
+ * confusing `Total: 0` (exit 1). On a real run this is almost always a slow/failed
+ * app boot, not a genuinely empty suite — and a genuinely empty target already
+ * fails the same way (0 tests), so a clear error strictly improves the outcome.
  */
-async function discoverTestTree(page: Page, setupPageErrorPromise: Promise<never>): Promise<{ group: DartTestEntry }> {
+async function discoverTestTree(
+  page: Page,
+  setupPageErrorPromise: Promise<never>,
+  initTimeout: number,
+): Promise<{ group: DartTestEntry }> {
+  // Node-context counter, used for the post-timeout fallback check below. The
+  // poll predicate re-declares its own copy because it runs in the browser.
+  const countTests = (entry: DartTestEntry): number =>
+    (entry.type === "test" ? 1 : 0) + entry.entries.reduce((sum, child) => sum + countTests(child), 0)
   try {
     return (await Promise.race([
       page
@@ -97,24 +120,31 @@ async function discoverTestTree(page: Page, setupPageErrorPromise: Promise<never
             if (!response) return false
 
             // Count registered test leaves; only resolve once at least one exists.
-            const countTests = (entry: DartTestEntry): number =>
-              (entry.type === "test" ? 1 : 0) + entry.entries.reduce((sum, child) => sum + countTests(child), 0)
+            const count = (entry: DartTestEntry): number =>
+              (entry.type === "test" ? 1 : 0) + entry.entries.reduce((sum, child) => sum + count(child), 0)
 
-            return countTests(response.group) > 0 ? response : false
+            return count(response.group) > 0 ? response : false
           },
-          { timeout: 120000 },
+          { timeout: initTimeout },
         )
         .then(v => v.jsonValue()),
       setupPageErrorPromise,
     ])) as { group: DartTestEntry }
   } catch (error) {
     if (error instanceof Error && /Timeout.*exceeded/i.test(error.message)) {
+      // One last direct read in case the tree registered right at the deadline.
       const fallback = (await page.evaluate(() => window.__patrol__getTests?.() ?? null)) as {
         group: DartTestEntry
       } | null
-      if (fallback) {
+      if (fallback && countTests(fallback.group) > 0) {
         return fallback
       }
+      throw new Error(
+        `Patrol discovered 0 tests after ${initTimeout} ms: window.__patrol__getTests() never ` +
+          `reported a registered test. The app likely failed to boot or was too slow to register ` +
+          `its tests on this run. If the suite is non-empty, raise the discovery budget with ` +
+          `--web-init-timeout (PATROL_WEB_INIT_TIMEOUT, currently ${initTimeout} ms).`,
+      )
     }
     throw error
   }
