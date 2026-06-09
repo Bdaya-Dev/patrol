@@ -1,18 +1,18 @@
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html
-# Run `pod lib lint patrol.podspec` to validate before publishing.
+# Run `pod lib lint patrol_plus.podspec` to validate before publishing.
 #
 Pod::Spec.new do |s|
-  s.name             = 'patrol'
+  s.name             = 'patrol_plus'
   s.version          = '0.0.1'
   s.summary          = 'Adapter for integration tests using Patrol.'
   s.description      = <<-DESC
 Runs tests that use flutter_test and patrol APIs as native macOS / iOS integration tests.
                        DESC
-  s.homepage         = 'https://leancode.pl'
+  s.homepage         = 'https://github.com/Bdaya-Dev/patrol'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Bartek Pacia' => 'bartek.pacia@leancode.pl' }
-  s.source           = { :http => 'https://github.com/leancodepl/patrol/tree/master/packages/patrol' }
+  s.author           = { 'Bdaya Dev' => 'ahmednfwela@digrum.com' }
+  s.source           = { :http => 'https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_plus' }
   s.source_files = 'Classes/**/*'
   s.ios.dependency 'Flutter'
   s.osx.dependency 'FlutterMacOS'
@@ -24,7 +24,7 @@ Runs tests that use flutter_test and patrol APIs as native macOS / iOS integrati
   s.resource_bundles = {
     'patrol_privacy' => ['Resources/PrivacyInfo.xcprivacy']
   }
-  
+
   # Include localization resources
   s.resources = [
     'Resources/*.lproj'
