@@ -1,3 +1,7 @@
+## 5.0.1
+
+ - **FIX**(patrol_plus): honour --web-init-timeout in web test discovery and fail loudly on 0 tests. ([c9d76e25](https://github.com/Bdaya-Dev/patrol/commit/c9d76e25d6179cafd381dcbbc8d4ecb822bcbd48))
+
 ## 5.0.0
 
 - Fork of `patrol` as `patrol_plus` for independent pub.dev publishing.
