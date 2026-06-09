@@ -20,12 +20,10 @@ class CompatibilityChecker {
     required Logger logger,
   }) : _projectRoot = projectRoot,
        _processManager = processManager,
-       _disposeScope = DisposeScope(),
        _logger = logger;
 
   final Directory _projectRoot;
   final ProcessManager _processManager;
-  final DisposeScope _disposeScope;
   final Logger _logger;
 
   /// Generates incompatibility error message with appropriate resolution steps
@@ -69,49 +67,44 @@ Check the compatibility table at: https://patrol.leancode.co/documentation/compa
       );
     }
 
+    // Read `flutter pub deps --style=list` to COMPLETION, then parse the version
+    // from its full stdout. Previously this streamed the output through a
+    // DisposeScope that disposed — and thus KILLED the spawned process — as soon
+    // as the listener was wired up (the run() block returns immediately, before
+    // any output is read). On a large project the deps dump is big, so the kill
+    // wins the race and onDone fires with the version still unread, surfacing a
+    // bogus "Failed to read patrol version". A blocking run() awaits process exit.
+    final depsResult = await _processManager.run(
+      [
+        flutterCommand.executable,
+        ...flutterCommand.arguments,
+        '--suppress-analytics',
+        '--no-version-check',
+        'pub',
+        'deps',
+        '--style=list',
+      ],
+      workingDirectory: _projectRoot.path,
+      runInShell: true,
+    );
+
     String? packageVersion;
-    final packageCompleter = Completer<String?>();
+    for (final line in (depsResult.stdout as String).split('\n')) {
+      if (line.startsWith('- patrol_plus ')) {
+        packageVersion = line.split(' ').last.trim();
+        break;
+      }
+    }
 
-    await _disposeScope.run((scope) async {
-      final process =
-          await _processManager.start(
-              [
-                flutterCommand.executable,
-                ...flutterCommand.arguments,
-                '--suppress-analytics',
-                '--no-version-check',
-                'pub',
-                'deps',
-                '--style=list',
-              ],
-              workingDirectory: _projectRoot.path,
-              runInShell: true,
-            )
-            ..disposedBy(scope);
-
-      process
-          .listenStdOut(
-            (line) {
-              if (line.startsWith('- patrol_plus ')) {
-                packageCompleter.maybeComplete(line.split(' ').last);
-              }
-            },
-            onDone: () {
-              if (!packageCompleter.isCompleted) {
-                throwToolExit(
-                  'Failed to read patrol version. Make sure you have patrol '
-                  'dependency in your pubspec.yaml file',
-                );
-              }
-            },
-          )
-          .disposedBy(scope);
-    });
-
-    packageVersion = await packageCompleter.future;
+    if (packageVersion == null) {
+      throwToolExit(
+        'Failed to read patrol version. Make sure you have patrol_plus '
+        'dependency in your pubspec.yaml file',
+      );
+    }
 
     final cliVersion = Version.parse(constants.version);
-    final patrolVersion = Version.parse(packageVersion!);
+    final patrolVersion = Version.parse(packageVersion);
 
     final isCompatible = areVersionsCompatible(cliVersion, patrolVersion);
 
