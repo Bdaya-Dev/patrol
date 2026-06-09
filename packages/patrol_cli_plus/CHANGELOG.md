@@ -1,3 +1,7 @@
+## 5.0.1
+
+ - **FIX**(patrol_cli_plus): compatibility checker no longer kills `flutter pub deps` before reading it on large projects. ([64c27d81](https://github.com/Bdaya-Dev/patrol/commit/64c27d8104e09ee60674713041173165a122519a))
+
 ## 5.0.0
 
 - Fork of `patrol_cli` as `patrol_cli_plus` for independent pub.dev publishing.
