@@ -23,7 +23,15 @@ jobs:
       - uses: bluefireteam/melos-action@v3
         with:
           run-versioning: true
-          publish-dry-run: true
+          # NOTE: `publish-dry-run` is intentionally NOT set here. melos-action
+          # runs `melos publish -y --dry-run` AFTER `melos version` rewrites each
+          # package's pubspec.yaml + CHANGELOG.md but BEFORE those edits are
+          # committed (the create-pr step commits them later). `dart pub publish
+          # --dry-run` then emits a "checked-in files are modified in git"
+          # warning and, in non-interactive mode (`-y`), exits 65 — aborting the
+          # whole prepare run. The real publish validation happens in publish.yml
+          # (triggered by the version tag), so the dry-run here is both redundant
+          # and structurally guaranteed to fail.
           create-pr: true
           tag: true
           git-email: ahmednfwela@digrum.com
