@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`patrol_plus` - `v5.0.1`](#patrol_plus---v501)
+
+---
+
+#### `patrol_plus` - `v5.0.1`
+
+ - **FIX**(patrol_plus): honour --web-init-timeout in web test discovery and fail loudly on 0 tests. ([c9d76e25](https://github.com/Bdaya-Dev/patrol/commit/c9d76e25d6179cafd381dcbbc8d4ecb822bcbd48))
+
+
+## 2026-06-09
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`patrol_cli_plus` - `v5.0.1`](#patrol_cli_plus---v501)
 
 ---
