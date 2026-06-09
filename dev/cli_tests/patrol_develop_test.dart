@@ -52,7 +52,7 @@ void main(List<String> args) async {
   );
 
   final process = await io.Process.start(
-    'patrol',
+    'patrol_plus',
     [
       'develop',
       ...['--target', 'patrol_test/example_test.dart'],

@@ -161,7 +161,7 @@ jobs:
           if [ -n "${{ inputs.test-target }}" ]; then
             ARGS="--target ${{ inputs.test-target }}"
           fi
-          patrol build android $ARGS
+          patrol_plus build android $ARGS
 
       # --- Run tests (platform-specific) ---
       - name: Run Android tests on emulator
@@ -178,7 +178,7 @@ jobs:
           disable-animations: true
           script: >-
             cd ${{ inputs.working-directory }} &&
-            patrol test
+            patrol_plus test
             -d emulator-5554
             ${{ inputs.test-target != '' && format('--target {0}', inputs.test-target) || '' }}
             ${{ inputs.verbose && '--verbose' || '' }}
@@ -198,7 +198,7 @@ jobs:
           if [ "${{ inputs.coverage }}" = "true" ]; then
             ARGS="$ARGS --coverage --coverage-package patrol_plus --coverage-package patrol_finders_plus"
           fi
-          patrol test $ARGS
+          patrol_plus test $ARGS
 
       - name: Run macOS tests
         if: matrix.platform == 'macos'
@@ -214,7 +214,7 @@ jobs:
           if [ "${{ inputs.coverage }}" = "true" ]; then
             ARGS="$ARGS --coverage --coverage-package patrol_plus --coverage-package patrol_finders_plus"
           fi
-          patrol test $ARGS
+          patrol_plus test $ARGS
 
       - name: Run web tests
         if: matrix.platform == 'web'
@@ -230,7 +230,7 @@ jobs:
           if [ "${{ inputs.coverage }}" = "true" ]; then
             ARGS="$ARGS --coverage --coverage-package patrol_plus --coverage-package patrol_finders_plus"
           fi
-          patrol test $ARGS
+          patrol_plus test $ARGS
 
       - name: Run Linux tests
         if: matrix.platform == 'linux'
@@ -247,7 +247,7 @@ jobs:
           if [ "${{ inputs.coverage }}" = "true" ]; then
             ARGS="$ARGS --coverage --coverage-package patrol_plus --coverage-package patrol_finders_plus"
           fi
-          dbus-run-session -- xvfb-run -a patrol test $ARGS
+          dbus-run-session -- xvfb-run -a patrol_plus test $ARGS
 
       - name: Run Windows tests
         if: matrix.platform == 'windows'
@@ -265,7 +265,7 @@ jobs:
           if ("${{ inputs.coverage }}" -eq "true") {
             $args += @("--coverage", "--coverage-package", "patrol_plus", "--coverage-package", "patrol_finders_plus")
           }
-          patrol test @args
+          patrol_plus test @args
 
       # --- Coverage upload ---
       - name: Upload coverage to Codecov
