@@ -9,6 +9,16 @@ command:
     includeCommitId: true
     workspaceChangelog: true
     linkToCommits: true
+    hooks:
+      # `melos version` bumps pubspec.yaml but NOT the hardcoded `version`
+      # constant in patrol_cli_plus/lib/src/base/constants.dart. Sync it before
+      # the version commit so the published CLI self-reports the correct version
+      # (and the compatibility checker uses the right cliVersion). Without this,
+      # 5.0.1 shipped reporting 5.0.0 until constants.dart was patched by hand.
+      preCommit: |
+        PKG_VERSION=$(grep -E '^version:' packages/patrol_cli_plus/pubspec.yaml | head -1 | sed -E 's/^version:[[:space:]]*([0-9][^[:space:]#]*).*/\1/')
+        sed -i -E "s/^const version = '.*';/const version = '${PKG_VERSION}';/" packages/patrol_cli_plus/lib/src/base/constants.dart
+        git add packages/patrol_cli_plus/lib/src/base/constants.dart
   publish:
     hooks:
       pre: melos run analyze
