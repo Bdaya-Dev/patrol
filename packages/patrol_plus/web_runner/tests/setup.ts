@@ -1,3 +1,5 @@
+import * as fs from "fs"
+import * as path from "path"
 import { chromium, type FullConfig, type Page } from "@playwright/test"
 import { initialise } from "./initialise"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
@@ -76,7 +78,24 @@ async function setup(config: FullConfig) {
     const testEntriesResponse = await discoverTestTree(page, setupPageErrorPromise, initTimeout)
 
     const patrolTests = mapEntry(testEntriesResponse.group)
-    process.env.PATROL_TESTS = JSON.stringify(patrolTests)
+    const serialised = JSON.stringify(patrolTests)
+
+    // Hand the discovered test list off to test.spec.ts via TWO channels:
+    //   1. process.env.PATROL_TESTS — back-compat only. This mutation lives in
+    //      the MAIN process; Playwright forks worker child processes that do NOT
+    //      observe runtime env mutations from globalSetup, so a worker
+    //      re-importing test.spec.ts would read an empty list.
+    //   2. A deterministic file on disk — crosses the main->worker process
+    //      boundary reliably. This is the root fix for the flaky empty-shard
+    //      "Total: 0": every process (main + each worker) sees the same list.
+    process.env.PATROL_TESTS = serialised
+    const testsFile = path.resolve(process.cwd(), ".patrol_tests.json")
+    try {
+      fs.writeFileSync(testsFile, serialised)
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(`[patrol] Failed to persist discovered tests to ${testsFile}: ${String(err)}`)
+    }
   } finally {
     await browser.close()
   }

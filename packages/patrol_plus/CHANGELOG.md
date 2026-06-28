@@ -1,3 +1,7 @@
+## 5.0.2
+
+ - **FIX**(patrol_plus): make web `--web-shard` deterministic and immune to the flaky empty-shard "Total: 0" hang. globalSetup now persists the discovered test list to a worker-safe file (`.patrol_tests.json`) instead of relying solely on the `PATROL_TESTS` env mutation, which does not cross Playwright's main->worker process boundary. `test.spec.ts` round-robin self-shards on `PATROL_WEB_SHARD` (disjoint subsets, exact union, balanced, never empty while shards <= test count), native Playwright `shard` is removed to avoid double-sharding, and an over-provisioned shard registers a passing placeholder so the run exits 0 instead of idling to the global timeout.
+
 ## 5.0.1
 
  - **FIX**(patrol_plus): honour --web-init-timeout in web test discovery and fail loudly on 0 tests. ([c9d76e25](https://github.com/Bdaya-Dev/patrol/commit/c9d76e25d6179cafd381dcbbc8d4ecb822bcbd48))

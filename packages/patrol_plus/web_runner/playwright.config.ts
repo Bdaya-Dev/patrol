@@ -31,7 +31,13 @@ const userAgent = process.env.PATROL_WEB_USER_AGENT ? process.env.PATROL_WEB_USE
 const viewport = process.env.PATROL_WEB_VIEWPORT
   ? (JSON.parse(process.env.PATROL_WEB_VIEWPORT) as PlaywrightTestOptions["viewport"])
   : undefined
-const shard = process.env.PATROL_WEB_SHARD ? parseShard(process.env.PATROL_WEB_SHARD) : undefined
+// NOTE: Native Playwright `shard` is intentionally NOT configured here.
+// PATROL_WEB_SHARD is consumed in tests/test.spec.ts, which deterministically
+// round-robin self-partitions the dynamically-generated test list against the
+// file-backed (worker-safe) discovery output. Re-enabling native sharding on
+// top of that self-partitioning would double-shard and silently drop tests —
+// and native test-level sharding over a single dynamically-generated spec is
+// exactly what produced the flaky empty-shard "Total: 0" hang.
 const headless = process.env.PATROL_WEB_HEADLESS ? process.env.PATROL_WEB_HEADLESS === "true" : false
 const browserArgs = process.env.PATROL_WEB_BROWSER_ARGS
   ? (JSON.parse(process.env.PATROL_WEB_BROWSER_ARGS) as string[])
@@ -60,7 +66,6 @@ export default defineConfig({
   globalTimeout: globalTimeout ?? 2 * 60 * 60 * 1000,
   workers,
   fullyParallel: true,
-  shard,
 })
 
 function mapReporters(reporterEnv: string, outputFolder: string) {
@@ -88,9 +93,4 @@ function mapReporters(reporterEnv: string, outputFolder: string) {
         throw new Error(`Unsupported reporter: ${name}`)
     }
   })
-}
-
-function parseShard(shardValue: string) {
-  const [current, total] = shardValue.split("/").map(Number)
-  return { current, total }
 }
