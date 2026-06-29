@@ -8,6 +8,23 @@ const initTimeout = process.env.PATROL_WEB_INIT_TIMEOUT
   ? parseInt(process.env.PATROL_WEB_INIT_TIMEOUT)
   : 120000
 
+// Timeout for detecting DDC mode ($dartRunMain presence). Must be STRICTLY LESS
+// than the per-test --web-timeout so that when $dartRunMain never appears
+// (profile/release/WASM builds), the catch block fires while the page is still
+// alive and we can proceed to the __patrol__onInitialised check.
+//
+// In DDC mode, all DDC modules load from localhost in ~15-30s, so 60s is
+// comfortably sufficient. In profile/release mode, $dartRunMain never appears —
+// this cap ensures the wait fails fast rather than consuming the entire test
+// budget and leaving the page in a closed state when the catch block runs.
+//
+// BUG (fixed here): using initTimeout (e.g. 300s) here caused the test-level
+// timeout (e.g. 120s) to fire first, which closed the page. The catch block
+// swallowed the "Target page, context or browser has been closed" error and then
+// the subsequent waitForFunction(__patrol__onInitialised) immediately threw the
+// same error on the now-dead page — masking the real failure as "Total: 0".
+const ddcDetectTimeout = Math.min(initTimeout, 60000)
+
 export async function initialise(page: Page) {
   // Set the flag on the current JS context as well (belt-and-suspenders with
   // the addInitScript registered by callers before navigation).
@@ -25,7 +42,7 @@ export async function initialise(page: Page) {
     logger.info("Waiting for DDC module loading to complete...")
     await page.waitForFunction(
       () => typeof window.$dartRunMain === "function",
-      { timeout: initTimeout },
+      { timeout: ddcDetectTimeout },
     )
 
     // Give DWDS 2s to call $dartRunMain itself (avoids double-init race)
