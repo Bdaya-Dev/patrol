@@ -1,3 +1,7 @@
+## 5.0.2
+
+ - Version bump to stay in lockstep with `patrol_plus` 5.0.2, which fixes the web `$dartRunMain` detection timeout that masked real init failures as "Total: 0" (Fixes #6) and makes web `--web-shard` deterministic. No CLI behaviour change; published together so consumers pin a single 5.0.2 line.
+
 ## 5.0.1
 
  - **FIX**(patrol_cli_plus): compatibility checker no longer kills `flutter pub deps` before reading it on large projects. ([64c27d81](https://github.com/Bdaya-Dev/patrol/commit/64c27d8104e09ee60674713041173165a122519a))
