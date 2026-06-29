@@ -72,7 +72,12 @@ const debuggerPort = process.env.PATROL_DEBUGGER_PORT
 const collectCoverage = !!process.env.PATROL_WEB_COVERAGE
 const coverageDir = process.env.PATROL_WEB_COVERAGE_DIR || "coverage"
 // "context" = fresh BrowserContext per test (strongest isolation, default)
-// "page" = same context, new page per test (shared cookies/storage)
+// "page"    = same context, new page per test (shared cookies/storage)
+// "worker"  = single page per Playwright worker; DDC loads ONCE instead of once
+//             per test. Eliminates the 2-minute DDC-reload cost on HTML renderer
+//             builds (2473 modules). Tests run sequentially on the shared page via
+//             window.__patrol__runTest without tearing the page down between them.
+//             Use when DDC init time dominates per-test cost (CI slow nodes).
 const isolationMode = process.env.PATROL_WEB_ISOLATION || "context"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -288,7 +293,7 @@ async function setupPage(page: Page) {
 export const patrolTest = base.extend<
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   {},
-  { sharedContext: BrowserContext; coverageReporter: CoverageReporter | null }
+  { sharedContext: BrowserContext; sharedPage: Page | null; coverageReporter: CoverageReporter | null }
 >({
   coverageReporter: [async ({}, use) => {
     if (!collectCoverage) {
@@ -332,7 +337,46 @@ export const patrolTest = base.extend<
     }
   }, { scope: "worker" }],
 
-  page: async ({ page: defaultPage, sharedContext, coverageReporter }, use) => {
+  /**
+   * Worker-scoped shared page for PATROL_WEB_ISOLATION=worker mode.
+   *
+   * DDC module loading (2473 scripts on the HTML renderer) takes ~2 s on fast
+   * nodes and up to ~120 s on slow CI nodes.  With the default "context" mode
+   * every test opens a fresh page and pays that cost in full; on a slow node
+   * this consumes the entire --web-timeout=120 s budget before Dart code even
+   * starts, causing every test to fail with "Test timeout exceeded while setting
+   * up page".
+   *
+   * In "worker" mode a single page is created for the lifetime of the Playwright
+   * worker process.  setupPage() (goto + initialise) is called ONCE; subsequent
+   * tests reuse the already-loaded Flutter app and call window.__patrol__runTest
+   * directly, reducing per-test overhead from ~120 s → <1 s on slow nodes.
+   *
+   * The tradeoff vs "context" isolation: widget-tree state from a previous test
+   * is visible to the next.  Patrol tests already reset their own state via
+   * navigateToHome / runApp at the start of each patrolTest, so this is safe in
+   * practice.  If a test crashes the page the worker exits and Playwright retries
+   * on a new worker — the same recovery path as today.
+   */
+  sharedPage: [async ({ browser }, use) => {
+    if (isolationMode !== "worker") {
+      await use(null)
+      return
+    }
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    await setupPage(page)
+    await use(page)
+    await context.close()
+  }, { scope: "worker" }],
+
+  page: async ({ page: defaultPage, sharedContext, sharedPage, coverageReporter }, use) => {
+    // Worker-scoped mode: DDC already loaded in sharedPage — pass it through.
+    if (isolationMode === "worker" && sharedPage) {
+      await use(sharedPage)
+      return
+    }
+
     let page: Page = defaultPage
 
     if (debuggerPort) {
@@ -428,7 +472,8 @@ if (tests.length === 0 && allTests.length > 0) {
         throw new Error(result.details ?? `Test "${name}" failed`)
       }
 
-      if (!collectCoverage) await page.close()
+      // In "worker" mode the page is shared across tests — do not close it here.
+      if (!collectCoverage && isolationMode !== "worker") await page.close()
     })
   }
 }
