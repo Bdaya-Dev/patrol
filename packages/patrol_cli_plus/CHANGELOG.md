@@ -1,3 +1,7 @@
+## 5.0.3
+
+ - **FIX**(patrol_cli_plus): target iOS simulators by UDID in test-without-building. ([1e565329](https://github.com/Bdaya-Dev/patrol/commit/1e5653298e1628b81e5477aceff5d35edec93572))
+
 ## 5.0.2
 
  - Version bump to stay in lockstep with `patrol_plus` 5.0.2, which fixes the web `$dartRunMain` detection timeout that masked real init failures as "Total: 0" (Fixes #6) and makes web `--web-shard` deterministic. No CLI behaviour change; published together so consumers pin a single 5.0.2 line.
