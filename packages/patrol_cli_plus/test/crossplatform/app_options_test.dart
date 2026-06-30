@@ -443,6 +443,53 @@ void main() {
         });
       },
     );
+
+    group('correctly targets a simulator device by UDID', () {
+      test('test-without-building uses -destination id=<udid>', () {
+        const flutterOpts = FlutterAppOptions(
+          command: flutterCommand,
+          target: 'patrol_test/app_test.dart',
+          buildMode: BuildMode.debug,
+          flavor: null,
+          buildName: null,
+          buildNumber: null,
+          dartDefines: {},
+          dartDefineFromFilePaths: [],
+        );
+        final simOptions = IOSAppOptions(
+          flutter: flutterOpts,
+          scheme: 'Runner',
+          configuration: 'Debug',
+          simulator: true,
+          // Intentionally `latest` to prove it no longer affects the
+          // simulator destination (targeting is now by exact UDID).
+          osVersion: 'latest',
+          testServerPort: 8081,
+          appServerPort: 8082,
+        );
+
+        final xcodebuildInvocation = simOptions.testWithoutBuildingInvocation(
+          iosSimulatorDevice,
+          xcTestRunPath: 'some.xctestrun',
+          resultBundlePath: '',
+        );
+
+        // A booted simulator is targeted by its exact UDID, NOT by
+        // `platform=iOS Simulator,OS=latest,name=...` which xcodebuild fails to
+        // resolve ("Unable to find a device matching ..." -> exit 70).
+        expect(
+          xcodebuildInvocation,
+          equals([
+            ...['xcodebuild', 'test-without-building'],
+            ...['-xctestrun', 'some.xctestrun'],
+            ...['-only-testing', 'RunnerUITests/RunnerUITests'],
+            ...['-destination', 'id=$iosSimulatorDeviceId'],
+            ...['-destination-timeout', '1'],
+            ...['-resultBundlePath', ''],
+          ]),
+        );
+      });
+    });
   });
 
   group('MacOSAppOptions', () {

@@ -17,3 +17,12 @@ const iosDevice = Device(
   targetPlatform: TargetPlatform.iOS,
   real: true,
 );
+
+const iosSimulatorDeviceName = 'iPhone 15';
+const iosSimulatorDeviceId = 'D7E8F9A0-1234-5678-9ABC-DEF012345678';
+const iosSimulatorDevice = Device(
+  name: iosSimulatorDeviceName,
+  id: iosSimulatorDeviceId,
+  targetPlatform: TargetPlatform.iOS,
+  real: false,
+);

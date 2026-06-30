@@ -1,2 +1,4 @@
 node_modules
 test-results
+.patrol_tests.json
+.patrol_build_mode.json

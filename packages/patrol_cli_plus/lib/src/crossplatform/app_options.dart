@@ -287,7 +287,18 @@ class IOSAppOptions {
       ...['-only-testing', 'RunnerUITests/RunnerUITests'],
       ...[
         '-destination',
-        'platform=${device.real ? 'iOS' : 'iOS Simulator,OS=$osVersion'},name=${device.name}',
+        // Target simulators by their exact UDID. The previous
+        // `platform=iOS Simulator,OS=$osVersion,name=$name` specifier failed to
+        // resolve a booted simulator ("xcodebuild: error: Unable to find a
+        // device matching the provided destination specifier" -> exit 70) when
+        // OS was `latest` or the runtime enumeration was slow on CI; `id=<udid>`
+        // is unambiguous and resolves instantly. Real devices keep the proven
+        // platform+name specifier. `osVersion` (the `--ios` flag) is retained
+        // for backward compatibility but is no longer used for simulators.
+        if (device.real)
+          'platform=iOS,name=${device.name}'
+        else
+          'id=${device.id}',
       ],
       ...['-destination-timeout', '1'],
       ...['-resultBundlePath', resultBundlePath],

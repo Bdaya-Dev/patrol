@@ -1,12 +1,72 @@
+import * as fs from "fs"
+import * as path from "path"
 import { type BrowserContext, type Page, chromium, test as base } from "@playwright/test"
 import { initialise } from "./initialise"
 import { logger } from "./logger"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
 import { PatrolTestEntry } from "./types"
-const tests: PatrolTestEntry[] = process.env.PATROL_TESTS ? JSON.parse(process.env.PATROL_TESTS) : []
-if (tests.length === 0) {
-  logger.error("PATROL_TESTS env is empty")
+
+/**
+ * Loads the full list of discovered patrol tests.
+ *
+ * Prefers the file persisted by globalSetup (tests/setup.ts), because it crosses
+ * the main->worker process boundary reliably. Playwright forks worker child
+ * processes that do NOT observe the `process.env.PATROL_TESTS` mutation made by
+ * globalSetup in the main process, so reading the env alone made a worker
+ * occasionally see an empty list and run 0 tests. Falls back to PATROL_TESTS for
+ * back-compat (e.g. callers that set it directly without a discovery file).
+ */
+function loadDiscoveredTests(): PatrolTestEntry[] {
+  const testsFile = path.resolve(process.cwd(), ".patrol_tests.json")
+  try {
+    if (fs.existsSync(testsFile)) {
+      return JSON.parse(fs.readFileSync(testsFile, "utf8")) as PatrolTestEntry[]
+    }
+  } catch (err) {
+    logger.warn("Failed to read persisted test list from %s: %s", testsFile, String(err))
+  }
+  return process.env.PATROL_TESTS ? (JSON.parse(process.env.PATROL_TESTS) as PatrolTestEntry[]) : []
 }
+
+/**
+ * Parses PATROL_WEB_SHARD ("current/total", 1-based) into shard bounds. Returns
+ * null when unset or invalid, so the non-sharded path runs every discovered test
+ * (identical to the pre-sharding behaviour that patrol-frames relies on).
+ */
+function parseShard(): { current: number; total: number } | null {
+  const raw = process.env.PATROL_WEB_SHARD
+  if (!raw) return null
+  const [current, total] = raw.split("/").map(Number)
+  if (
+    !Number.isInteger(current) ||
+    !Number.isInteger(total) ||
+    total < 1 ||
+    current < 1 ||
+    current > total
+  ) {
+    logger.warn("Invalid PATROL_WEB_SHARD '%s' — ignoring and running all discovered tests", raw)
+    return null
+  }
+  return { current, total }
+}
+
+const allTests = loadDiscoveredTests()
+if (allTests.length === 0) {
+  logger.error("No patrol tests discovered (persisted file and PATROL_TESTS env are both empty)")
+}
+
+const shard = parseShard()
+// Deterministic round-robin self-sharding. Native Playwright `shard` has been
+// removed from playwright.config.ts: the test list is generated dynamically into
+// this single spec file, so we partition it ourselves against the file-backed,
+// worker-consistent list. Round-robin (`index % total === current - 1`)
+// guarantees the per-shard subsets are DISJOINT, their UNION is exact, sizes
+// differ by at most 1, and NO shard is empty while total <= test count — which
+// eliminates the race where native test-level sharding handed a worker 0 tests
+// and idled to the global timeout ("Total: 0").
+const tests: PatrolTestEntry[] = shard
+  ? allTests.filter((_, index) => index % shard.total === shard.current - 1)
+  : allTests
 
 const debuggerPort = process.env.PATROL_DEBUGGER_PORT
 const collectCoverage = !!process.env.PATROL_WEB_COVERAGE
@@ -17,9 +77,6 @@ const isolationMode = process.env.PATROL_WEB_ISOLATION || "context"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CoverageReporter = { add: (entries: any[]) => Promise<void>; generate: () => Promise<void> }
-
-import * as fs from "fs"
-import * as path from "path"
 
 function buildPackageResolver(projectRoot: string) {
   const configPath = path.join(projectRoot, ".dart_tool", "package_config.json")
@@ -337,20 +394,41 @@ export const patrolTest = base.extend<
   },
 })
 
-for (const { name, skip, tags } of tests) {
-  patrolTest(name, { tag: tags }, async ({ page }) => {
-    patrolTest.skip(skip)
-
-    await page.waitForFunction(() => window.__patrol__runTest, {
-      timeout: 300000,
-    })
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const result = await page.evaluate(async name => await window.__patrol__runTest!(name), name)
-    if (result?.result === "failure") {
-      throw new Error(result.details ?? `Test "${name}" failed`)
-    }
-
-    if (!collectCoverage) await page.close()
+if (tests.length === 0 && allTests.length > 0) {
+  // This shard legitimately has no tests assigned (total > discovered test
+  // count). Register a single trivially-passing placeholder so Playwright exits
+  // 0 instead of failing with "no tests found" and idling to the global timeout.
+  //
+  // When NO tests were discovered at all (allTests is empty too) we deliberately
+  // register nothing, so Playwright exits non-zero ("no tests found"). That
+  // preserves loud failure for a genuinely empty/broken target — globalSetup
+  // already throws when discovery finds 0 tests, so reaching here with an empty
+  // allTests means a real problem worth surfacing.
+  base("patrol: no tests assigned to this shard", () => {
+    // Trivially passing — keeps an over-provisioned shard green and fast instead
+    // of erroring with "no tests found" and idling to the global timeout.
+    logger.info(
+      "No patrol tests assigned to shard %s; %d test(s) discovered overall.",
+      process.env.PATROL_WEB_SHARD ?? "(none)",
+      allTests.length,
+    )
   })
+} else {
+  for (const { name, skip, tags } of tests) {
+    patrolTest(name, { tag: tags }, async ({ page }) => {
+      patrolTest.skip(skip)
+
+      await page.waitForFunction(() => window.__patrol__runTest, {
+        timeout: 300000,
+      })
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const result = await page.evaluate(async name => await window.__patrol__runTest!(name), name)
+      if (result?.result === "failure") {
+        throw new Error(result.details ?? `Test "${name}" failed`)
+      }
+
+      if (!collectCoverage) await page.close()
+    })
+  }
 }
