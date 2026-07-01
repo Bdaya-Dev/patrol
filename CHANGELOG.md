@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-07-01
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`patrol_plus` - `v5.0.4`](#patrol_plus---v504)
+
+---
+
+#### `patrol_plus` - `v5.0.4`
+
+ - **FIX**(patrol_plus): make iOS per-test relaunch robust on Xcode-26 / iOS-26 simulator ([#10](https://github.com/Bdaya-Dev/patrol/issues/10)). ([9aab2f34](https://github.com/Bdaya-Dev/patrol/commit/9aab2f34c5de347ee59050a642ebac619b3c067c))
+ - **DOCS**(patrol_plus): add commit hash link to 5.0.3 changelog entry (melos format). ([965dfc06](https://github.com/Bdaya-Dev/patrol/commit/965dfc06bdc1eb535673f09ebab4057816d0b31f))
+
+
 ## 2026-06-30
 
 ### Changes

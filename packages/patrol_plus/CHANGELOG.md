@@ -1,3 +1,8 @@
+## 5.0.4
+
+ - **FIX**(patrol_plus): make iOS per-test relaunch robust on Xcode-26 / iOS-26 simulator ([#10](https://github.com/Bdaya-Dev/patrol/issues/10)). ([9aab2f34](https://github.com/Bdaya-Dev/patrol/commit/9aab2f34c5de347ee59050a642ebac619b3c067c))
+ - **DOCS**(patrol_plus): add commit hash link to 5.0.3 changelog entry (melos format). ([965dfc06](https://github.com/Bdaya-Dev/patrol/commit/965dfc06bdc1eb535673f09ebab4057816d0b31f))
+
 ## 5.0.3
 
  - **FIX**(patrol_plus): per-test `initialise()` now skips the 60s DDC detection wait on subsequent calls (profile/release/WASM builds). globalSetup writes `.patrol_build_mode.json` after the first DDC detect; each Playwright worker reads it and skips the wait if `isDDC=false`. Without this, every test burned 60s on the DDC detect — with `--web-timeout=120s` this left only 60s for Flutter boot + test body, causing the test timeout to fire during `waitForFunction(__patrol__onInitialised)`, Playwright closing the page, and the same "Target page, context or browser has been closed / Total: 0" failure that 5.0.2 fixed in globalSetup but left present in the per-test setup phase. Fixes #6. ([21921ca0](https://github.com/Bdaya-Dev/patrol/commit/21921ca03))
