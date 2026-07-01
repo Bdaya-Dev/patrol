@@ -39,6 +39,22 @@
     return true;                                                                                                \
   }                                                                                                             \
                                                                                                                 \
+  -(void)recordIssue:(XCTIssue *)issue {                                                                        \
+    if (@available(iOS 26.0, *)) {                                                                              \
+      NSString *__patrolDesc = issue.compactDescription ?: @"";                                                 \
+      /* Only suppress framework/system issues (never a real Dart-test */                                       \
+      /* assertion failure) whose text matches the benign iOS-26 relaunch */                                    \
+      /* messages, so a genuine test failure can never be swallowed. */                                         \
+      if (issue.type == XCTIssueTypeSystem &&                                                                   \
+          ([__patrolDesc containsString:@"Failed to terminate"] ||                                              \
+           [__patrolDesc containsString:@"does not have a process ID"])) {                                      \
+        NSLog(@"[patrol] Ignoring benign iOS 26 relaunch issue: %@", __patrolDesc);                             \
+        return;                                                                                                 \
+      }                                                                                                         \
+    }                                                                                                           \
+    [super recordIssue:issue];                                                                                  \
+  }                                                                                                             \
+                                                                                                                \
   +(void)uninstallApp {                                                                                         \
     XCUIApplication *app = [[XCUIApplication alloc] init];                                                      \
     NSString *appName = app.label;                                                                              \
@@ -230,7 +246,20 @@
         }                                                                                                       \
                                                                                                                 \
         server.appReady = NO;                                                                                   \
-        [[[XCUIApplication alloc] init] launch];                                                                \
+        XCUIApplication *app = [[XCUIApplication alloc] init];                                                  \
+        /* iOS 26 / Xcode 26: launch()'s implicit terminate of the still- */                                    \
+        /* registered previous instance fails against a stale/zero pid    */                                    \
+        /* after the app exits or LLDB detaches. Bring the app to         */                                    \
+        /* NotRunning ourselves first so launch() has nothing to kill.    */                                    \
+        if (app.state != XCUIApplicationStateNotRunning) {                                                      \
+          [app terminate];                                                                                      \
+          NSDate *__patrolTermDeadline = [NSDate dateWithTimeIntervalSinceNow:10.0];                            \
+          while (app.state != XCUIApplicationStateNotRunning &&                                                 \
+                 [__patrolTermDeadline timeIntervalSinceNow] > 0) {                                             \
+            [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];                 \
+          }                                                                                                     \
+        }                                                                                                       \
+        [app launch];                                                                                           \
         while (!server.appReady) {                                                                              \
           [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];                    \
         }                                                                                                       \
