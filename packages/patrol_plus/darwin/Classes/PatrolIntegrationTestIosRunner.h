@@ -40,17 +40,15 @@
   }                                                                                                             \
                                                                                                                 \
   -(void)recordIssue:(XCTIssue *)issue {                                                                        \
-    if (@available(iOS 26.0, *)) {                                                                              \
-      NSString *__patrolDesc = issue.compactDescription ?: @"";                                                 \
-      /* Only suppress framework/system issues (never a real Dart-test */                                       \
-      /* assertion failure) whose text matches the benign iOS-26 relaunch */                                    \
-      /* messages, so a genuine test failure can never be swallowed. */                                         \
-      if (issue.type == XCTIssueTypeSystem &&                                                                   \
-          ([__patrolDesc containsString:@"Failed to terminate"] ||                                              \
-           [__patrolDesc containsString:@"does not have a process ID"])) {                                      \
-        NSLog(@"[patrol] Ignoring benign iOS 26 relaunch issue: %@", __patrolDesc);                             \
-        return;                                                                                                 \
-      }                                                                                                         \
+    NSString *__patrolDesc = issue.compactDescription ?: @"";                                                   \
+    /* Only suppress framework/system issues (never a real Dart-test */                                         \
+    /* assertion failure) whose text matches the benign iOS-26 relaunch */                                      \
+    /* messages, so a genuine test failure can never be swallowed. */                                           \
+    if (issue.type == XCTIssueTypeSystem &&                                                                     \
+        ([__patrolDesc containsString:@"Failed to terminate"] ||                                                \
+         [__patrolDesc containsString:@"does not have a process ID"])) {                                        \
+      NSLog(@"[patrol] Ignoring benign iOS 26 relaunch issue: %@", __patrolDesc);                               \
+      return;                                                                                                   \
     }                                                                                                           \
     [super recordIssue:issue];                                                                                  \
   }                                                                                                             \
