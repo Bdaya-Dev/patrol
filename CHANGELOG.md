@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`patrol_plus` - `v5.1.1`](#patrol_plus---v511)
+
+---
+
+#### `patrol_plus` - `v5.1.1`
+
+ - **FIX**(patrol_plus): make terminate-suppression wording OS-agnostic. ([7b252556](https://github.com/Bdaya-Dev/patrol/commit/7b2525564cf0fcc351d992f0408594b864af5e9e))
+
+
+## 2026-07-02
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`patrol_plus` - `v5.1.0`](#patrol_plus---v510)
 
 ---
