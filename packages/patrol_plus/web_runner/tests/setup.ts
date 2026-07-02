@@ -3,6 +3,7 @@ import * as path from "path"
 import { chromium, type FullConfig, type Page } from "@playwright/test"
 import { initialise } from "./initialise"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
+import { resolveLocale } from "./resolveLocale"
 import { DartTestEntry, PatrolTestEntry } from "./types"
 
 async function setup(config: FullConfig) {
@@ -11,7 +12,7 @@ async function setup(config: FullConfig) {
     ? JSON.parse(process.env.PATROL_WEB_BROWSER_ARGS)
     : undefined
 
-  const locale = process.env.PATROL_WEB_LOCALE || undefined
+  const locale = resolveLocale()
 
   const browser = await chromium.launch({
     args: browserArgs,
