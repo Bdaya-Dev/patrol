@@ -1,6 +1,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import { type BrowserContext, type Page, chromium, test as base } from "@playwright/test"
+import { filterByTags, parseTagList } from "./filterByTags"
 import { initialise } from "./initialise"
 import { logger } from "./logger"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
@@ -55,6 +56,25 @@ if (allTests.length === 0) {
   logger.error("No patrol tests discovered (persisted file and PATROL_TESTS env are both empty)")
 }
 
+// Tag filter (F-C). --tags / --exclude-tags are forwarded from the CLI as
+// PATROL_WEB_GREP / PATROL_WEB_GREP_INVERT and applied to the discovered list
+// BEFORE sharding, so each shard partitions the already-filtered set. An empty
+// result (e.g. a change-scoped run whose tags match nothing in this build) is
+// NOT an error: it falls through to the green "no tests assigned" placeholder
+// below, so a no-op scope is fast and passing rather than red.
+const includeTags = parseTagList(process.env.PATROL_WEB_GREP)
+const excludeTags = parseTagList(process.env.PATROL_WEB_GREP_INVERT)
+const selectedTests = filterByTags(allTests, includeTags, excludeTags)
+if ((includeTags.length > 0 || excludeTags.length > 0) && selectedTests.length !== allTests.length) {
+  logger.info(
+    "Tag filter applied (include=%o exclude=%o): %d of %d discovered test(s) selected",
+    includeTags,
+    excludeTags,
+    selectedTests.length,
+    allTests.length,
+  )
+}
+
 const shard = parseShard()
 // Deterministic round-robin self-sharding. Native Playwright `shard` has been
 // removed from playwright.config.ts: the test list is generated dynamically into
@@ -65,8 +85,8 @@ const shard = parseShard()
 // eliminates the race where native test-level sharding handed a worker 0 tests
 // and idled to the global timeout ("Total: 0").
 const tests: PatrolTestEntry[] = shard
-  ? allTests.filter((_, index) => index % shard.total === shard.current - 1)
-  : allTests
+  ? selectedTests.filter((_, index) => index % shard.total === shard.current - 1)
+  : selectedTests
 
 const debuggerPort = process.env.PATROL_DEBUGGER_PORT
 const collectCoverage = !!process.env.PATROL_WEB_COVERAGE

@@ -345,6 +345,13 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       serverTimeout: intArg('web-server-timeout'),
       initTimeout: intArg('web-init-timeout'),
       browserArgs: stringArg('web-browser-args'),
+      // Reuse the shared --tags / --exclude-tags flags for web. On native
+      // platforms these reach the Dart test runner; on web there is no Dart
+      // runner, so they are forwarded to the Playwright harness as
+      // PATROL_WEB_GREP / PATROL_WEB_GREP_INVERT and applied to the discovered
+      // test list by tag (see web_test_backend + web_runner/tests/filterByTags).
+      grep: tags,
+      grepInvert: excludeTags,
     );
 
     // No need to build web app for testing. It's done in the execute method.
