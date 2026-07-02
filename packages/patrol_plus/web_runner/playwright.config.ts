@@ -1,4 +1,5 @@
 import { defineConfig, PlaywrightTestOptions, ReporterDescription, TraceMode, VideoMode } from "@playwright/test"
+import { resolveLocale } from "./tests/resolveLocale"
 
 const outputDir = process.env.PATROL_TEST_RESULTS_DIR || "./test-results"
 const outputFolder = process.env.PATROL_TEST_REPORT_DIR || "./playwright-report"
@@ -16,7 +17,7 @@ const workers = process.env.PATROL_WEB_WORKERS ? parseInt(process.env.PATROL_WEB
 const reporter = process.env.PATROL_WEB_REPORTER
   ? mapReporters(process.env.PATROL_WEB_REPORTER, outputFolder)
   : undefined
-const locale = process.env.PATROL_WEB_LOCALE ? process.env.PATROL_WEB_LOCALE : undefined
+const locale = resolveLocale()
 const timezoneId = process.env.PATROL_WEB_TIMEZONE ? process.env.PATROL_WEB_TIMEZONE : undefined
 const colorScheme = process.env.PATROL_WEB_COLOR_SCHEME
   ? (process.env.PATROL_WEB_COLOR_SCHEME as PlaywrightTestOptions["colorScheme"])

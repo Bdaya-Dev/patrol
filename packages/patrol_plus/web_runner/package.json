@@ -7,7 +7,7 @@
     "format": "prettier --check .",
     "lint:fix": "eslint . --fix",
     "format:fix": "prettier --write .",
-    "test": "node --test --experimental-strip-types tests/filterByTags.test.ts"
+    "test": "node --test --experimental-strip-types tests/filterByTags.test.ts tests/resolveLocale.test.ts"
   },
   "author": "",
   "license": "ISC",
