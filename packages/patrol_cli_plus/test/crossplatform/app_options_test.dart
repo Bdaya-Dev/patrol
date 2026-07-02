@@ -797,5 +797,35 @@ void main() {
         expect(flutterInvocation, isNot(contains('--flavor')));
       });
     });
+
+    group('carries web tag filters for the Playwright runner', () {
+      const flutterOpts = FlutterAppOptions(
+        command: flutterCommand,
+        target: 'patrol_test/app_test.dart',
+        buildMode: BuildMode.profile,
+        flavor: null,
+        buildName: null,
+        buildNumber: null,
+        dartDefines: {},
+        dartDefineFromFilePaths: [],
+      );
+
+      test('grep / grepInvert default to null (no filter)', () {
+        options = const WebAppOptions(flutter: flutterOpts);
+        expect(options.grep, isNull);
+        expect(options.grepInvert, isNull);
+      });
+
+      test('grep / grepInvert are carried through (from --tags / '
+          '--exclude-tags)', () {
+        options = const WebAppOptions(
+          flutter: flutterOpts,
+          grep: '@billing-plans,@tap-hosted-checkout',
+          grepInvert: '@slow',
+        );
+        expect(options.grep, '@billing-plans,@tap-hosted-checkout');
+        expect(options.grepInvert, '@slow');
+      });
+    });
   });
 }

@@ -569,6 +569,9 @@ class WebTestBackend {
                   'PATROL_WEB_INIT_TIMEOUT': options.initTimeout.toString(),
                 if (options.browserArgs != null)
                   'PATROL_WEB_BROWSER_ARGS': options.browserArgs.toString(),
+                if (options.grep != null) 'PATROL_WEB_GREP': options.grep!,
+                if (options.grepInvert != null)
+                  'PATROL_WEB_GREP_INVERT': options.grepInvert!,
               },
               runInShell: true,
             )

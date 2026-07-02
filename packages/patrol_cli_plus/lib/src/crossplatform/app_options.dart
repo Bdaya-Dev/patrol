@@ -466,6 +466,8 @@ class WebAppOptions {
     this.serverTimeout,
     this.browserArgs,
     this.initTimeout,
+    this.grep,
+    this.grepInvert,
   });
 
   final FlutterAppOptions flutter;
@@ -500,6 +502,15 @@ class WebAppOptions {
   /// __patrol__onInitialised during page initialisation.
   /// Defaults to 120000 ms (2 minutes) if not specified.
   final int? initTimeout;
+
+  /// Comma-separated list of tags; only web tests carrying at least one of
+  /// these tags are run (the `--tags` filter, applied to the discovered test
+  /// list in the web runner). Null means "no include filter" (run all).
+  final String? grep;
+
+  /// Comma-separated list of tags; web tests carrying any of these tags are
+  /// excluded (the `--exclude-tags` filter). Applied after [grep].
+  final String? grepInvert;
 
   /// Translates these options into a proper flutter build invocation.
   List<String> toFlutterBuildInvocation() {
