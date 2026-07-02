@@ -1,3 +1,7 @@
+## 5.1.2
+
+ - **FIX**(patrol_plus): pin web runner browser locale to en-US (Flutter engine parseBrowserLanguages crash). ([bd557671](https://github.com/Bdaya-Dev/patrol/commit/bd557671410178a14dcbb7c2a19b0912c13873db))
+
 ## 5.1.1
 
  - **FIX**(patrol_plus): make terminate-suppression wording OS-agnostic. ([7b252556](https://github.com/Bdaya-Dev/patrol/commit/7b2525564cf0fcc351d992f0408594b864af5e9e))

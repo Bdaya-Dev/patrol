@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`patrol_plus` - `v5.1.2`](#patrol_plus---v512)
+
+---
+
+#### `patrol_plus` - `v5.1.2`
+
+ - **FIX**(patrol_plus): pin web runner browser locale to en-US (Flutter engine parseBrowserLanguages crash). ([bd557671](https://github.com/Bdaya-Dev/patrol/commit/bd557671410178a14dcbb7c2a19b0912c13873db))
+
+
+## 2026-07-02
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`patrol_plus` - `v5.1.1`](#patrol_plus---v511)
 
 ---
