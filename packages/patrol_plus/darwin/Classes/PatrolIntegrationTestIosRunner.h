@@ -42,12 +42,12 @@
   -(void)recordIssue:(XCTIssue *)issue {                                                                        \
     NSString *__patrolDesc = issue.compactDescription ?: @"";                                                   \
     /* Only suppress framework/system issues (never a real Dart-test */                                         \
-    /* assertion failure) whose text matches the benign iOS-26 relaunch */                                      \
+    /* assertion failure) whose text matches the benign XCUITest relaunch */                                    \
     /* messages, so a genuine test failure can never be swallowed. */                                           \
     if (issue.type == XCTIssueTypeSystem &&                                                                     \
         ([__patrolDesc containsString:@"Failed to terminate"] ||                                                \
          [__patrolDesc containsString:@"does not have a process ID"])) {                                        \
-      NSLog(@"[patrol] Ignoring benign iOS 26 relaunch issue: %@", __patrolDesc);                               \
+      NSLog(@"[patrol] Ignoring benign XCUITest relaunch issue: %@", __patrolDesc);                             \
       return;                                                                                                   \
     }                                                                                                           \
     [super recordIssue:issue];                                                                                  \
