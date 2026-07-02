@@ -1,3 +1,7 @@
+## 5.1.0
+
+ - **FEAT**(patrol_plus): web runner filters the discovered test list by `--tags`/`--exclude-tags` (via `PATROL_WEB_GREP`/`PATROL_WEB_GREP_INVERT`) before sharding; an empty match falls through to the existing "no tests assigned" placeholder instead of failing. ([77896d10](https://github.com/Bdaya-Dev/patrol/commit/77896d10a5b77bd54ff562e85a7e47d32b7dc754))
+
 ## 5.0.4
 
  - **FIX**(patrol_plus): make iOS per-test relaunch robust on Xcode-26 / iOS-26 simulator ([#10](https://github.com/Bdaya-Dev/patrol/issues/10)). ([9aab2f34](https://github.com/Bdaya-Dev/patrol/commit/9aab2f34c5de347ee59050a642ebac619b3c067c))
