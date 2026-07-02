@@ -3,6 +3,47 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-07-02
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`patrol_plus` - `v5.1.0`](#patrol_plus---v510)
+
+---
+
+#### `patrol_plus` - `v5.1.0`
+
+ - **FEAT**(patrol_plus): web runner filters the discovered test list by `--tags`/`--exclude-tags` (via `PATROL_WEB_GREP`/`PATROL_WEB_GREP_INVERT`) before sharding; an empty match falls through to the existing "no tests assigned" placeholder instead of failing. ([77896d10](https://github.com/Bdaya-Dev/patrol/commit/77896d10a5b77bd54ff562e85a7e47d32b7dc754))
+
+
+## 2026-07-02
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`patrol_cli_plus` - `v5.1.0`](#patrol_cli_plus---v510)
+
+---
+
+#### `patrol_cli_plus` - `v5.1.0`
+
+ - **FEAT**(patrol_cli_plus): forward `--tags`/`--exclude-tags` to the web runner as `PATROL_WEB_GREP`/`PATROL_WEB_GREP_INVERT`, so web test runs can be filtered by tag like native runs already are. ([77896d10](https://github.com/Bdaya-Dev/patrol/commit/77896d10a5b77bd54ff562e85a7e47d32b7dc754))
+
 ## 2026-07-01
 
 ### Changes

@@ -1,3 +1,7 @@
+## 5.1.0
+
+ - **FEAT**(patrol_cli_plus): forward `--tags`/`--exclude-tags` to the web runner as `PATROL_WEB_GREP`/`PATROL_WEB_GREP_INVERT`, so web test runs can be filtered by tag like native runs already are. ([77896d10](https://github.com/Bdaya-Dev/patrol/commit/77896d10a5b77bd54ff562e85a7e47d32b7dc754))
+
 ## 5.0.3
 
  - **FIX**(patrol_cli_plus): target iOS simulators by UDID in test-without-building. ([1e565329](https://github.com/Bdaya-Dev/patrol/commit/1e5653298e1628b81e5477aceff5d35edec93572))
