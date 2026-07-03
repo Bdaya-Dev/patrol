@@ -1,12 +1,14 @@
 import * as fs from "fs"
 import * as path from "path"
 import { type BrowserContext, type Page, chromium, test as base } from "@playwright/test"
+import { writeCoverageSummary } from "./coverageSummary"
 import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate"
 import { filterByTags, parseTagList } from "./filterByTags"
 import { initialise } from "./initialise"
 import { logger } from "./logger"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
 import { PatrolTestEntry } from "./types"
+import { appendZeroFillLcov } from "./zeroFillLcov"
 
 /**
  * Loads the full list of discovered patrol tests.
@@ -136,122 +138,6 @@ function buildPackageResolver(projectRoot: string) {
   }
 }
 
-/**
- * Walks [dir] recursively and yields absolute paths for every `.dart` file.
- */
-function* walkDartFiles(dir: string): Generator<string> {
-  if (!fs.existsSync(dir)) return
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name)
-    if (entry.isDirectory()) {
-      yield* walkDartFiles(full)
-    } else if (entry.isFile() && entry.name.endsWith(".dart")) {
-      yield full
-    }
-  }
-}
-
-/**
- * Parses the SF: lines from an LCOV file and returns a Set of absolute paths
- * that are already present in the report.
- */
-function parseLcovFiles(lcovPath: string): Set<string> {
-  const covered = new Set<string>()
-  if (!fs.existsSync(lcovPath)) return covered
-  for (const line of fs.readFileSync(lcovPath, "utf8").split("\n")) {
-    if (line.startsWith("SF:")) {
-      covered.add(path.resolve(line.slice(3).trim()))
-    }
-  }
-  return covered
-}
-
-/**
- * Counts the lines in [source] that are likely executable (non-blank,
- * not pure-comment lines).  This is a conservative approximation — good
- * enough for LF/LH accuracy without a full Dart parser.
- */
-function countExecutableLines(source: string): number[] {
-  const lines = source.split("\n")
-  const lineNumbers: number[] = []
-  let inBlockComment = false
-  for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i].trim()
-    if (inBlockComment) {
-      if (trimmed.includes("*/")) inBlockComment = false
-      continue
-    }
-    if (trimmed.startsWith("/*")) {
-      inBlockComment = !trimmed.includes("*/")
-      continue
-    }
-    if (trimmed === "" || trimmed.startsWith("//") || trimmed === "{" || trimmed === "}") {
-      continue
-    }
-    lineNumbers.push(i + 1) // 1-based
-  }
-  return lineNumbers
-}
-
-/**
- * Appends zero-fill LCOV stanzas to [lcovPath] for every `.dart` file found
- * under the `lib/` directory of each package in `package_config.json` that:
- *   - is not already present in [lcovPath], and
- *   - matches [packageFilter] when applied to `package:<name>/…` URIs
- *     (when [packageFilter] is null, all packages are included).
- *
- * Files whose absolute path is inside `node_modules` or `.dart_tool` are
- * always skipped.
- */
-function appendZeroFillLcov(projectRoot: string, lcovPath: string, packageFilter: RegExp | null): void {
-  const configPath = path.join(projectRoot, ".dart_tool", "package_config.json")
-  if (!fs.existsSync(configPath)) {
-    logger.warn("package_config.json not found at %s — skipping zero-fill", configPath)
-    return
-  }
-
-  const config: { packages?: Array<{ name: string; rootUri: string; packageUri?: string }> } =
-    JSON.parse(fs.readFileSync(configPath, "utf8"))
-
-  const coveredFiles = parseLcovFiles(lcovPath)
-  const stanzas: string[] = []
-
-  for (const pkg of config.packages ?? []) {
-    // Apply the same coverage filter that entryFilter uses, but against the
-    // package URI scheme so the user's regex is meaningful.
-    if (packageFilter && !packageFilter.test(`package:${pkg.name}/`)) {
-      continue
-    }
-
-    const rootUri = (pkg.rootUri as string).replace(/\/$/, "")
-    const absRoot = path.resolve(path.dirname(configPath), rootUri)
-    const libDir = path.join(absRoot, (pkg.packageUri ?? "lib/").replace(/\/$/, ""))
-
-    for (const dartFile of walkDartFiles(libDir)) {
-      // Skip generated files and hidden directories
-      if (dartFile.includes("node_modules") || dartFile.includes(".dart_tool")) continue
-
-      const absFile = path.resolve(dartFile)
-      if (coveredFiles.has(absFile)) continue
-
-      const source = fs.readFileSync(absFile, "utf8")
-      const executableLines = countExecutableLines(source)
-      if (executableLines.length === 0) continue
-
-      const daLines = executableLines.map(n => `DA:${n},0`).join("\n")
-      stanzas.push(`SF:${absFile}\n${daLines}\nLH:0\nLF:${executableLines.length}\nend_of_record`)
-    }
-  }
-
-  if (stanzas.length === 0) {
-    logger.info("Zero-fill: all Dart files already present in LCOV (or no packages matched filter)")
-    return
-  }
-
-  fs.appendFileSync(lcovPath, "\n" + stanzas.join("\n") + "\n")
-  logger.info("Zero-fill: appended %d uncovered Dart file(s) to %s", stanzas.length, lcovPath)
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function resolveSourceMaps(entries: any[], projectRoot: string | null) {
   const resolve = projectRoot ? buildPackageResolver(projectRoot) : () => null
@@ -351,10 +237,33 @@ export const patrolTest = base.extend<
     // Append zero-fill stanzas for Dart files that V8 never loaded.
     // This gives accurate LF (total lines) and LH (hit lines) counts,
     // matching what `flutter test --coverage` produces via getSourceReport.
+    //
+    // F-E invariant: [zeroFillFilter] is derived ONLY from
+    // PATROL_WEB_COVERAGE_FILTER (customFilter), never from the test-selection
+    // tag filters (PATROL_WEB_GREP / PATROL_WEB_GREP_INVERT / includeTags /
+    // excludeTags above). So the zero-fill walk — and therefore the LF/LH
+    // denominator — covers the FULL app's package_config.json even on a
+    // change-scoped (tag-filtered) run that only executed a subset of flows.
+    // Do not thread includeTags/excludeTags into this filter.
     const projectRoot = coverageDir ? path.dirname(coverageDir) : process.cwd()
     const lcovFile = path.join(coverageDir, "lcov.info")
     const zeroFillFilter = customFilter ? new RegExp(customFilter) : null
     appendZeroFillLcov(projectRoot, lcovFile, zeroFillFilter)
+
+    // F-E: emit a machine-readable per-run summary (covered/total lines per
+    // source) from the final, whole-app zero-filled lcov.info, alongside it.
+    // Downstream tooling (the flow<->source manifest gap detector, §5b) reads
+    // this instead of re-parsing LCOV.
+    const summaryFile = path.join(coverageDir, "coverage-summary.json")
+    const summary = writeCoverageSummary(lcovFile, summaryFile)
+    logger.info(
+      "Coverage summary: %d/%d lines (%s%%) across %d source(s) — %s",
+      summary.totals.linesCovered,
+      summary.totals.linesTotal,
+      (summary.totals.lineRate * 100).toFixed(2),
+      summary.sources.length,
+      summaryFile,
+    )
   }, { scope: "worker" }],
 
   sharedContext: [async ({ browser }, use) => {
