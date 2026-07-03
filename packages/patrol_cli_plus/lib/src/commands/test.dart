@@ -352,6 +352,11 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       // test list by tag (see web_test_backend + web_runner/tests/filterByTags).
       grep: tags,
       grepInvert: excludeTags,
+      // F-B web error gate. --web-error-detection is off by default; when on,
+      // an un-allowlisted browser-level error fails the test (see errorGate.ts
+      // in web_runner + web_test_backend PATROL_WEB_ERROR_* env forwarding).
+      errorDetection: boolArg('web-error-detection'),
+      errorAllow: stringArg('web-error-allow'),
     );
 
     // No need to build web app for testing. It's done in the execute method.

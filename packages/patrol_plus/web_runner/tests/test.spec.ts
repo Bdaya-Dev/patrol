@@ -1,6 +1,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import { type BrowserContext, type Page, chromium, test as base } from "@playwright/test"
+import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate"
 import { filterByTags, parseTagList } from "./filterByTags"
 import { initialise } from "./initialise"
 import { logger } from "./logger"
@@ -94,6 +95,13 @@ const coverageDir = process.env.PATROL_WEB_COVERAGE_DIR || "coverage"
 // "context" = fresh BrowserContext per test (strongest isolation, default)
 // "page" = same context, new page per test (shared cookies/storage)
 const isolationMode = process.env.PATROL_WEB_ISOLATION || "context"
+
+// Web error gate (F-B). Disabled unless the CLI passed --web-error-detection
+// (PATROL_WEB_ERROR_DETECTION=true). See errorGate.ts for the four channels.
+const errorGateConfig = {
+  enabled: process.env.PATROL_WEB_ERROR_DETECTION === "true",
+  allowlist: parseAllowList(process.env.PATROL_WEB_ERROR_ALLOW),
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CoverageReporter = { add: (entries: any[]) => Promise<void>; generate: () => Promise<void> }
@@ -291,6 +299,11 @@ async function setupPage(page: Page) {
     console.error(error.stack ?? error.message)
   })
 
+  // F-B web error gate — separate listener set from the log-only pair above,
+  // so the gate's own bookkeeping (allowlist filtering, violation recording)
+  // stays independent of the always-on console/pageerror logging.
+  const errorGate = attachErrorGate(page, errorGateConfig)
+
   await page.addInitScript(() => {
     window.__patrol__isInitialised = true
   })
@@ -303,6 +316,8 @@ async function setupPage(page: Page) {
   })
 
   await initialise(page)
+
+  return errorGate
 }
 
 export const patrolTest = base.extend<
@@ -398,7 +413,7 @@ export const patrolTest = base.extend<
       page = await sharedContext.newPage()
     }
 
-    await setupPage(page)
+    const errorGate = await setupPage(page)
 
     if (coverageReporter) await page.coverage.startJSCoverage()
     await use(page)
@@ -407,6 +422,12 @@ export const patrolTest = base.extend<
       await resolveSourceMaps(entries, coverageDir ? path.dirname(coverageDir) : null)
       await coverageReporter.add(entries)
     }
+
+    // F-B: fail this test if an un-allowlisted browser error surfaced during
+    // setup or the test body. Thrown from fixture teardown, which Playwright
+    // attributes to the currently running test.
+    errorGate.dispose()
+    assertNoViolations(errorGate.violations)
 
     if (isolationMode === "page") {
       await page.close()

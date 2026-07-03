@@ -827,5 +827,37 @@ void main() {
         expect(options.grepInvert, '@slow');
       });
     });
+
+    group('carries the web error gate config for the Playwright runner '
+        '(F-B)', () {
+      const flutterOpts = FlutterAppOptions(
+        command: flutterCommand,
+        target: 'patrol_test/app_test.dart',
+        buildMode: BuildMode.profile,
+        flavor: null,
+        buildName: null,
+        buildNumber: null,
+        dartDefines: {},
+        dartDefineFromFilePaths: [],
+      );
+
+      test('errorDetection defaults to false and errorAllow to null '
+          '(gate off by default)', () {
+        options = const WebAppOptions(flutter: flutterOpts);
+        expect(options.errorDetection, isFalse);
+        expect(options.errorAllow, isNull);
+      });
+
+      test('errorDetection / errorAllow are carried through (from '
+          '--web-error-detection / --web-error-allow)', () {
+        options = const WebAppOptions(
+          flutter: flutterOpts,
+          errorDetection: true,
+          errorAllow: 'is unimplemented,UNIMPLEMENTED',
+        );
+        expect(options.errorDetection, isTrue);
+        expect(options.errorAllow, 'is unimplemented,UNIMPLEMENTED');
+      });
+    });
   });
 }

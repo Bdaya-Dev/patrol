@@ -572,6 +572,9 @@ class WebTestBackend {
                 if (options.grep != null) 'PATROL_WEB_GREP': options.grep!,
                 if (options.grepInvert != null)
                   'PATROL_WEB_GREP_INVERT': options.grepInvert!,
+                'PATROL_WEB_ERROR_DETECTION': options.errorDetection.toString(),
+                if (options.errorAllow != null)
+                  'PATROL_WEB_ERROR_ALLOW': options.errorAllow!,
               },
               runInShell: true,
             )
