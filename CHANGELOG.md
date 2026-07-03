@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-07-03
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`patrol_cli_plus` - `v5.2.0`](#patrol_cli_plus---v520)
+ - [`patrol_plus` - `v5.2.0`](#patrol_plus---v520)
+
+---
+
+#### `patrol_cli_plus` - `v5.2.0`
+
+ - **FEAT**(patrol_plus): web error gate (--web-error-detection) ([#21](https://github.com/Bdaya-Dev/patrol/issues/21)). ([35fa4e91](https://github.com/Bdaya-Dev/patrol/commit/35fa4e912bf8d15f045695b9b451998e02eb5b64))
+
+#### `patrol_plus` - `v5.2.0`
+
+ - **FEAT**(patrol_plus): web error gate (--web-error-detection) ([#21](https://github.com/Bdaya-Dev/patrol/issues/21)). ([35fa4e91](https://github.com/Bdaya-Dev/patrol/commit/35fa4e912bf8d15f045695b9b451998e02eb5b64))
+
+
 ## 2026-07-02
 
 ### Changes
