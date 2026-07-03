@@ -468,6 +468,8 @@ class WebAppOptions {
     this.initTimeout,
     this.grep,
     this.grepInvert,
+    this.errorDetection = false,
+    this.errorAllow,
   });
 
   final FlutterAppOptions flutter;
@@ -511,6 +513,17 @@ class WebAppOptions {
   /// Comma-separated list of tags; web tests carrying any of these tags are
   /// excluded (the `--exclude-tags` filter). Applied after [grep].
   final String? grepInvert;
+
+  /// Whether the web error gate (F-B) is enabled: fails a test if an
+  /// un-allowlisted browser-level error (console SEVERE/SHOUT, uncaught page
+  /// exception, failed request, or HTTP >= 400 response) is detected during
+  /// its run. Off by default. Set by `--web-error-detection`.
+  final bool errorDetection;
+
+  /// Comma-separated list of substrings; a browser error detected by
+  /// [errorDetection] whose text contains any of these (case-insensitively)
+  /// is allowlisted rather than failing the test. Set by `--web-error-allow`.
+  final String? errorAllow;
 
   /// Translates these options into a proper flutter build invocation.
   List<String> toFlutterBuildInvocation() {

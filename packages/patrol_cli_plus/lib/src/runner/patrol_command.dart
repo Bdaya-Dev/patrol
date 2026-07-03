@@ -387,6 +387,28 @@ abstract class PatrolCommand extends Command<int> {
         'web-browser-args',
         help: 'Custom browser launch arguments. JSON array of strings.',
         valueHelp: '\'["--no-sandbox", "--disable-gpu"]\'',
+      )
+      ..addFlag(
+        'web-error-detection',
+        help:
+            'Fail a web test when an unexpected browser-level error is '
+            'detected during its run: a console record at Dart log level '
+            'SEVERE/SHOUT (or a genuine console.error), an uncaught page '
+            'exception, a failed network request (excluding ERR_ABORTED), '
+            'or an HTTP response with status >= 400 (excluding .map and '
+            'favicon.ico noise). Off by default. Combine with '
+            '--web-error-allow to allowlist expected errors.',
+        negatable: false,
+      )
+      ..addOption(
+        'web-error-allow',
+        help:
+            'Comma-separated list of substrings. A browser error detected by '
+            '--web-error-detection whose text contains any of these '
+            '(case-insensitively) is allowlisted (ignored) instead of '
+            'failing the test. Has no effect unless --web-error-detection '
+            'is set.',
+        valueHelp: 'is unimplemented,UNIMPLEMENTED',
       );
   }
 
