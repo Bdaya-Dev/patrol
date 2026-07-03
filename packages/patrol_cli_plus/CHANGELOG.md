@@ -1,3 +1,7 @@
+## 5.2.0
+
+ - **FEAT**(patrol_plus): web error gate (--web-error-detection) ([#21](https://github.com/Bdaya-Dev/patrol/issues/21)). ([35fa4e91](https://github.com/Bdaya-Dev/patrol/commit/35fa4e912bf8d15f045695b9b451998e02eb5b64))
+
 ## 5.1.0
 
  - **FEAT**(patrol_cli_plus): forward `--tags`/`--exclude-tags` to the web runner as `PATROL_WEB_GREP`/`PATROL_WEB_GREP_INVERT`, so web test runs can be filtered by tag like native runs already are. ([77896d10](https://github.com/Bdaya-Dev/patrol/commit/77896d10a5b77bd54ff562e85a7e47d32b7dc754))

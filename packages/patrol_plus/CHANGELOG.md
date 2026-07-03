@@ -1,3 +1,7 @@
+## 5.2.0
+
+ - **FEAT**(patrol_plus): web error gate (--web-error-detection) ([#21](https://github.com/Bdaya-Dev/patrol/issues/21)). ([35fa4e91](https://github.com/Bdaya-Dev/patrol/commit/35fa4e912bf8d15f045695b9b451998e02eb5b64))
+
 ## 5.1.2
 
  - **FIX**(patrol_plus): pin web runner browser locale to en-US (Flutter engine parseBrowserLanguages crash). ([bd557671](https://github.com/Bdaya-Dev/patrol/commit/bd557671410178a14dcbb7c2a19b0912c13873db))
