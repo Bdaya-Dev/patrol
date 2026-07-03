@@ -50,6 +50,19 @@ export type SemanticsNodeRect = {
  * the logic here as a plain, unit-testable function is how that browser-side
  * predicate's intended behaviour is specified and verified without needing a
  * real browser.
+ *
+ * KNOWN LIMITATION — this predicate only detects staleness on SHRINK. A stale
+ * node's rect reflects the OLD (larger) viewport, so on shrink its left/top
+ * can legitimately fall outside the new (smaller) bounds and get caught by
+ * the `rect.left > width || rect.top > height` check. On GROW the opposite
+ * holds: a stale node's rect reflects the OLD (smaller) viewport, so its
+ * left/top edge is trivially within the NEW (larger) bounds too — the check
+ * can't distinguish "already relaid-out for the bigger viewport" from "still
+ * carrying the smaller viewport's geometry" from position alone. Detecting
+ * staleness on grow would need something content-shape-aware (e.g. comparing
+ * against an expected post-layout rect), which isn't attempted here — flag
+ * only, not handled, per the design's R2 risk being scoped to the resize
+ * direction that produces the observed CanvasKit error (shrink).
  */
 export function isSemanticsTreeSettled(rects: SemanticsNodeRect[], width: number, height: number): boolean {
   for (const rect of rects) {

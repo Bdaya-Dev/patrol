@@ -1,7 +1,13 @@
-import { Page } from "playwright"
+import type { Page } from "playwright"
 import type { ResizeWindowRequest } from "../contracts"
-import { logger } from "../logger"
-import { resolveResizeSettleTimeoutMs } from "../resizeSettle"
+// NOTE: explicit `.ts` extensions — see setLocale.ts's identical note.
+// inFlowSafety.browser.test.ts now imports this file directly and runs
+// under `node --test --experimental-strip-types`, whose ESM resolver
+// requires fully specified relative import paths; Playwright's own TS
+// bundler (which also loads this file via actions.ts) resolves the `.ts`
+// extension fine too, so this is safe for both callers.
+import { logger } from "../logger.ts"
+import { resolveResizeSettleTimeoutMs } from "../resizeSettle.ts"
 
 /**
  * F-D — in-flow-safe resize (patrol-visual-review-overhaul-DESIGN.md §2, R2).
@@ -85,7 +91,9 @@ export async function resizeWindow(page: Page, params: ResizeWindowRequest["para
   )
 
   // Mirrors isSemanticsTreeSettled() in ../resizeSettle.ts — see that
-  // module's doc comment for why the logic is duplicated here.
+  // module's doc comment for why the logic is duplicated here, and for the
+  // known shrink-only limitation of this predicate (it cannot detect stale
+  // semantics geometry on a GROW resize).
   await page
     .waitForFunction(
       ([w, h]) => {
