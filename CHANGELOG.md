@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`patrol_plus` - `v5.3.0`](#patrol_plus---v530)
+
+---
+
+#### `patrol_plus` - `v5.3.0`
+
+ - **FEAT**(patrol_plus): in-flow-safe resize + setLocale native actions ([#22](https://github.com/Bdaya-Dev/patrol/issues/22)). ([6bf73ed7](https://github.com/Bdaya-Dev/patrol/commit/6bf73ed7ce737a9259885567b7a87a9685593a02))
+
+
+## 2026-07-03
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`patrol_cli_plus` - `v5.2.0`](#patrol_cli_plus---v520)
  - [`patrol_plus` - `v5.2.0`](#patrol_plus---v520)
 
