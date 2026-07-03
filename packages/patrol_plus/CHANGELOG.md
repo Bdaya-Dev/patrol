@@ -1,3 +1,7 @@
+## 5.4.0
+
+ - **FEAT**(patrol_plus): coverage report emission for scoped runs ([#26](https://github.com/Bdaya-Dev/patrol/issues/26)). ([c941475d](https://github.com/Bdaya-Dev/patrol/commit/c941475d928f6fea8635c4e2a6e8d1444d170dc2))
+
 ## 5.3.0
 
  - **FEAT**(patrol_plus): in-flow-safe resize + setLocale native actions ([#22](https://github.com/Bdaya-Dev/patrol/issues/22)). ([6bf73ed7](https://github.com/Bdaya-Dev/patrol/commit/6bf73ed7ce737a9259885567b7a87a9685593a02))
