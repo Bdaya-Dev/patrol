@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`patrol_plus` - `v5.4.1`](#patrol_plus---v541)
+
+---
+
+#### `patrol_plus` - `v5.4.1`
+
+ - **FIX**(patrol_plus): resolve dart2js --profile source-map schemes for web coverage ([#29](https://github.com/Bdaya-Dev/patrol/issues/29)). ([09754021](https://github.com/Bdaya-Dev/patrol/commit/0975402110684ecbd783264c852a5a8038bdf296))
+
+
+## 2026-07-03
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`patrol_plus` - `v5.4.0`](#patrol_plus---v540)
 
 ---
