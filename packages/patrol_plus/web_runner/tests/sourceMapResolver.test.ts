@@ -191,3 +191,84 @@ test("buildPackageResolver: bundle-relative source that doesn't exist returns nu
     fs.rmSync(projectRoot, { recursive: true, force: true })
   }
 })
+
+// ---------------------------------------------------------------------------
+// Round-1 review blocker 1: a same-drive pub-cache dependency is emitted by
+// dart2js as a DEEP bundle-relative path (not absolute), e.g.
+// `../../../../../../../../Pub/Cache/.../asn1octetstring.dart`. Reproduced
+// against a REAL `dart compile js -o web/main.dart.js web/main.dart` output
+// with `PUB_CACHE` forced onto the checkout's own drive (see
+// `sourceMapResolver.dart2js.browser.test.ts`'s `before()` hook) — the old
+// strip-all-`../`-then-rejoin-onto-projectRoot heuristic mis-resolved this
+// onto a nonexistent path under projectRoot because the remainder after
+// stripping is NOT projectRoot-relative (the dependency lives OUTSIDE
+// projectRoot entirely). Per the source-map spec, a relative `sources`
+// entry must resolve against the map's own location instead.
+// ---------------------------------------------------------------------------
+
+test(
+  "buildPackageResolver: bundle-relative source OUTSIDE projectRoot resolves via the real bundle-output directory " +
+    "derived from entryUrl/mapUrl (round-1 review blocker — same-drive pub-cache dependency)",
+  () => {
+    const projectRoot = makeTmpDir()
+    const externalDepRoot = makeTmpDir() // sibling tmp dir, OUTSIDE projectRoot, same drive
+    try {
+      const depFile = path.join(
+        externalDepRoot,
+        "hosted",
+        "pub.dev",
+        "asn1lib-1.6.5",
+        "lib",
+        "src",
+        "asn1octetstring.dart",
+      )
+      writeFile(depFile, "class ASN1OctetString {}\n")
+
+      // The real dart2js output directory for this fork's fixture (and
+      // Invora's WebTestBackend `flutter run -d chrome` coverage path):
+      // <projectRoot>/web, holding the compiled bundle alongside its map.
+      const bundleDir = path.join(projectRoot, "web")
+      writeFile(path.join(bundleDir, "main.dart.js"), "// stub\n")
+
+      // Recreate the EXACT shape dart2js emits: a genuine `../` climb from
+      // bundleDir all the way to the common ancestor with externalDepRoot,
+      // then back down — i.e. what `path.relative(bundleDir, depFile)`
+      // produces, matching the real captured evidence
+      // (`../../../../../../../../Pub/Cache/.../asn1octetstring.dart`).
+      const uri = path.relative(bundleDir, depFile).split(path.sep).join("/")
+
+      const resolve = buildPackageResolver(projectRoot)
+      // entryUrl/mapUrl both a bare "/main.dart.js" — dart2js's bundle
+      // serves from the HTTP server root, matching the fixture's setup.
+      assert.equal(
+        resolve(uri, "http://127.0.0.1:1/main.dart.js", "http://127.0.0.1:1/main.dart.js.map"),
+        "class ASN1OctetString {}\n",
+      )
+    } finally {
+      fs.rmSync(projectRoot, { recursive: true, force: true })
+      fs.rmSync(externalDepRoot, { recursive: true, force: true })
+    }
+  },
+)
+
+test(
+  "buildPackageResolver: bundle-relative first-party source STILL resolves when entryUrl/mapUrl are provided " +
+    "(round-1 review blocker 1 — verifying the fix doesn't regress the first-party path)",
+  () => {
+    const projectRoot = makeTmpDir()
+    try {
+      writeFile(path.join(projectRoot, "lib", "features", "shell", "greeter.dart"), "class Greeter {}\n")
+      const resolve = buildPackageResolver(projectRoot)
+      assert.equal(
+        resolve(
+          "../../../lib/features/shell/greeter.dart",
+          "http://127.0.0.1:1/main.dart.js",
+          "http://127.0.0.1:1/main.dart.js.map",
+        ),
+        "class Greeter {}\n",
+      )
+    } finally {
+      fs.rmSync(projectRoot, { recursive: true, force: true })
+    }
+  },
+)

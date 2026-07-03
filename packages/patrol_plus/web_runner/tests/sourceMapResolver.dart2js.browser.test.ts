@@ -66,6 +66,30 @@ const fixtureDir = path.join(
 const webDir = path.join(fixtureDir, "web")
 const bundleJs = path.join(webDir, "main.dart.js")
 
+// Round-1 review blocker 2: force PUB_CACHE onto the checkout's own drive
+// rather than letting `dart pub get` use whatever the ambient/default pub
+// cache happens to be. On a machine where the default pub cache and this
+// checkout happen to sit on DIFFERENT filesystem drives/roots, dart2js
+// emits the asn1lib dependency as an ABSOLUTE path (scheme 2) and the
+// same-drive bug (round-1 review blocker 1 — a deep bundle-relative climb
+// like `../../../../../../../../Pub/Cache/.../asn1octetstring.dart`) never
+// gets exercised at all, silently making this regression test
+// non-deterministic across environments. Forcing PUB_CACHE onto the
+// checkout's own drive guarantees the bundle-relative shape every time
+// (and is a no-op requirement on POSIX, where every path already shares
+// the single `/` root) — see `sourceMapResolver.test.ts` for the
+// equivalent synthetic unit-test coverage of both shapes.
+//
+// Deliberately a SIBLING of fixtureDir (`tests/fixtures/`), NOT nested
+// inside it: a same-drive pub cache is still a real dependency OUTSIDE
+// projectRoot (that's exactly what makes the bug reproduce — the old
+// strip-all-`../`-then-rejoin-onto-projectRoot heuristic is only ever
+// wrong for a source outside projectRoot; nesting the pub cache inside
+// fixtureDir would make even the old, unfixed heuristic accidentally
+// resolve it correctly, defeating this test's purpose). Gitignored via
+// `web_runner/.gitignore`.
+const pubCacheDir = path.join(fixtureDir, "..", "dart2js_fixture_pubcache_test")
+
 // `shell: true` so `dart`/`dart.bat` resolves via PATHEXT on Windows (Flutter
 // SDK installs both `dart` (POSIX) and `dart.bat` (Windows); Node's spawn
 // without a shell requires the exact extension on win32) while remaining a
@@ -74,16 +98,20 @@ const dartAvailable = spawnSync("dart", ["--version"], { stdio: "ignore", shell:
 
 before(() => {
   if (!dartAvailable) return
+  fs.mkdirSync(pubCacheDir, { recursive: true })
+  const env = { ...process.env, PUB_CACHE: pubCacheDir }
+
   // `dart pub get` then `dart compile js` — real, fresh every run (see the
   // fixture directory's .gitignore doc comment). Both are fast (<2s) for
   // this deliberately tiny fixture.
-  const pubGet = spawnSync("dart", ["pub", "get"], { cwd: fixtureDir, encoding: "utf8", shell: true })
+  const pubGet = spawnSync("dart", ["pub", "get"], { cwd: fixtureDir, encoding: "utf8", shell: true, env })
   assert.equal(pubGet.status, 0, `dart pub get failed:\n${pubGet.stdout}\n${pubGet.stderr}`)
 
   const compile = spawnSync("dart", ["compile", "js", "-o", "web/main.dart.js", "web/main.dart"], {
     cwd: fixtureDir,
     encoding: "utf8",
     shell: true,
+    env,
   })
   assert.equal(compile.status, 0, `dart compile js failed:\n${compile.stdout}\n${compile.stderr}`)
   assert.ok(fs.existsSync(bundleJs), "dart2js did not produce main.dart.js")
@@ -175,8 +203,22 @@ test(
       "greeter.dart source did not resolve to its real file content",
     )
 
-    // Scheme 2 — absolute pub-cache filesystem path (Windows /X:/... or
-    // POSIX form, whichever dart2js emitted on this machine).
+    // Scheme 2 (absolute pub-cache filesystem path, Windows /X:/... or
+    // POSIX form — dependency on a DIFFERENT drive/root than the bundle) OR
+    // scheme 3-as-dependency (deep bundle-relative climb, e.g.
+    // `../../../../../../../../Pub/Cache/.../asn1octetstring.dart` —
+    // dependency on the SAME drive/root as the bundle; round-1 review
+    // blocker 1). `before()` forces PUB_CACHE onto the checkout's own
+    // drive, so THIS test deterministically exercises the harder
+    // bundle-relative shape on every machine/CI runner regardless of where
+    // that machine's ambient default pub cache happens to live — but the
+    // assertions below deliberately do NOT branch on which shape dart2js
+    // actually emitted (round-1 review blocker 2): the same regex matches
+    // an absolute-path OR a bundle-relative source string, and the content
+    // assertion only cares that `sourcesContent` resolved to the real file
+    // — so this test would keep passing unchanged if that forcing were
+    // ever removed and a cross-drive checkout produced the absolute form
+    // instead.
     const asn1Index = indexOf(s => /asn1lib-1\.6\.5[/\\].*asn1octetstring\.dart$/.test(s))
     assert.notEqual(asn1Index, -1, `asn1lib source missing from compiled sources: ${sources.join(", ")}`)
     assert.match(

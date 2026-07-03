@@ -2,3 +2,9 @@ node_modules
 test-results
 .patrol_tests.json
 .patrol_build_mode.json
+
+# sourceMapResolver.dart2js.browser.test.ts forces PUB_CACHE onto this
+# sibling-of-fixtureDir directory (round-1 review blocker 2 — deterministic
+# same-drive pub-cache repro) instead of the ambient default pub cache;
+# recreated fresh on every test run.
+tests/fixtures/dart2js_fixture_pubcache_test/

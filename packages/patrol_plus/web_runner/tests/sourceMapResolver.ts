@@ -32,20 +32,62 @@ import * as path from "path"
  * 2. Absolute build-machine filesystem paths, e.g. (Windows)
  *    `/C:/Users/.../asn1lib-1.6.5/lib/src/asn1exception.dart` or (POSIX)
  *    `/root/.pub-cache/hosted/pub.dev/asn1lib-1.6.5/lib/src/...` — pub-cache
- *    dependency sources. Valid on the SAME machine that compiled the
- *    bundle, which for Invora's CI is the same job that later runs this
- *    resolver. Resolved by reading the path directly, after normalizing the
- *    Windows `/X:/...` leading-slash-plus-drive-letter form dart2js emits.
- * 3. Paths relative to the compiled bundle's own directory, for the app's
- *    first-party `lib/**` sources, e.g. `../../../lib/features/shell/
- *    invora_app_shell.dart`. Resolved by stripping the leading `../`
- *    traversal and joining the remainder onto `projectRoot` — every
- *    first-party dart2js source lives under `projectRoot` in exactly this
- *    shape (`lib/...`, `web/...`, `bin/...`), so once the climb back up to
- *    the bundle's directory is discarded, what is left is already a
- *    project-root-relative path. Mirrors how `zeroFillLcov.ts`'s
- *    `appendZeroFillLcov` already resolves package roots out of
- *    `.dart_tool/package_config.json`.
+ *    dependency sources, emitted whenever the dependency is on a DIFFERENT
+ *    filesystem drive/root than the compiled bundle. Resolved by reading
+ *    the path directly, after normalizing the Windows `/X:/...`
+ *    leading-slash-plus-drive-letter form dart2js emits.
+ * 3. Paths relative to the compiled bundle's own output directory. This is
+ *    NOT limited to first-party `lib/**` sources: when a pub-cache
+ *    dependency happens to sit on the SAME filesystem drive/root as the
+ *    compiled bundle, dart2js emits it as a bundle-relative path too, e.g.
+ *    `../../../../../../../../Pub/Cache/hosted/pub.dev/asn1lib-1.6.5/lib/
+ *    src/asn1octetstring.dart` (reproduced by forcing `PUB_CACHE` onto the
+ *    checkout's own drive — see `sourceMapResolver.test.ts`) alongside the
+ *    first-party shape, e.g. `../lib/features/shell/greeter.dart`.
+ *
+ *    Per the source-map spec, a relative `sources` entry resolves against
+ *    the MAP's own location (`sourceRoot` / the directory the `.map` file
+ *    itself was served from) — NOT against the project root (round-1
+ *    review blocker: the original fix here unconditionally stripped every
+ *    leading `../` and rejoined the remainder onto `projectRoot`, which
+ *    only happens to be correct for a source that genuinely lives INSIDE
+ *    `projectRoot`; for a same-drive pub-cache dependency the remainder is
+ *    not `projectRoot`-relative at all, so it silently landed on a
+ *    nonexistent path and resolved to `null`).
+ *
+ *    [resolveBundleRelativeSourceCandidates] fixes this with two
+ *    complementary strategies that BOTH first-party and pub-cache-as-
+ *    relative sources flow through:
+ *
+ *      a. [resolveBundleRelativeSourcePath] (tried first) — the original
+ *         strip-all-`../`-then-rejoin-onto-`projectRoot` shortcut. This
+ *         stays exactly correct for any source that lives inside
+ *         `projectRoot` REGARDLESS of how deeply nested the bundle's own
+ *         (real or dart2js-conceptual) output directory is: if
+ *         `uri === "../".repeat(depth) + rest` — which is exactly what a
+ *         relative path from `projectRoot/X` (`depth(X) === depth`) to
+ *         `projectRoot/rest` looks like — stripping every leading `../`
+ *         always reconstructs `rest` exactly, independent of `depth`. So
+ *         first-party `lib/**` attribution keeps working unconditionally,
+ *         without needing to know the bundle's true output-directory depth
+ *         (which Invora's real evidence and this fork's own dart2js
+ *         fixture do NOT agree on — 3 climbs vs. 1 — because dart2js's
+ *         notion of the bundle's directory need not correspond to any
+ *         single real, guessable filesystem depth).
+ *      b. Real candidate bundle-output directories, derived from
+ *         `entryUrl`/`mapUrl` (tried next, in order, when (a) doesn't
+ *         resolve to a file on disk) — [uri]'s `../` climb is resolved
+ *         AS-IS (no stripping) against each of `build/web`, `web`, and
+ *         bare `projectRoot`, joined with the URL path segment the bundle
+ *         was actually served from. This is what correctly reaches a
+ *         same-drive pub-cache dependency OUTSIDE `projectRoot`: strategy
+ *         (a) can't, because the remainder after stripping isn't
+ *         `projectRoot`-relative, but a genuine (non-stripped) relative
+ *         resolution against the REAL bundle directory is — verified
+ *         empirically against a real `dart compile js -o web/main.dart.js`
+ *         fixture output with `PUB_CACHE` forced onto the checkout's own
+ *         drive (see `sourceMapResolver.test.ts` and
+ *         `sourceMapResolver.dart2js.browser.test.ts`).
  *
  * A source that resolves to nothing on disk (any scheme) returns `null` —
  * exactly like today's "unresolved" case — rather than throwing, so a
@@ -94,10 +136,78 @@ export function normalizeAbsoluteSourcePath(uri: string): string | null {
  * `main.dart` for the entrypoint itself) against [projectRoot], by
  * discarding the leading `../` climb and joining what's left onto
  * [projectRoot]. Does not check the path actually exists.
+ *
+ * Exact for any source that lives INSIDE [projectRoot] (first-party
+ * `lib/**`), independent of the bundle's true output-directory depth — see
+ * this file's top doc comment, strategy (a), for why. NOT correct for a
+ * source outside [projectRoot] (e.g. a same-drive pub-cache dependency) —
+ * use [resolveBundleRelativeSourceCandidates] for the general case.
  */
 export function resolveBundleRelativeSourcePath(uri: string, projectRoot: string): string {
   const stripped = uri.replace(/^(\.\.\/)+/, "")
   return path.resolve(projectRoot, stripped)
+}
+
+/**
+ * Conventional on-disk locations, relative to [projectRoot], where a Dart
+ * web build's compiled JS bundle (and its `.map`) can live — tried in
+ * order as the base for a GENUINE (non-stripped) relative resolution of a
+ * bundle-relative source, until one lands on a real file:
+ *
+ *   - `build/web` — `flutter build web`'s standard output directory.
+ *   - `web`       — the Dart/Flutter web entrypoint directory itself;
+ *                    where `dart compile js -o web/main.dart.js
+ *                    web/main.dart` (this fork's own dart2js fixture, and
+ *                    Invora's `WebTestBackend`'s `flutter run -d chrome`
+ *                    dev-server coverage path) serves the bundle from.
+ *   - "" (bare `projectRoot`) — last-resort fallback for unusual layouts.
+ */
+const BUNDLE_OUTPUT_SUBDIRS = ["build/web", "web", ""]
+
+/**
+ * The directory segment of [url]'s path — e.g. `/` for
+ * `http://host:1234/main.dart.js`, or `/assets` for
+ * `http://host:1234/assets/main.dart.js` — or `null` if [url] isn't a
+ * parseable absolute URL (e.g. empty/undefined, as in a caller that hasn't
+ * threaded `entryUrl`/`mapUrl` through, such as a direct unit test of
+ * [buildPackageResolver]'s `package:` branch).
+ */
+function urlDirSegment(url: string): string | null {
+  try {
+    return path.dirname(new URL(url).pathname)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Ordered candidate absolute paths for a bundle-relative source-map [uri]
+ * (dart2js schemes 2-as-relative and 3, issue #28 round-1 review blocker).
+ * The caller should `readIfExists` each in order and use the first that
+ * resolves to a real file — see this file's top doc comment for the full
+ * rationale.
+ *
+ * [entryUrl] and [mapUrl] are the coverage entry's compiled-JS URL and its
+ * resolved source-map URL respectively (`mapUrl` is preferred, since per
+ * the source-map spec a relative `sources` entry resolves against the
+ * map's own location; `entryUrl` is the fallback when `mapUrl` isn't a
+ * parseable URL).
+ */
+export function resolveBundleRelativeSourceCandidates(
+  uri: string,
+  projectRoot: string,
+  entryUrl: string,
+  mapUrl: string,
+): string[] {
+  const candidates = [resolveBundleRelativeSourcePath(uri, projectRoot)]
+  const urlDir = urlDirSegment(mapUrl) ?? urlDirSegment(entryUrl) ?? "/"
+  for (const subdir of BUNDLE_OUTPUT_SUBDIRS) {
+    // path.join treats a leading "/" in urlDir as just another path
+    // segment (not an absolute-path reset) once combined with projectRoot
+    // + subdir, so every candidate stays anchored under projectRoot.
+    candidates.push(path.resolve(path.join(projectRoot, subdir, urlDir), uri))
+  }
+  return candidates
 }
 
 function readIfExists(filePath: string): string | null {
@@ -140,18 +250,23 @@ function loadPackageRoots(projectRoot: string): Record<string, string> {
  *   1. `package:<name>/<path>` (DDC) — via `.dart_tool/package_config.json`.
  *   2. `org-dartlang-sdk:` (dart2js) — excluded, always `null`.
  *   3. Absolute filesystem paths, POSIX or Windows `/X:/...` (dart2js
- *      pub-cache dependency sources).
- *   4. Everything else, treated as bundle-relative (dart2js first-party
- *      `lib/**`/entrypoint sources).
+ *      pub-cache dependency sources on a DIFFERENT drive/root than the
+ *      bundle).
+ *   4. Everything else, treated as bundle-relative — dart2js first-party
+ *      `lib/**`/entrypoint sources, AND pub-cache dependency sources on
+ *      the SAME drive/root as the bundle (see
+ *      [resolveBundleRelativeSourceCandidates]'s doc comment).
  *
- * Returns a function from source-map `sources` URI to file text, or `null`
- * when the source can't be resolved to a real file (excluded scheme,
- * unknown package, or the file doesn't exist on disk).
+ * Returns a function from source-map `sources` URI (plus the coverage
+ * entry's `entryUrl`/`mapUrl`, used only by branch 4 above) to file text,
+ * or `null` when the source can't be resolved to a real file (excluded
+ * scheme, unknown package, or the file doesn't exist on disk under any
+ * candidate).
  */
 export function buildPackageResolver(projectRoot: string) {
   const packages = loadPackageRoots(projectRoot)
 
-  return (uri: string): string | null => {
+  return (uri: string, entryUrl = "", mapUrl = ""): string | null => {
     const packageMatch = uri.match(/^package:([^/]+)\/(.+)$/)
     if (packageMatch) {
       const [, pkgName, relPath] = packageMatch
@@ -171,13 +286,19 @@ export function buildPackageResolver(projectRoot: string) {
       return readIfExists(absolutePath)
     }
 
-    return readIfExists(resolveBundleRelativeSourcePath(uri, projectRoot))
+    for (const candidate of resolveBundleRelativeSourceCandidates(uri, projectRoot, entryUrl, mapUrl)) {
+      const content = readIfExists(candidate)
+      if (content !== null) {
+        return content
+      }
+    }
+    return null
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function resolveSourceMaps(entries: any[], projectRoot: string | null) {
-  const resolve = projectRoot ? buildPackageResolver(projectRoot) : () => null
+  const resolve = projectRoot ? buildPackageResolver(projectRoot) : null
   for (const entry of entries) {
     if (entry.source && !entry.sourceMap) {
       const match = entry.source.match(/\/\/[#@]\s*sourceMappingURL=(\S+)/)
@@ -188,7 +309,7 @@ export async function resolveSourceMaps(entries: any[], projectRoot: string | nu
           if (res.ok) {
             const data = await res.json()
             if (data.sources && !data.sourcesContent) {
-              data.sourcesContent = data.sources.map((s: string) => resolve(s) ?? "")
+              data.sourcesContent = data.sources.map((s: string) => (resolve ? resolve(s, entry.url, mapUrl) : null) ?? "")
             }
             entry.sourceMap = data
           }
