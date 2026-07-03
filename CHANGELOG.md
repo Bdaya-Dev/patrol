@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`patrol_plus` - `v5.4.0`](#patrol_plus---v540)
+
+---
+
+#### `patrol_plus` - `v5.4.0`
+
+ - **FEAT**(patrol_plus): coverage report emission for scoped runs ([#26](https://github.com/Bdaya-Dev/patrol/issues/26)). ([c941475d](https://github.com/Bdaya-Dev/patrol/commit/c941475d928f6fea8635c4e2a6e8d1444d170dc2))
+
+
+## 2026-07-03
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`patrol_plus` - `v5.3.0`](#patrol_plus---v530)
 
 ---
