@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Patrol F-D in-flow resize + setLocale fixture</title>
+    <!--
+      Minimal fixture asset for the F-D fork test
+      (patrol-visual-review-overhaul-DESIGN.md §2, "Fork test plan: fixture
+      that resizes and switches locale mid-flow; assert no semantics error
+      and that subsequent finders still resolve.").
+
+      This is NOT a build of the Flutter app -- the full patrol Playwright
+      harness (tests/test.spec.ts + tests/setup.ts) requires a live,
+      dev-server-served Flutter build and cannot run standalone in this
+      repo. Loaded via `page.setContent(...)`, this static page stands in
+      for the two pieces of real app behaviour the in-flow resize/setLocale
+      actions depend on, so both can be exercised against a REAL Chromium
+      page (not a FakePage) without that dependency:
+
+        - a `languagechange` listener, standing in for the Flutter web
+          engine's own `PlatformDispatcher.locale` recompute
+          (flutter/engine#18137);
+        - `<flt-semantics>` elements (the real Flutter web engine's
+          accessibility-overlay tag name -- see resizeWindow.ts's
+          `document.querySelectorAll("flt-semantics")`) that deliberately
+          lag a window resize by ~100ms before repositioning themselves,
+          standing in for CanvasKit's real async semantics-DOM re-layout.
+          The delay is what makes the fixture meaningful: reposition the
+          nodes synchronously/eagerly and the fixture would pass even
+          against a resizeWindow that fires-and-forgets, defeating the
+          point.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      flt-semantics {
+        position: absolute;
+        display: block;
+      }
+      #in-flow-target {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="in-flow-target">Target</button>
+    <flt-semantics id="semantics-a"></flt-semantics>
+    <flt-semantics id="semantics-b"></flt-semantics>
+    <script>
+      // Test hook, read via page.evaluate — not part of the app surface
+      // being exercised, just a way to observe the languagechange listener
+      // ran and what it saw.
+      window.__fixtureLocaleLog = []
+      window.addEventListener("languagechange", () => {
+        window.__fixtureLocaleLog.push(navigator.languages.join(","))
+      })
+
+      // See the file-level comment: the ~100ms delay is deliberate so the
+      // nodes are observably stale for a window after resize, proving
+      // resizeWindow.ts's settle-wait (not just a fixed frame count) is
+      // what makes the fixture pass.
+      function settleSemantics() {
+        const w = window.innerWidth
+        const h = window.innerHeight
+        for (const el of document.querySelectorAll("flt-semantics")) {
+          el.style.left = Math.max(w - 20, 0) + "px"
+          el.style.top = Math.max(h - 20, 0) + "px"
+          el.style.width = "10px"
+          el.style.height = "10px"
+        }
+      }
+
+      window.addEventListener("resize", () => {
+        setTimeout(settleSemantics, 100)
+      })
+
+      // Initial placement so the nodes start settled for the fixture's
+      // starting viewport, before any mid-flow resize happens.
+      settleSemantics()
+    </script>
+  </body>
+</html>

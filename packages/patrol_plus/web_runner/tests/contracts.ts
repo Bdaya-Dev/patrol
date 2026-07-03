@@ -105,6 +105,12 @@ export type ResizeWindowRequest = PatrolNativeRequestBase<
     height: number
   }
 >
+export type SetLocaleRequest = PatrolNativeRequestBase<
+  "setLocale",
+  {
+    locale: string
+  }
+>
 type UnknownRequest = PatrolNativeRequestBase<`unknown-placeholder-${string}`, unknown>
 
 export type PatrolNativeRequest =
@@ -126,6 +132,7 @@ export type PatrolNativeRequest =
   | ResizeWindowRequest
   | ScrollToRequest
   | SetClipboardRequest
+  | SetLocaleRequest
   | StartTestRequest
   | TapRequest
   | UnknownRequest

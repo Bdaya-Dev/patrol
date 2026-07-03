@@ -84,7 +84,21 @@ abstract interface class WebAutomator {
   Future<void> setClipboard({required String text});
 
   /// Resizes the browser window.
+  ///
+  /// Safe to call mid-flow (not only before the app boots): the harness
+  /// waits for the browser viewport, a settled frame, and (if the CanvasKit
+  /// accessibility DOM overlay is active) the semantics tree to catch up
+  /// with the new size before returning.
   Future<void> resizeWindow({required Size size});
+
+  /// Sets the browser's locale to [locale] (e.g. `'ar-SA'`, `'en-US'`).
+  ///
+  /// Safe to call mid-flow: overrides the live page's `navigator.language`/
+  /// `Intl` via the Chromium DevTools Protocol and dispatches the DOM
+  /// `languagechange` event the Flutter web engine listens for, so an
+  /// already-booted app picks up the new locale without a reload and
+  /// without depending on any app-internal locale state.
+  Future<void> setLocale({required String locale});
 
   /// Returns a list of all files downloaded during the single test.
   Future<List<String>> verifyFileDownloads();

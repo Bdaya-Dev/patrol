@@ -16,6 +16,7 @@ import { pressKeyCombo } from "./actions/pressKeyCombo"
 import { resizeWindow } from "./actions/resizeWindow"
 import { scrollTo } from "./actions/scrollTo"
 import { setClipboard } from "./actions/setClipboard"
+import { setLocale } from "./actions/setLocale"
 import { startTest } from "./actions/startTest"
 import { tap } from "./actions/tap"
 import { uploadFile } from "./actions/uploadFile"
@@ -44,4 +45,5 @@ export const actions = {
   getClipboard,
   setClipboard,
   resizeWindow,
+  setLocale,
 } as const
