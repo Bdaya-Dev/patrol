@@ -1,3 +1,7 @@
+## 5.3.0
+
+ - **FEAT**(patrol_plus): in-flow-safe resize + setLocale native actions ([#22](https://github.com/Bdaya-Dev/patrol/issues/22)). ([6bf73ed7](https://github.com/Bdaya-Dev/patrol/commit/6bf73ed7ce737a9259885567b7a87a9685593a02))
+
 ## 5.2.0
 
  - **FEAT**(patrol_plus): web error gate (--web-error-detection) ([#21](https://github.com/Bdaya-Dev/patrol/issues/21)). ([35fa4e91](https://github.com/Bdaya-Dev/patrol/commit/35fa4e912bf8d15f045695b9b451998e02eb5b64))
