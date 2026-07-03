@@ -274,6 +274,16 @@ class WebAutomator implements web_automator.WebAutomator {
   }
 
   @override
+  Future<void> setLocale({required String locale}) async {
+    await callPlaywright(
+      'setLocale',
+      {'locale': locale},
+      logger: _config.logger,
+      patrolLog: _patrolLog,
+    );
+  }
+
+  @override
   Future<List<String>> verifyFileDownloads() async {
     final result = await callPlaywright(
       'verifyFileDownloads',
