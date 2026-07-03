@@ -1,3 +1,7 @@
+## 5.4.1
+
+ - **FIX**(patrol_plus): resolve dart2js --profile source-map schemes for web coverage ([#29](https://github.com/Bdaya-Dev/patrol/issues/29)). ([09754021](https://github.com/Bdaya-Dev/patrol/commit/0975402110684ecbd783264c852a5a8038bdf296))
+
 ## 5.4.0
 
  - **FEAT**(patrol_plus): coverage report emission for scoped runs ([#26](https://github.com/Bdaya-Dev/patrol/issues/26)). ([c941475d](https://github.com/Bdaya-Dev/patrol/commit/c941475d928f6fea8635c4e2a6e8d1444d170dc2))
