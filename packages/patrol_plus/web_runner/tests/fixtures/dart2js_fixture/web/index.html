@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Patrol sourceMapResolver dart2js fixture harness</title>
+    <!--
+      Minimal static harness for sourceMapResolver.dart2js.browser.test.ts
+      (issue #28). Loads the dart2js-compiled main.dart.js directly (a real
+      compiled bundle, freshly built by the test's own setup step — see
+      that file) and defines `window.dartPrint` BEFORE the script runs so
+      the test can deterministically observe when Dart's `main()` has
+      finished executing, without text-matching console output.
+    -->
+    <script>
+      window.__dartPrintLog = []
+      window.dartPrint = function (message) {
+        window.__dartPrintLog.push(message)
+      }
+    </script>
+  </head>
+  <body>
+    <script src="main.dart.js"></script>
+  </body>
+</html>

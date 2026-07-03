@@ -1,12 +1,14 @@
 import * as fs from "fs"
 import * as path from "path"
 import { type BrowserContext, type Page, chromium, test as base } from "@playwright/test"
+import { isExcludedCoverageEntry } from "./coverageEntryFilter"
 import { writeCoverageSummary } from "./coverageSummary"
 import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate"
 import { filterByTags, parseTagList } from "./filterByTags"
 import { initialise } from "./initialise"
 import { logger } from "./logger"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
+import { resolveSourceMaps } from "./sourceMapResolver"
 import { PatrolTestEntry } from "./types"
 import { appendZeroFillLcov } from "./zeroFillLcov"
 
@@ -108,60 +110,12 @@ const errorGateConfig = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CoverageReporter = { add: (entries: any[]) => Promise<void>; generate: () => Promise<void> }
 
-function buildPackageResolver(projectRoot: string) {
-  const configPath = path.join(projectRoot, ".dart_tool", "package_config.json")
-  if (!fs.existsSync(configPath)) {
-    return () => null
-  }
-  const config = JSON.parse(fs.readFileSync(configPath, "utf8"))
-  const packages: Record<string, string> = {}
-  for (const pkg of config.packages ?? []) {
-    const rootUri = (pkg.rootUri as string).replace(/\/$/, "")
-    const absRoot = path.resolve(path.dirname(configPath), rootUri)
-    packages[pkg.name] = path.join(absRoot, pkg.packageUri ?? "lib/")
-  }
-  return (uri: string): string | null => {
-    const match = uri.match(/^package:([^/]+)\/(.+)$/)
-    if (!match) {
-      return null
-    }
-    const [, pkgName, relPath] = match
-    const pkgLibDir = packages[pkgName]
-    if (!pkgLibDir) {
-      return null
-    }
-    const filePath = path.join(pkgLibDir, relPath)
-    if (fs.existsSync(filePath)) {
-      return fs.readFileSync(filePath, "utf8")
-    }
-    return null
-  }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveSourceMaps(entries: any[], projectRoot: string | null) {
-  const resolve = projectRoot ? buildPackageResolver(projectRoot) : () => null
-  for (const entry of entries) {
-    if (entry.source && !entry.sourceMap) {
-      const match = entry.source.match(/\/\/[#@]\s*sourceMappingURL=(\S+)/)
-      if (match) {
-        const mapUrl = new URL(match[1], entry.url).toString()
-        try {
-          const res = await fetch(mapUrl)
-          if (res.ok) {
-            const data = await res.json()
-            if (data.sources && !data.sourcesContent) {
-              data.sourcesContent = data.sources.map((s: string) => resolve(s) ?? "")
-            }
-            entry.sourceMap = data
-          }
-        } catch {
-          // Source map fetch failed — coverage will use JS paths
-        }
-      }
-    }
-  }
-}
+// buildPackageResolver / resolveSourceMaps moved to ./sourceMapResolver.ts
+// (issue #28: DDC-only `package:` resolution didn't recognize dart2js
+// --profile's three other source-map schemes — org-dartlang-sdk:, absolute
+// pub-cache filesystem paths, bundle-relative first-party paths — so every
+// dart2js source lost sourcesContent and got zero real hit attribution; see
+// that file's doc comment and invora-flutter#86 R5 for the full writeup).
 
 async function setupPage(page: Page) {
   page.on("console", message => {
@@ -217,7 +171,6 @@ export const patrolTest = base.extend<
       return
     }
     const mod = await import("monocart-coverage-reports")
-    const defaultEntryExcludes = /\/(dart_sdk|canvaskit|ddc_module_loader|dwds)\//
     const customFilter = process.env.PATROL_WEB_COVERAGE_FILTER
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const reporter: CoverageReporter = new (mod.default as any)({
@@ -225,7 +178,7 @@ export const patrolTest = base.extend<
       reports: ["v8", "lcovonly"],
       name: "patrol_lcov",
       entryFilter: (entry: { url: string }) => {
-        if (defaultEntryExcludes.test(entry.url)) return false
+        if (isExcludedCoverageEntry(entry.url)) return false
         if (customFilter) return new RegExp(customFilter).test(entry.url)
         return true
       },

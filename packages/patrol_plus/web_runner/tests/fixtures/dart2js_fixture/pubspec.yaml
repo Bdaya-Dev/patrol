@@ -1,0 +1,19 @@
+name: dart2js_fixture
+description: >
+  Minimal standalone Dart package compiled with dart2js to produce a REAL
+  profile-mode source map for the sourceMapSchemes fork test (issue #28,
+  Bdaya-Dev/patrol). Not part of the published patrol_plus package — lives
+  under web_runner/tests/fixtures only, excluded from lint/publish via the
+  package.json eslint ignore list.
+
+  Deliberately depends on a small, dependency-free pub.dev package
+  (asn1lib) so the compiled source map exercises a genuine absolute
+  pub-cache filesystem path source, alongside its own nested lib/ sources
+  (bundle-relative paths) and whatever dart:core internals dart2js pulls in
+  (org-dartlang-sdk: paths) -- the three non-`package:` schemes
+  buildPackageResolver must resolve.
+publish_to: "none"
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+dependencies:
+  asn1lib: 1.6.5
