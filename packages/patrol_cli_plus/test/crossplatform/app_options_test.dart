@@ -890,6 +890,22 @@ void main() {
         options = const WebAppOptions(flutter: flutterOpts, authFlow: spec);
         expect(options.authFlow, spec);
       });
+
+      test('authStateFile defaults to null (auth flow runs fresh every time)', () {
+        options = const WebAppOptions(flutter: flutterOpts);
+        expect(options.authStateFile, isNull);
+      });
+
+      test(
+        'authStateFile is carried through (from --web-auth-state-file)',
+        () {
+          options = const WebAppOptions(
+            flutter: flutterOpts,
+            authStateFile: '.patrol_auth_state.json',
+          );
+          expect(options.authStateFile, '.patrol_auth_state.json');
+        },
+      );
     });
   });
 }

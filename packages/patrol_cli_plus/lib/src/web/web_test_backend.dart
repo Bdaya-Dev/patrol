@@ -577,6 +577,8 @@ class WebTestBackend {
                   'PATROL_WEB_ERROR_ALLOW': options.errorAllow!,
                 if (options.authFlow != null)
                   'PATROL_WEB_AUTH_FLOW': options.authFlow!,
+                if (options.authStateFile != null)
+                  'PATROL_WEB_AUTH_STATE_FILE': options.authStateFile!,
               },
               runInShell: true,
             )

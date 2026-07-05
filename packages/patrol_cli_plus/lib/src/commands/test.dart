@@ -361,6 +361,10 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       // runs (see authFlows/oidc.ts in web_runner + web_test_backend
       // PATROL_WEB_AUTH_FLOW env forwarding).
       authFlow: stringArg('web-auth-flow'),
+      // F-A speed follow-up: session-cache reuse across tests in the same
+      // run (see authFlows/sessionCache.ts in web_runner + web_test_backend
+      // PATROL_WEB_AUTH_STATE_FILE env forwarding).
+      authStateFile: stringArg('web-auth-state-file'),
     );
 
     // No need to build web app for testing. It's done in the execute method.

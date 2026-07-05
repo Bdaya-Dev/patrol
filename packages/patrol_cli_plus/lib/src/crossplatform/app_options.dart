@@ -471,6 +471,7 @@ class WebAppOptions {
     this.errorDetection = false,
     this.errorAllow,
     this.authFlow,
+    this.authStateFile,
   });
 
   final FlutterAppOptions flutter;
@@ -536,6 +537,17 @@ class WebAppOptions {
   /// the spec references environment-variable NAMES that are resolved on the
   /// CI/test-runner host at run time.
   final String? authFlow;
+
+  /// Path to a JSON file used to cache/reuse a `--web-auth-flow` session
+  /// across tests in the same run (Playwright `storageState` reuse — F-A
+  /// speed follow-up). Null (the default) means the auth prelude, if any,
+  /// runs fresh for every page needing it (today's behaviour, unchanged).
+  /// When set, only the first page in the run that needs auth performs the
+  /// live identity-provider round-trip; every subsequent page restores the
+  /// cached cookies/localStorage instead. Set by `--web-auth-state-file`,
+  /// forwarded as `PATROL_WEB_AUTH_STATE_FILE`. See
+  /// `authFlows/sessionCache.ts` (web_runner) for the cache format.
+  final String? authStateFile;
 
   /// Translates these options into a proper flutter build invocation.
   List<String> toFlutterBuildInvocation() {

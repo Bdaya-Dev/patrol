@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { afterEach, beforeEach, test } from "node:test"
 import { parseAuthFlowSpec, runAuthFlow } from "./oidc.ts"
 import type { AuthFlowSpec } from "./oidc.ts"
+import type { PatrolTestResult } from "../types.ts"
 
 // Minimal fakes implementing only the Page/Locator surface runAuthFlow
 // touches (locator/waitForURL), so the auth-flow orchestration logic can be
@@ -11,6 +12,7 @@ type Call =
   | { kind: "click"; selector: string; timeout?: number }
   | { kind: "fill"; selector: string; value: string; timeout?: number }
   | { kind: "waitForURL"; pattern: string; timeout?: number }
+  | { kind: "evaluate"; name: string }
 
 class FakeLocator {
   private page: FakePage
@@ -47,6 +49,9 @@ class FakeLocator {
 class FakePage {
   calls: Call[] = []
   failingSelectors = new Map<string, string>()
+  /** Scriptable result queue for `evaluate` calls, consumed in FIFO order — mirrors how a real
+   * `__patrol__runTest` invocation would resolve once per call. */
+  evaluateResults: PatrolTestResult[] = []
   private navigationQueue: string[]
   private currentUrl: string
 
@@ -61,6 +66,12 @@ class FakePage {
 
   url(): string {
     return this.currentUrl
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async evaluate(_fn: unknown, name?: any): Promise<PatrolTestResult | undefined> {
+    this.calls.push({ kind: "evaluate", name: String(name) })
+    return this.evaluateResults.shift()
   }
 
   async waitForURL(pattern: RegExp, opts?: { timeout?: number }): Promise<void> {
@@ -347,6 +358,82 @@ test(
       ["click", "click", "waitForURL", "fill", "fill", "click", "waitForURL"],
     )
     assert.equal(page.url(), "https://dev-dashboard.invora.app/home")
+  },
+)
+
+// ---- bootTestName (auth-prelude boot fix) -----------------------------------
+
+test(
+  "runAuthFlow: with bootTestName, invokes __patrol__runTest BEFORE the " + "trigger click",
+  async () => {
+    process.env.PATROL_TEST_ZITADEL_USERNAME = "autotest@example.com"
+    process.env.PATROL_TEST_ZITADEL_PASSWORD = "s3cr3t"
+
+    const page = new FakePage("https://dev-dashboard.invora.app/landing", [
+      "https://dev-auth.invora.app/login",
+      "https://dev-dashboard.invora.app/home",
+    ])
+    page.evaluateResults.push({ result: "success", details: null })
+
+    await run(page, {
+      ...baseSpec,
+      triggerSelector: "text=Sign in",
+      bootTestName: "Auth prelude boot: reach the sign-in screen",
+    })
+
+    assert.deepEqual(
+      page.calls.map(c => c.kind),
+      ["evaluate", "click", "click", "waitForURL", "fill", "fill", "click", "waitForURL"],
+    )
+    const evaluateCall = page.calls.find((c): c is Extract<Call, { kind: "evaluate" }> => c.kind === "evaluate")
+    assert.equal(evaluateCall?.name, "Auth prelude boot: reach the sign-in screen")
+    // The evaluate (boot test) call happens strictly before both clicks
+    // (a11y placeholder, then the trigger).
+    assert.equal(page.calls[0].kind, "evaluate")
+    assert.equal(page.calls[1].kind, "click")
+  },
+)
+
+test(
+  "runAuthFlow: when the boot test fails, throws naming bootTestName and " +
+    "its failure details, without proceeding to the trigger click",
+  async () => {
+    process.env.PATROL_TEST_ZITADEL_USERNAME = "autotest@example.com"
+    process.env.PATROL_TEST_ZITADEL_PASSWORD = "s3cr3t"
+
+    const page = new FakePage("https://dev-dashboard.invora.app/landing", [
+      "https://dev-auth.invora.app/login",
+      "https://dev-dashboard.invora.app/home",
+    ])
+    page.evaluateResults.push({ result: "failure", details: "widget not found: Sign in button" })
+
+    await assert.rejects(
+      run(page, { ...baseSpec, triggerSelector: "text=Sign in", bootTestName: "boot test" }),
+      /Auth flow boot test "boot test" failed.*widget not found: Sign in button/,
+    )
+
+    // Only the evaluate call happened — no click, no waitForURL.
+    assert.deepEqual(
+      page.calls.map(c => c.kind),
+      ["evaluate"],
+    )
+  },
+)
+
+test(
+  "runAuthFlow: without bootTestName, never calls evaluate at all " + "(back-compat)",
+  async () => {
+    process.env.PATROL_TEST_ZITADEL_USERNAME = "autotest@example.com"
+    process.env.PATROL_TEST_ZITADEL_PASSWORD = "s3cr3t"
+
+    const page = new FakePage("https://dev-dashboard.invora.app/", [
+      "https://dev-auth.invora.app/login",
+      "https://dev-dashboard.invora.app/home",
+    ])
+
+    await run(page, baseSpec)
+
+    assert.ok(!page.calls.some(c => c.kind === "evaluate"))
   },
 )
 
