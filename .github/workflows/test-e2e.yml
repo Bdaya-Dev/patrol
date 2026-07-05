@@ -193,6 +193,57 @@ jobs:
           flags: patrol_cli
           fail_ci_if_error: false
 
+  # Runs the web_runner Playwright harness's own node:test unit suite
+  # (filterByTags, errorGate, authFlows/oidc, resize/setLocale, coverage
+  # zero-fill/summary, source-map resolution, ...). Previously these files
+  # existed (F-B/F-C/F-D/F-E each added their own) but nothing in CI actually
+  # ran `npm test` in web_runner — the only web-related required check was
+  # patrol_cli's Dart unit-tests above. Node 24 (not the e2e-web job's Node
+  # 20) because `--experimental-strip-types` requires Node 22.6+; Playwright
+  # itself (e2e-web) transpiles .ts via its own bundler and never hits this
+  # flag, so the two jobs' Node versions are independent by design.
+  web-runner-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install web_runner dependencies
+        working-directory: packages/patrol_plus/web_runner
+        run: npm ci
+
+      # A couple of the pre-existing unit tests (inFlowSafety.browser.test.ts,
+      # sourceMapResolver.dart2js.browser.test.ts) launch a real headless
+      # Chromium via Playwright — install the browser binary + its OS deps
+      # first, or they fail with "Executable doesn't exist" (found the hard
+      # way: the first run of this job failed here, since e2e-web's own
+      # Playwright install happens via a different job/setup path that
+      # doesn't carry over to this standalone job).
+      - name: Install Playwright browsers
+        working-directory: packages/patrol_plus/web_runner
+        run: npx playwright install --with-deps chromium
+
+      - name: Run web_runner unit tests
+        working-directory: packages/patrol_plus/web_runner
+        run: npm test
+
+      - name: Lint web_runner
+        working-directory: packages/patrol_plus/web_runner
+        run: npm run lint
+
+      # NOT running `npm run format` (prettier --check) here: a fresh checkout
+      # already fails it on 13 pre-existing files this PR never touched (this
+      # PR's own new files ARE prettier-clean -- verified locally). That's
+      # real, pre-existing drift across F-B/F-C/F-D/F-E's web_runner history,
+      # never caught because no CI job ever ran `npm run format` before this
+      # one existed. Fixing those 13 unrelated files is a separate cleanup,
+      # out of scope for this PR (F-A auth prelude) -- flagged here instead of
+      # silently mass-reformatting alongside an unrelated feature.
+
   patrol-develop-linux:
     runs-on: ubuntu-latest
     timeout-minutes: 30

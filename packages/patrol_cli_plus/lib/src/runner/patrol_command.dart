@@ -409,6 +409,28 @@ abstract class PatrolCommand extends Command<int> {
             'failing the test. Has no effect unless --web-error-detection '
             'is set.',
         valueHelp: 'is unimplemented,UNIMPLEMENTED',
+      )
+      ..addOption(
+        'web-auth-flow',
+        help:
+            'JSON spec for a cross-origin auth prelude, run once per test on '
+            'the same page/context BEFORE the in-page test body, so a real '
+            'identity-provider login (and the redirect back) lands in the '
+            'one continuous video. Required fields: loginUrlPattern, '
+            'loginNameSelector, loginNameEnvVar, passwordSelector, '
+            'passwordEnvVar, submitSelector, successUrlPattern. Optional: '
+            'triggerSelector, timeoutMs. Unset by default (no prelude runs — '
+            'the correct setting for mocked-mode runs against a fake auth '
+            'service). Credential values are never placed in this spec — '
+            'only the NAMES of environment variables that carry them.',
+        valueHelp:
+            '\'{"loginUrlPattern":"https://idp.example",'
+            '"loginNameSelector":"input[name=loginName]",'
+            '"loginNameEnvVar":"E2E_USERNAME",'
+            '"passwordSelector":"input[type=password]",'
+            '"passwordEnvVar":"E2E_PASSWORD",'
+            '"submitSelector":"button[type=submit]",'
+            '"successUrlPattern":"https://app.example"}\'',
       );
   }
 
