@@ -246,8 +246,19 @@ export async function runAuthFlow(page: Page, spec: AuthFlowSpec): Promise<void>
 
   if (spec.bootTestName) {
     logger.info("Auth flow: running boot test %s to render the login screen", spec.bootTestName)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const bootResult = await page.evaluate(async name => await window.__patrol__runTest!(name), spec.bootTestName)
+    const bootTestName = spec.bootTestName
+    const bootPromise = page.evaluate(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      async name => await window.__patrol__runTest!(name),
+      bootTestName,
+    )
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error(`Auth flow boot test "${bootTestName}" did not resolve within ${timeout}ms`)),
+        timeout,
+      )
+    })
+    const bootResult = await Promise.race([bootPromise, timeoutPromise])
     if (bootResult?.result === "failure") {
       throw new Error(
         `Auth flow boot test "${spec.bootTestName}" failed before the trigger could be clicked: ` +

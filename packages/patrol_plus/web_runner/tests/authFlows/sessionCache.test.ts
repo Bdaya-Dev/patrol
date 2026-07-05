@@ -3,7 +3,7 @@ import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
 import { afterEach, beforeEach, test } from "node:test"
-import { loadCachedSession, restoreCachedSession, saveCachedSession } from "./sessionCache.ts"
+import { hasSessionData, loadCachedSession, restoreCachedSession, saveCachedSession } from "./sessionCache.ts"
 import type { CachedSession } from "./sessionCache.ts"
 
 // Minimal fakes implementing only the BrowserContext/Page surface
@@ -65,6 +65,15 @@ test("loadCachedSession: returns null for malformed JSON (never throws)", () => 
   assert.equal(loadCachedSession(filePath), null)
 })
 
+test("loadCachedSession: returns null for structurally invalid shapes (missing cookies/origins arrays)", () => {
+  const cases = ["{}", "null", "[]", JSON.stringify({ cookies: "not-an-array", origins: [] })]
+  for (const raw of cases) {
+    const filePath = path.join(tmpDir, `invalid-${cases.indexOf(raw)}.json`)
+    fs.writeFileSync(filePath, raw)
+    assert.equal(loadCachedSession(filePath), null, `expected null for: ${raw}`)
+  }
+})
+
 test("loadCachedSession: returns the parsed session for valid JSON", () => {
   const filePath = path.join(tmpDir, "valid.json")
   const session: CachedSession = {
@@ -124,6 +133,50 @@ test("saveCachedSession: captures page.context().storageState() and writes it to
 
   const written = JSON.parse(fs.readFileSync(filePath, "utf8")) as CachedSession
   assert.deepEqual(written, context.storageStateResult)
+})
+
+test("saveCachedSession: creates the parent directory when it doesn't exist yet", async () => {
+  const context = new FakeContext()
+  const page = new FakePage(context)
+  const filePath = path.join(tmpDir, "nested", "deeper", "saved.json")
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await saveCachedSession(page as any, filePath)
+
+  assert.equal(fs.existsSync(filePath), true)
+})
+
+// ---- hasSessionData -----------------------------------------------------------
+
+test("hasSessionData: false for an empty session", () => {
+  assert.equal(hasSessionData({ cookies: [], origins: [] }), false)
+})
+
+test("hasSessionData: true when there is at least one cookie", () => {
+  const session: CachedSession = {
+    cookies: [
+      {
+        name: "sid",
+        value: "abc123",
+        domain: "dev-dashboard.invora.app",
+        path: "/",
+        expires: -1,
+        httpOnly: true,
+        secure: true,
+        sameSite: "Lax",
+      },
+    ],
+    origins: [],
+  }
+  assert.equal(hasSessionData(session), true)
+})
+
+test("hasSessionData: true when there is at least one localStorage entry (no cookies)", () => {
+  const session: CachedSession = {
+    cookies: [],
+    origins: [{ origin: "https://dev-dashboard.invora.app", localStorage: [{ name: "oidc.tokens", value: "{}" }] }],
+  }
+  assert.equal(hasSessionData(session), true)
 })
 
 // ---- restoreCachedSession -----------------------------------------------------

@@ -1,4 +1,5 @@
 import * as fs from "fs"
+import * as path from "path"
 import type { BrowserContext, Page } from "playwright"
 
 /**
@@ -25,15 +26,43 @@ import type { BrowserContext, Page } from "playwright"
 export type CachedSession = Awaited<ReturnType<BrowserContext["storageState"]>>
 
 /**
+ * Structural validation for a value loaded from disk: only `cookies` and
+ * `origins` as arrays are required (mirrors `storageState()`'s actual return
+ * shape). Rejects `{}`, `null`, arrays, or anything else that JSON.parse can
+ * legally produce but that isn't a usable session — an empty/malformed
+ * on-disk file must degrade to "do the real login", never to "restore an
+ * empty session and skip login".
+ */
+function isCachedSession(value: unknown): value is CachedSession {
+  if (typeof value !== "object" || value === null) return false
+  const candidate = value as Partial<CachedSession>
+  return Array.isArray(candidate.cookies) && Array.isArray(candidate.origins)
+}
+
+/**
+ * `true` when [session] actually carries some auth data (at least one cookie
+ * or one per-origin localStorage entry). A structurally-valid but empty
+ * session (`{ cookies: [], origins: [] }` — e.g. captured before any login
+ * happened) must NOT be treated as "already authenticated, skip login": the
+ * call site should gate on this, not on `cachedSession` truthiness alone.
+ */
+export function hasSessionData(session: CachedSession): boolean {
+  if (session.cookies.length > 0) return true
+  return session.origins.some(origin => origin.localStorage.length > 0)
+}
+
+/**
  * Loads a previously-saved [CachedSession] from disk. Returns `null` when
- * the file is absent, unreadable, or not valid JSON — this NEVER throws, so
- * a missing/corrupt cache degrades to "do the real login" rather than
- * blocking the run.
+ * the file is absent, unreadable, not valid JSON, or doesn't structurally
+ * look like a `storageState()` result (see [isCachedSession]) — this NEVER
+ * throws, so a missing/corrupt/malformed cache degrades to "do the real
+ * login" rather than blocking the run.
  */
 export function loadCachedSession(filePath: string): CachedSession | null {
   try {
     const raw = fs.readFileSync(filePath, "utf8")
-    return JSON.parse(raw) as CachedSession
+    const parsed: unknown = JSON.parse(raw)
+    return isCachedSession(parsed) ? parsed : null
   } catch {
     return null
   }
@@ -44,10 +73,16 @@ export function loadCachedSession(filePath: string): CachedSession | null {
  * per-origin localStorage — see
  * https://playwright.dev/docs/api/class-browsercontext#browser-context-storage-state)
  * and persists it to [filePath] as JSON, for later reuse by
- * [restoreCachedSession] in a different test within the same run.
+ * [restoreCachedSession] in a different test within the same run. Creates
+ * [filePath]'s parent directory if it doesn't already exist (e.g. a nested
+ * `.auth/web-state.json` path in a fresh checkout).
  */
 export async function saveCachedSession(page: Page, filePath: string): Promise<void> {
   const state = await page.context().storageState()
+  const dir = path.dirname(filePath)
+  if (dir && dir !== ".") {
+    fs.mkdirSync(dir, { recursive: true })
+  }
   fs.writeFileSync(filePath, JSON.stringify(state))
 }
 

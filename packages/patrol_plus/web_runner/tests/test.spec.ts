@@ -2,7 +2,7 @@ import * as fs from "fs"
 import * as path from "path"
 import { type BrowserContext, type Page, chromium, test as base } from "@playwright/test"
 import { parseAuthFlowSpec, runAuthFlow } from "./authFlows/oidc"
-import { loadCachedSession, restoreCachedSession, saveCachedSession } from "./authFlows/sessionCache"
+import { hasSessionData, loadCachedSession, restoreCachedSession, saveCachedSession } from "./authFlows/sessionCache"
 import { isExcludedCoverageEntry } from "./coverageEntryFilter"
 import { writeCoverageSummary } from "./coverageSummary"
 import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate"
@@ -161,7 +161,11 @@ async function setupPage(page: Page) {
   // the cache file doesn't exist yet for the first page in a run but does
   // for every subsequent one.
   const authStateFile = process.env.PATROL_WEB_AUTH_STATE_FILE
-  const cachedSession = authStateFile ? loadCachedSession(authStateFile) : null
+  const loadedSession = authStateFile ? loadCachedSession(authStateFile) : null
+  // A structurally-valid but empty session (e.g. a stale/blank cache file)
+  // must not be treated as "already authenticated" — only a session that
+  // actually carries cookies/localStorage skips the live login below.
+  const cachedSession = loadedSession && hasSessionData(loadedSession) ? loadedSession : null
 
   if (cachedSession) {
     logger.info("Auth flow: restoring cached session from %s (skipping login)", authStateFile)
