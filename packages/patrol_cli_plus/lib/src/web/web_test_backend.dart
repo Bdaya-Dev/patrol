@@ -17,17 +17,18 @@ import 'package:process/process.dart';
 
 const _kDefaultWebServerTimeoutSeconds = 120;
 
-/// Resolves a `--web-auth-state-file` path against [Directory.current]
-/// (the invocation directory, i.e. the Flutter/patrol project root) when
-/// it isn't already absolute. Without this, a relative path like
-/// `.patrol_auth_state.json` would be forwarded verbatim to the Node/
-/// Playwright runner process, which resolves it relative to the runner's
-/// OWN working directory (`web_runner/`), not the caller's project root —
-/// silently writing/reading the cache file in the wrong place.
-String _resolveAuthStateFile(String authStateFile) {
-  return p.isAbsolute(authStateFile)
-      ? authStateFile
-      : p.join(Directory.current.path, authStateFile);
+/// Resolves a `--web-auth-state-file`/`--web-auth-flow-module` path against
+/// [Directory.current] (the invocation directory, i.e. the Flutter/patrol
+/// project root) when it isn't already absolute. Without this, a relative
+/// path like `.patrol_auth_state.json` or `patrol_test/ci/foo.ts` would be
+/// forwarded verbatim to the Node/Playwright runner process, which resolves
+/// it relative to the runner's OWN working directory (`web_runner/`), not
+/// the caller's project root — silently reading/writing/importing the wrong
+/// file.
+String _resolveRelativeToCwd(String path) {
+  return p.isAbsolute(path)
+      ? path
+      : p.join(Directory.current.path, path);
 }
 
 class WebTestBackend {
@@ -592,8 +593,12 @@ class WebTestBackend {
                 if (options.authFlow != null)
                   'PATROL_WEB_AUTH_FLOW': options.authFlow!,
                 if (options.authStateFile != null)
-                  'PATROL_WEB_AUTH_STATE_FILE': _resolveAuthStateFile(
+                  'PATROL_WEB_AUTH_STATE_FILE': _resolveRelativeToCwd(
                     options.authStateFile!,
+                  ),
+                if (options.authFlowModule != null)
+                  'PATROL_WEB_AUTH_FLOW_MODULE': _resolveRelativeToCwd(
+                    options.authFlowModule!,
                   ),
               },
               runInShell: true,

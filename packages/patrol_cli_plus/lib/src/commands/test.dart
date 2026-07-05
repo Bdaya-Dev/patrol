@@ -365,6 +365,11 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       // run (see authFlows/sessionCache.ts in web_runner + web_test_backend
       // PATROL_WEB_AUTH_STATE_FILE env forwarding).
       authStateFile: stringArg('web-auth-state-file'),
+      // F-A registration escape hatch. Null (the default) means unused (see
+      // authFlows/module.ts in web_runner + web_test_backend
+      // PATROL_WEB_AUTH_FLOW_MODULE env forwarding). Mutually exclusive with
+      // authFlow — enforced at web_runner setup time, not here.
+      authFlowModule: stringArg('web-auth-flow-module'),
     );
 
     // No need to build web app for testing. It's done in the execute method.

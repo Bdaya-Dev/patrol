@@ -1,7 +1,8 @@
 import * as fs from "fs"
 import * as path from "path"
 import { type BrowserContext, type Page, chromium, test as base } from "@playwright/test"
-import { parseAuthFlowSpec, runAuthFlow } from "./authFlows/oidc"
+import { assertNotBothAuthFlowMechanismsSet, loadAuthFlowModule } from "./authFlows/module"
+import { DEFAULT_TIMEOUT_MS, parseAuthFlowSpec, runAuthFlow } from "./authFlows/oidc"
 import { hasSessionData, loadCachedSession, restoreCachedSession, saveCachedSession } from "./authFlows/sessionCache"
 import { isExcludedCoverageEntry } from "./coverageEntryFilter"
 import { writeCoverageSummary } from "./coverageSummary"
@@ -115,6 +116,13 @@ const errorGateConfig = {
 // whole run loudly rather than silently no-opping per test (see oidc.ts).
 const authFlowSpec = parseAuthFlowSpec(process.env.PATROL_WEB_AUTH_FLOW)
 
+// F-A registration escape hatch (see authFlows/module.ts's doc comment) —
+// mutually exclusive with the declarative --web-auth-flow spec above.
+// Checked at module load (not per-page) so an ambiguous config fails the
+// whole run immediately, matching parseAuthFlowSpec's own fail-fast posture.
+const authFlowModulePath = process.env.PATROL_WEB_AUTH_FLOW_MODULE
+assertNotBothAuthFlowMechanismsSet(process.env.PATROL_WEB_AUTH_FLOW, authFlowModulePath)
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CoverageReporter = { add: (entries: any[]) => Promise<void>; generate: () => Promise<void> }
 
@@ -198,6 +206,24 @@ async function setupPage(page: Page) {
   // inside runAuthFlow itself.
   if (authFlowSpec && !cachedSession) {
     await runAuthFlow(page, authFlowSpec)
+    await initialise(page)
+
+    if (authStateFile) {
+      await saveCachedSession(page, authStateFile)
+      logger.info("Auth flow: cached session to %s for reuse by later tests in this run", authStateFile)
+    }
+  } else if (authFlowModulePath && !cachedSession) {
+    // F-A registration escape hatch. Same placement/contract as the
+    // declarative branch above (still inside setupPage, still "between
+    // setupPage and the __patrol__runTest call") — the module owns its own
+    // boot-render step (it has full `page` access, so it can invoke
+    // `page.evaluate(() => window.__patrol__runTest!(name))` itself; see
+    // authFlows/module.ts's doc comment for why bootTestName isn't part of
+    // this mechanism) and its own success-detection, then this call site
+    // re-initialises exactly like the declarative branch does.
+    logger.info("Auth flow: running --web-auth-flow-module %s", authFlowModulePath)
+    const flow = await loadAuthFlowModule(authFlowModulePath)
+    await flow({ page, log: (msg, ...args) => logger.info(msg, ...args), timeoutMs: DEFAULT_TIMEOUT_MS })
     await initialise(page)
 
     if (authStateFile) {

@@ -472,6 +472,7 @@ class WebAppOptions {
     this.errorAllow,
     this.authFlow,
     this.authStateFile,
+    this.authFlowModule,
   });
 
   final FlutterAppOptions flutter;
@@ -548,6 +549,17 @@ class WebAppOptions {
   /// forwarded as `PATROL_WEB_AUTH_STATE_FILE`. See
   /// `authFlows/sessionCache.ts` (web_runner) for the cache format.
   final String? authStateFile;
+
+  /// Path to a Node/TS module (exporting an async `runAuthFlow` or
+  /// `default` function taking `{ page, log, timeoutMs }`) that drives a
+  /// custom cross-origin auth flow — the escape hatch for flows the
+  /// declarative [authFlow] spec cannot express (e.g. a multi-page
+  /// registration flow with an external email-code fetch; see
+  /// `authFlows/module.ts` (web_runner) for the full rationale). Null (the
+  /// default) means this mechanism is unused. Mutually exclusive with
+  /// [authFlow] — passing both is an error. Set by `--web-auth-flow-module`,
+  /// forwarded as `PATROL_WEB_AUTH_FLOW_MODULE`.
+  final String? authFlowModule;
 
   /// Translates these options into a proper flutter build invocation.
   List<String> toFlutterBuildInvocation() {

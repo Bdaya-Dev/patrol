@@ -906,6 +906,28 @@ void main() {
           expect(options.authStateFile, '.patrol_auth_state.json');
         },
       );
+
+      test(
+        'authFlowModule defaults to null (registration escape hatch unused)',
+        () {
+          options = const WebAppOptions(flutter: flutterOpts);
+          expect(options.authFlowModule, isNull);
+        },
+      );
+
+      test(
+        'authFlowModule is carried through (from --web-auth-flow-module)',
+        () {
+          options = const WebAppOptions(
+            flutter: flutterOpts,
+            authFlowModule: 'patrol_test/ci/real_dev_register_flow.ts',
+          );
+          expect(
+            options.authFlowModule,
+            'patrol_test/ci/real_dev_register_flow.ts',
+          );
+        },
+      );
     });
   });
 }
