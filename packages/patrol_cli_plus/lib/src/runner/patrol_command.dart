@@ -435,13 +435,30 @@ abstract class PatrolCommand extends Command<int> {
       ..addOption(
         'web-auth-state-file',
         help:
-            'Path to a JSON file used to cache/reuse a --web-auth-flow '
-            'session across tests in the same run (Playwright storageState '
-            'reuse). Unset = auth flow runs fresh for every page needing it '
-            '(today\'s behavior). When set, only the first page in the run '
-            'that needs auth performs the live identity-provider round-trip; '
-            'every subsequent page restores the cached session instead.',
+            'Path to a JSON file used to cache/reuse a --web-auth-flow (or '
+            '--web-auth-flow-module) session across tests in the same run '
+            '(Playwright storageState reuse). Unset = auth flow runs fresh '
+            'for every page needing it (today\'s behavior). When set, only '
+            'the first page in the run that needs auth performs the live '
+            'identity-provider round-trip; every subsequent page restores '
+            'the cached session instead. WARNING: the file contains live '
+            'session cookies/tokens in plaintext — do not commit it and '
+            'clean it up after CI runs. Primarily intended for single-'
+            'worker/non-sharded runs: concurrent workers sharing the same '
+            'file may each race to perform a live login before any of them '
+            'has saved a session.',
         valueHelp: '.patrol_auth_state.json',
+      )
+      ..addOption(
+        'web-auth-flow-module',
+        help:
+            'Path to a Node/TS module (exporting an async \'runAuthFlow\' or '
+            'default function taking {page, log, timeoutMs}) that drives a '
+            'custom cross-origin auth flow — the escape hatch for flows the '
+            'declarative --web-auth-flow spec cannot express (e.g. '
+            'registration with an external email-code fetch). Mutually '
+            'exclusive with --web-auth-flow.',
+        valueHelp: 'patrol_test/ci/real_dev_register_flow.ts',
       );
   }
 

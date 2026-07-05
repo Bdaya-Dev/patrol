@@ -111,7 +111,8 @@ export type AuthFlowSpec = {
   timeoutMs?: number
 }
 
-const DEFAULT_TIMEOUT_MS = 30000
+/** Also reused by `--web-auth-flow-module` (./module.ts) as its context's default `timeoutMs`, so both auth-flow mechanisms share one default. */
+export const DEFAULT_TIMEOUT_MS = 30000
 
 /** How long to wait for the (optional, best-effort) semantics placeholder. Deliberately short — most builds don't render it and this must never eat into the real per-step [timeoutMs] budget. */
 const ACCESSIBILITY_ENABLE_TIMEOUT_MS = 2000
