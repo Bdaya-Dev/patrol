@@ -15,6 +15,48 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`patrol_cli_plus` - `v5.4.0`](#patrol_cli_plus---v540)
+ - [`patrol_log_plus` - `v5.0.1`](#patrol_log_plus---v501)
+ - [`patrol_plus` - `v5.6.0`](#patrol_plus---v560)
+ - [`patrol_finders_plus` - `v5.0.1`](#patrol_finders_plus---v501)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `patrol_finders_plus` - `v5.0.1`
+
+---
+
+#### `patrol_cli_plus` - `v5.4.0`
+
+ - **FIX**(patrol_plus): address CodeRabbit findings on PR [#34](https://github.com/Bdaya-Dev/patrol/issues/34). ([b40c18e0](https://github.com/Bdaya-Dev/patrol/commit/b40c18e0c263b3102dca72267e22e203e21e680f))
+ - **FEAT**(patrol_plus): --web-auth-flow-module registration escape hatch (F-A). ([cd63e926](https://github.com/Bdaya-Dev/patrol/commit/cd63e92660f7ae5f0a0cc15b0ac9cdc8bbc08fad))
+ - **FEAT**(patrol_plus): fix auth-prelude boot timing + session-cache reuse (F-A phase 1 fix). ([eeb075bd](https://github.com/Bdaya-Dev/patrol/commit/eeb075bdb35a5b2f10f640a785dc2c0c3c933499))
+
+#### `patrol_log_plus` - `v5.0.1`
+
+ - **FIX**(patrol_log_plus): stop dropping unmatched lines in verbose (--show-flutter-logs) mode. ([991f6c9c](https://github.com/Bdaya-Dev/patrol/commit/991f6c9cefb7ee0d9cbe8d89b0e485b7f68909de))
+
+#### `patrol_plus` - `v5.6.0`
+
+ - **FIX**(patrol_plus): address CodeRabbit findings on PR [#34](https://github.com/Bdaya-Dev/patrol/issues/34). ([b40c18e0](https://github.com/Bdaya-Dev/patrol/commit/b40c18e0c263b3102dca72267e22e203e21e680f))
+ - **FEAT**(patrol_plus): --web-auth-flow-module registration escape hatch (F-A). ([cd63e926](https://github.com/Bdaya-Dev/patrol/commit/cd63e92660f7ae5f0a0cc15b0ac9cdc8bbc08fad))
+ - **FEAT**(patrol_plus): fix auth-prelude boot timing + session-cache reuse (F-A phase 1 fix). ([eeb075bd](https://github.com/Bdaya-Dev/patrol/commit/eeb075bdb35a5b2f10f640a785dc2c0c3c933499))
+
+
+## 2026-07-05
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`patrol_cli_plus` - `v5.3.0`](#patrol_cli_plus---v530)
  - [`patrol_plus` - `v5.5.0`](#patrol_plus---v550)
 

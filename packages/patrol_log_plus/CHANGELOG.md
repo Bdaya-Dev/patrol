@@ -1,3 +1,7 @@
+## 5.0.1
+
+ - **FIX**(patrol_log_plus): stop dropping unmatched lines in verbose (--show-flutter-logs) mode. ([991f6c9c](https://github.com/Bdaya-Dev/patrol/commit/991f6c9cefb7ee0d9cbe8d89b0e485b7f68909de))
+
 ## 5.0.0
 
 - Fork of `patrol_log` as `patrol_log_plus` for independent pub.dev publishing.
