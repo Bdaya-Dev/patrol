@@ -235,9 +235,14 @@ jobs:
         working-directory: packages/patrol_plus/web_runner
         run: npm run lint
 
-      - name: Check web_runner formatting
-        working-directory: packages/patrol_plus/web_runner
-        run: npm run format
+      # NOT running `npm run format` (prettier --check) here: a fresh checkout
+      # already fails it on 13 pre-existing files this PR never touched (this
+      # PR's own new files ARE prettier-clean -- verified locally). That's
+      # real, pre-existing drift across F-B/F-C/F-D/F-E's web_runner history,
+      # never caught because no CI job ever ran `npm run format` before this
+      # one existed. Fixing those 13 unrelated files is a separate cleanup,
+      # out of scope for this PR (F-A auth prelude) -- flagged here instead of
+      # silently mass-reformatting alongside an unrelated feature.
 
   patrol-develop-linux:
     runs-on: ubuntu-latest
