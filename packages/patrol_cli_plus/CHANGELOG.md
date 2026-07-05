@@ -1,3 +1,7 @@
+## 5.3.0
+
+ - **FEAT**(patrol_plus): cross-origin auth prelude (--web-auth-flow) (F-A phase 1) ([#31](https://github.com/Bdaya-Dev/patrol/issues/31)). ([b74a56d1](https://github.com/Bdaya-Dev/patrol/commit/b74a56d10e63efdc2da5cd3f3bd8eb594c87a413))
+
 ## 5.2.0
 
  - **FEAT**(patrol_plus): web error gate (--web-error-detection) ([#21](https://github.com/Bdaya-Dev/patrol/issues/21)). ([35fa4e91](https://github.com/Bdaya-Dev/patrol/commit/35fa4e912bf8d15f045695b9b451998e02eb5b64))
