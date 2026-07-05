@@ -1,3 +1,9 @@
+## 5.6.0
+
+ - **FIX**(patrol_plus): address CodeRabbit findings on PR [#34](https://github.com/Bdaya-Dev/patrol/issues/34). ([b40c18e0](https://github.com/Bdaya-Dev/patrol/commit/b40c18e0c263b3102dca72267e22e203e21e680f))
+ - **FEAT**(patrol_plus): --web-auth-flow-module registration escape hatch (F-A). ([cd63e926](https://github.com/Bdaya-Dev/patrol/commit/cd63e92660f7ae5f0a0cc15b0ac9cdc8bbc08fad))
+ - **FEAT**(patrol_plus): fix auth-prelude boot timing + session-cache reuse (F-A phase 1 fix). ([eeb075bd](https://github.com/Bdaya-Dev/patrol/commit/eeb075bdb35a5b2f10f640a785dc2c0c3c933499))
+
 ## 5.5.0
 
  - **FEAT**(patrol_plus): cross-origin auth prelude (--web-auth-flow) (F-A phase 1) ([#31](https://github.com/Bdaya-Dev/patrol/issues/31)). ([b74a56d1](https://github.com/Bdaya-Dev/patrol/commit/b74a56d10e63efdc2da5cd3f3bd8eb594c87a413))

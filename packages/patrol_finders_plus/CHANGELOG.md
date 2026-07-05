@@ -1,3 +1,7 @@
+## 5.0.1
+
+ - Update a dependency to the latest release.
+
 ## 5.0.0
 
 - Fork of `patrol_finders` as `patrol_finders_plus` for independent pub.dev publishing.

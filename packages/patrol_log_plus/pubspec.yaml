@@ -1,7 +1,7 @@
 name: patrol_log_plus
 description: >
   Log package for Patrol, a powerful Flutter-native UI testing framework.
-version: 5.0.0
+version: 5.0.1
 homepage: https://patrol.leancode.co
 repository: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_log_plus
 issue_tracker: https://github.com/Bdaya-Dev/patrol/issues
