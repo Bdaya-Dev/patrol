@@ -4,6 +4,15 @@ on:
   push:
     tags:
       - '*-v[0-9]+.[0-9]+.[0-9]+*'
+  # Manual escape hatch: a locally-pushed release tag (created outside of a
+  # GitHub Actions run -- e.g. release-prepare.yml's own `melos exec ... git
+  # tag` step reliably fails with "tag already exists" because
+  # $MELOS_PACKAGE_VERSION there still resolves to the PRE-bump version, so
+  # the actual tag+push has historically needed a manual follow-up) does not
+  # always reach GitHub's tag-push event pipeline promptly. Dispatch this
+  # manually against the release tag ref (`--ref <package>-v<version>`) as a
+  # deterministic fallback when a pushed tag doesn't trigger a run.
+  workflow_dispatch: {}
 
 permissions:
   # `contents: write` is required by melos-action's `create-release: true`
