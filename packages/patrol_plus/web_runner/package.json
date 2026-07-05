@@ -7,7 +7,7 @@
     "format": "prettier --check .",
     "lint:fix": "eslint . --fix",
     "format:fix": "prettier --write .",
-    "test": "node --test --experimental-strip-types tests/filterByTags.test.ts tests/resolveLocale.test.ts tests/errorGate.test.ts tests/actions/resizeWindow.test.ts tests/actions/setLocale.test.ts tests/actions/inFlowSafety.browser.test.ts tests/zeroFillLcov.test.ts tests/coverageSummary.test.ts tests/sourceMapResolver.test.ts tests/coverageEntryFilter.test.ts tests/sourceMapResolver.dart2js.browser.test.ts"
+    "test": "node --test --experimental-strip-types tests/filterByTags.test.ts tests/resolveLocale.test.ts tests/errorGate.test.ts tests/actions/resizeWindow.test.ts tests/actions/setLocale.test.ts tests/actions/inFlowSafety.browser.test.ts tests/zeroFillLcov.test.ts tests/coverageSummary.test.ts tests/sourceMapResolver.test.ts tests/coverageEntryFilter.test.ts tests/sourceMapResolver.dart2js.browser.test.ts tests/authFlows/oidc.test.ts"
   },
   "author": "",
   "license": "ISC",

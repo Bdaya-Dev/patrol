@@ -859,5 +859,37 @@ void main() {
         expect(options.errorAllow, 'is unimplemented,UNIMPLEMENTED');
       });
     });
+
+    group('carries the cross-origin auth-flow spec for the Playwright '
+        'runner (F-A)', () {
+      const flutterOpts = FlutterAppOptions(
+        command: flutterCommand,
+        target: 'patrol_test/app_test.dart',
+        buildMode: BuildMode.profile,
+        flavor: null,
+        buildName: null,
+        buildNumber: null,
+        dartDefines: {},
+        dartDefineFromFilePaths: [],
+      );
+
+      test('authFlow defaults to null (no auth prelude runs)', () {
+        options = const WebAppOptions(flutter: flutterOpts);
+        expect(options.authFlow, isNull);
+      });
+
+      test('authFlow is carried through (from --web-auth-flow)', () {
+        const spec =
+            '{"loginUrlPattern":"https://dev-auth.invora.app",'
+            '"loginNameSelector":"input[name=loginName]",'
+            '"loginNameEnvVar":"E2E_USERNAME",'
+            '"passwordSelector":"input[type=password]",'
+            '"passwordEnvVar":"E2E_PASSWORD",'
+            '"submitSelector":"button[type=submit]",'
+            '"successUrlPattern":"https://dev-dashboard.invora.app"}';
+        options = const WebAppOptions(flutter: flutterOpts, authFlow: spec);
+        expect(options.authFlow, spec);
+      });
+    });
   });
 }

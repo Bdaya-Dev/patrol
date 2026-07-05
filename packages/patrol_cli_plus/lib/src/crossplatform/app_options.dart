@@ -470,6 +470,7 @@ class WebAppOptions {
     this.grepInvert,
     this.errorDetection = false,
     this.errorAllow,
+    this.authFlow,
   });
 
   final FlutterAppOptions flutter;
@@ -524,6 +525,17 @@ class WebAppOptions {
   /// [errorDetection] whose text contains any of these (case-insensitively)
   /// is allowlisted rather than failing the test. Set by `--web-error-allow`.
   final String? errorAllow;
+
+  /// JSON spec for the cross-origin auth prelude (F-A): drives a real
+  /// identity-provider login by selector, on the same page/context the
+  /// in-page test body runs on, before that body starts. Null (the default)
+  /// means no prelude runs — every mocked-mode run, since `FakeAuthService`
+  /// needs no real IdP round-trip. See `authFlows/oidc.ts` (web_runner) for
+  /// the spec shape. Set by `--web-auth-flow`, forwarded as
+  /// `PATROL_WEB_AUTH_FLOW`. Credentials are never carried in this value —
+  /// the spec references environment-variable NAMES that are resolved on the
+  /// CI/test-runner host at run time.
+  final String? authFlow;
 
   /// Translates these options into a proper flutter build invocation.
   List<String> toFlutterBuildInvocation() {

@@ -1,6 +1,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import { type BrowserContext, type Page, chromium, test as base } from "@playwright/test"
+import { parseAuthFlowSpec, runAuthFlow } from "./authFlows/oidc"
 import { isExcludedCoverageEntry } from "./coverageEntryFilter"
 import { writeCoverageSummary } from "./coverageSummary"
 import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate"
@@ -107,6 +108,12 @@ const errorGateConfig = {
   allowlist: parseAllowList(process.env.PATROL_WEB_ERROR_ALLOW),
 }
 
+// Cross-origin auth prelude (F-A). Unset for every mocked run (the default —
+// FakeAuthService needs no real IdP round-trip); set by --web-auth-flow for
+// real-dev runs. Parsed once at module load so a malformed spec fails the
+// whole run loudly rather than silently no-opping per test (see oidc.ts).
+const authFlowSpec = parseAuthFlowSpec(process.env.PATROL_WEB_AUTH_FLOW)
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CoverageReporter = { add: (entries: any[]) => Promise<void>; generate: () => Promise<void> }
 
@@ -156,6 +163,21 @@ async function setupPage(page: Page) {
   })
 
   await initialise(page)
+
+  // F-A cross-origin auth prelude. Runs (still inside setupPage, so still
+  // "between setupPage and the __patrol__runTest call") only when
+  // --web-auth-flow was passed. Drives the IdP round-trip on this SAME
+  // page/context — the errorGate and console/pageerror listeners above stay
+  // attached across the cross-origin navigation and back (Playwright page
+  // listeners are not origin-scoped) — then re-runs initialise() because the
+  // app reloaded fresh at the post-auth URL and its __patrol__runTest
+  // registration (if any survived the navigation) belongs to a destroyed
+  // Dart VM. See authFlows/oidc.ts's doc comment for why the re-initialise
+  // call lives here rather than inside runAuthFlow itself.
+  if (authFlowSpec) {
+    await runAuthFlow(page, authFlowSpec)
+    await initialise(page)
+  }
 
   return errorGate
 }

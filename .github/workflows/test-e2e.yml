@@ -193,6 +193,41 @@ jobs:
           flags: patrol_cli
           fail_ci_if_error: false
 
+  # Runs the web_runner Playwright harness's own node:test unit suite
+  # (filterByTags, errorGate, authFlows/oidc, resize/setLocale, coverage
+  # zero-fill/summary, source-map resolution, ...). Previously these files
+  # existed (F-B/F-C/F-D/F-E each added their own) but nothing in CI actually
+  # ran `npm test` in web_runner — the only web-related required check was
+  # patrol_cli's Dart unit-tests above. Node 24 (not the e2e-web job's Node
+  # 20) because `--experimental-strip-types` requires Node 22.6+; Playwright
+  # itself (e2e-web) transpiles .ts via its own bundler and never hits this
+  # flag, so the two jobs' Node versions are independent by design.
+  web-runner-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install web_runner dependencies
+        working-directory: packages/patrol_plus/web_runner
+        run: npm ci
+
+      - name: Run web_runner unit tests
+        working-directory: packages/patrol_plus/web_runner
+        run: npm test
+
+      - name: Lint web_runner
+        working-directory: packages/patrol_plus/web_runner
+        run: npm run lint
+
+      - name: Check web_runner formatting
+        working-directory: packages/patrol_plus/web_runner
+        run: npm run format
+
   patrol-develop-linux:
     runs-on: ubuntu-latest
     timeout-minutes: 30
