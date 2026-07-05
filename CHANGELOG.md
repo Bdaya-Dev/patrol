@@ -15,6 +15,32 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`patrol_cli_plus` - `v5.4.0`](#patrol_cli_plus---v540)
+ - [`patrol_plus` - `v5.6.0`](#patrol_plus---v560)
+
+---
+
+#### `patrol_cli_plus` - `v5.4.0`
+
+ - **FEAT**(patrol_plus): cross-origin auth prelude (--web-auth-flow) (F-A phase 1) ([#31](https://github.com/Bdaya-Dev/patrol/issues/31)). ([b74a56d1](https://github.com/Bdaya-Dev/patrol/commit/b74a56d10e63efdc2da5cd3f3bd8eb594c87a413))
+
+#### `patrol_plus` - `v5.6.0`
+
+ - **FEAT**(patrol_plus): cross-origin auth prelude (--web-auth-flow) (F-A phase 1) ([#31](https://github.com/Bdaya-Dev/patrol/issues/31)). ([b74a56d1](https://github.com/Bdaya-Dev/patrol/commit/b74a56d10e63efdc2da5cd3f3bd8eb594c87a413))
+
+
+## 2026-07-05
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`patrol_cli_plus` - `v5.3.0`](#patrol_cli_plus---v530)
  - [`patrol_plus` - `v5.5.0`](#patrol_plus---v550)
 
