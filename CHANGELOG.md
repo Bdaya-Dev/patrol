@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-07-05
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`patrol_cli_plus` - `v5.3.0`](#patrol_cli_plus---v530)
+ - [`patrol_plus` - `v5.5.0`](#patrol_plus---v550)
+
+---
+
+#### `patrol_cli_plus` - `v5.3.0`
+
+ - **FEAT**(patrol_plus): cross-origin auth prelude (--web-auth-flow) (F-A phase 1) ([#31](https://github.com/Bdaya-Dev/patrol/issues/31)). ([b74a56d1](https://github.com/Bdaya-Dev/patrol/commit/b74a56d10e63efdc2da5cd3f3bd8eb594c87a413))
+
+#### `patrol_plus` - `v5.5.0`
+
+ - **FEAT**(patrol_plus): cross-origin auth prelude (--web-auth-flow) (F-A phase 1) ([#31](https://github.com/Bdaya-Dev/patrol/issues/31)). ([b74a56d1](https://github.com/Bdaya-Dev/patrol/commit/b74a56d10e63efdc2da5cd3f3bd8eb594c87a413))
+
+
 ## 2026-07-03
 
 ### Changes

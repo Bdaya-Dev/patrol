@@ -1,3 +1,7 @@
+## 5.5.0
+
+ - **FEAT**(patrol_plus): cross-origin auth prelude (--web-auth-flow) (F-A phase 1) ([#31](https://github.com/Bdaya-Dev/patrol/issues/31)). ([b74a56d1](https://github.com/Bdaya-Dev/patrol/commit/b74a56d10e63efdc2da5cd3f3bd8eb594c87a413))
+
 ## 5.4.1
 
  - **FIX**(patrol_plus): resolve dart2js --profile source-map schemes for web coverage ([#29](https://github.com/Bdaya-Dev/patrol/issues/29)). ([09754021](https://github.com/Bdaya-Dev/patrol/commit/0975402110684ecbd783264c852a5a8038bdf296))
