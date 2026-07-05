@@ -45,6 +45,18 @@ export type AuthFlowSpec = {
    * needed to reach the IdP).
    */
   triggerSelector?: string
+  /**
+   * Whether to best-effort click the CanvasKit `flt-semantics-placeholder`
+   * element immediately before [triggerSelector], enabling Flutter's
+   * accessibility DOM overlay so ordinary DOM selectors (text=, role=, css)
+   * can resolve real interactive widgets at all — a bare CanvasKit canvas
+   * exposes no DOM otherwise (see the flutter-rules skill: "JS-click
+   * flt-semantics-placeholder to enable the a11y tree first"). Defaults to
+   * `true`; has no effect when [triggerSelector] is unset, and is a no-op
+   * (swallowed) on builds that don't render the placeholder (HTML renderer,
+   * or CanvasKit builds where accessibility is already active).
+   */
+  enableAccessibility?: boolean
   /** Regex source tested against `page.url()` to detect arrival at the identity-provider origin (e.g. `"^https://dev-auth\\.invora\\.app/"`). */
   loginUrlPattern: string
   /** Playwright selector for the login-name/username field on the IdP page. */
@@ -69,6 +81,9 @@ export type AuthFlowSpec = {
 }
 
 const DEFAULT_TIMEOUT_MS = 30000
+
+/** How long to wait for the (optional, best-effort) semantics placeholder. Deliberately short — most builds don't render it and this must never eat into the real per-step [timeoutMs] budget. */
+const ACCESSIBILITY_ENABLE_TIMEOUT_MS = 2000
 
 const REQUIRED_FIELDS: (keyof AuthFlowSpec)[] = [
   "loginUrlPattern",
@@ -114,6 +129,7 @@ export function parseAuthFlowSpec(raw: string | undefined): AuthFlowSpec | null 
 
   return {
     triggerSelector: spec.triggerSelector,
+    enableAccessibility: spec.enableAccessibility,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     loginUrlPattern: spec.loginUrlPattern!,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -150,12 +166,37 @@ function requireCredential(envVar: string): string {
 }
 
 /**
+ * Best-effort click of Flutter web's `flt-semantics-placeholder` — the one
+ * element CanvasKit always renders as REAL DOM (deliberately, so a screen
+ * reader or automation tool can find and click it before anything else is
+ * accessible: https://docs.flutter.dev/ui/accessibility/web-accessibility).
+ * Clicking it triggers Flutter to render full accessibility DOM for
+ * subsequent interactive widgets, which is what lets an ordinary Playwright
+ * DOM selector (text=, role=, css) resolve [AuthFlowSpec.triggerSelector] at
+ * all on a CanvasKit build. Swallows any failure (short timeout) — HTML
+ * renderer builds, or CanvasKit builds where accessibility is already
+ * active, simply don't have this element, and that's fine.
+ */
+async function enableAccessibilityIfPresent(page: Page): Promise<void> {
+  await page
+    .locator("flt-semantics-placeholder")
+    .first()
+    .click({ timeout: ACCESSIBILITY_ENABLE_TIMEOUT_MS })
+    .then(() => logger.info("Auth flow: enabled Flutter web accessibility DOM (flt-semantics-placeholder)"))
+    .catch(() => {
+      // Not present / already enabled / not a CanvasKit build — no-op.
+    })
+}
+
+/**
  * Drives the cross-origin auth round-trip on [page] by selector: optional
- * trigger click -> wait for the IdP origin -> fill loginName/password ->
- * submit -> wait for the redirect back to the app origin. See this module's
- * doc comment for why it deliberately does NOT re-run `initialise(page)`
- * itself (the call site's job) and why every step is unguarded (a failure
- * here must fail the test loudly, not be swallowed).
+ * trigger click (preceded by a best-effort accessibility-enable, see
+ * [enableAccessibilityIfPresent]) -> wait for the IdP origin -> fill
+ * loginName/password -> submit -> wait for the redirect back to the app
+ * origin. See this module's doc comment for why it deliberately does NOT
+ * re-run `initialise(page)` itself (the call site's job) and why every
+ * required step is unguarded (a failure here must fail the test loudly, not
+ * be swallowed).
  *
  * Credentials are resolved from the environment up front (before any
  * navigation), so a missing credential fails immediately rather than leaving
@@ -168,6 +209,9 @@ export async function runAuthFlow(page: Page, spec: AuthFlowSpec): Promise<void>
   const password = requireCredential(spec.passwordEnvVar)
 
   if (spec.triggerSelector) {
+    if (spec.enableAccessibility !== false) {
+      await enableAccessibilityIfPresent(page)
+    }
     logger.info("Auth flow: clicking trigger %s", spec.triggerSelector)
     await page.locator(spec.triggerSelector).first().click({ timeout })
   }

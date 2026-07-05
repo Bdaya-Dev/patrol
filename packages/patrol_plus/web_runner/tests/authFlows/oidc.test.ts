@@ -154,6 +154,16 @@ test("parseAuthFlowSpec: optional triggerSelector/timeoutMs are carried through 
   assert.equal(spec.timeoutMs, 45000)
 })
 
+test("parseAuthFlowSpec: enableAccessibility is undefined by default, " + "carried through as false when set", () => {
+  const spec = parseAuthFlowSpec(JSON.stringify(baseSpec))
+  assert.ok(spec)
+  assert.equal(spec.enableAccessibility, undefined)
+
+  const spec2 = parseAuthFlowSpec(JSON.stringify({ ...baseSpec, enableAccessibility: false }))
+  assert.ok(spec2)
+  assert.equal(spec2.enableAccessibility, false)
+})
+
 // ---- runAuthFlow ------------------------------------------------------------
 
 test(
@@ -183,23 +193,92 @@ test(
   },
 )
 
-test("runAuthFlow: with a triggerSelector, clicks it first, before waiting " + "for the IdP origin", async () => {
+test(
+  "runAuthFlow: with a triggerSelector, best-effort clicks the a11y " +
+    "placeholder THEN the trigger, before waiting for the IdP origin",
+  async () => {
+    process.env.PATROL_TEST_ZITADEL_USERNAME = "autotest@example.com"
+    process.env.PATROL_TEST_ZITADEL_PASSWORD = "s3cr3t"
+
+    const page = new FakePage("https://dev-dashboard.invora.app/landing", [
+      "https://dev-auth.invora.app/login",
+      "https://dev-dashboard.invora.app/home",
+    ])
+
+    await run(page, { ...baseSpec, triggerSelector: "text=Sign in" })
+
+    assert.deepEqual(
+      page.calls.map(c => c.kind),
+      ["click", "click", "waitForURL", "fill", "fill", "click", "waitForURL"],
+    )
+    const clicks = page.calls.filter((c): c is Extract<Call, { kind: "click" }> => c.kind === "click")
+    assert.equal(clicks[0].selector, "flt-semantics-placeholder")
+    assert.equal(clicks[1].selector, "text=Sign in")
+  },
+)
+
+test("runAuthFlow: without a triggerSelector, never attempts the a11y " + "placeholder click at all", async () => {
   process.env.PATROL_TEST_ZITADEL_USERNAME = "autotest@example.com"
   process.env.PATROL_TEST_ZITADEL_PASSWORD = "s3cr3t"
 
-  const page = new FakePage("https://dev-dashboard.invora.app/landing", [
+  const page = new FakePage("https://dev-dashboard.invora.app/", [
     "https://dev-auth.invora.app/login",
     "https://dev-dashboard.invora.app/home",
   ])
 
-  await run(page, { ...baseSpec, triggerSelector: "text=Sign in" })
+  await run(page, baseSpec)
 
-  assert.deepEqual(
-    page.calls.map(c => c.kind),
-    ["click", "waitForURL", "fill", "fill", "click", "waitForURL"],
+  assert.ok(
+    !page.calls.some(
+      c => c.kind === "click" && (c as Extract<Call, { kind: "click" }>).selector === "flt-semantics-placeholder",
+    ),
   )
-  assert.equal((page.calls[0] as Extract<Call, { kind: "click" }>).selector, "text=Sign in")
 })
+
+test(
+  "runAuthFlow: enableAccessibility: false skips the a11y placeholder " + "click, going straight to the trigger",
+  async () => {
+    process.env.PATROL_TEST_ZITADEL_USERNAME = "autotest@example.com"
+    process.env.PATROL_TEST_ZITADEL_PASSWORD = "s3cr3t"
+
+    const page = new FakePage("https://dev-dashboard.invora.app/landing", [
+      "https://dev-auth.invora.app/login",
+      "https://dev-dashboard.invora.app/home",
+    ])
+
+    await run(page, { ...baseSpec, triggerSelector: "text=Sign in", enableAccessibility: false })
+
+    assert.deepEqual(
+      page.calls.map(c => c.kind),
+      ["click", "waitForURL", "fill", "fill", "click", "waitForURL"],
+    )
+    assert.equal((page.calls[0] as Extract<Call, { kind: "click" }>).selector, "text=Sign in")
+  },
+)
+
+test(
+  "runAuthFlow: an a11y placeholder click failure is swallowed — the " + "trigger click still proceeds normally",
+  async () => {
+    process.env.PATROL_TEST_ZITADEL_USERNAME = "autotest@example.com"
+    process.env.PATROL_TEST_ZITADEL_PASSWORD = "s3cr3t"
+
+    const page = new FakePage("https://dev-dashboard.invora.app/landing", [
+      "https://dev-auth.invora.app/login",
+      "https://dev-dashboard.invora.app/home",
+    ])
+    // Simulates an HTML-renderer build (or a11y already enabled): the
+    // placeholder simply isn't there to click.
+    page.failingSelectors.set("flt-semantics-placeholder", "element not found")
+
+    await run(page, { ...baseSpec, triggerSelector: "text=Sign in" })
+
+    assert.deepEqual(
+      page.calls.map(c => c.kind),
+      ["click", "click", "waitForURL", "fill", "fill", "click", "waitForURL"],
+    )
+    assert.equal(page.url(), "https://dev-dashboard.invora.app/home")
+  },
+)
 
 test(
   "runAuthFlow: throws before any navigation when the loginName " +
