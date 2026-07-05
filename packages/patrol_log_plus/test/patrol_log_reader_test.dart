@@ -14,6 +14,7 @@ PatrolLogReader _buildReader({
   bool clearTestSteps = false,
   bool hideTestSteps = false,
   bool hideTestLifecycle = true,
+  bool showFlutterLogs = false,
 }) {
   return PatrolLogReader(
     scope: DisposeScope(),
@@ -21,7 +22,7 @@ PatrolLogReader _buildReader({
         const Stream<String>.empty().listen(onData),
     log: (capturedLogs ?? []).add,
     reportPath: 'test_report.html',
-    showFlutterLogs: false,
+    showFlutterLogs: showFlutterLogs,
     hideTestSteps: hideTestSteps,
     clearTestSteps: clearTestSteps,
     hideTestLifecycle: hideTestLifecycle,
@@ -405,6 +406,59 @@ void main() {
 
         expect(reader.totalTests, 1);
         expect(reader.successfulTests, 1);
+      });
+    });
+
+    group('parse (showFlutterLogs verbose mode)', () {
+      // Regression test for the F-A auth-prelude root cause: a raw
+      // Node/Playwright exception thrown out of the Playwright test fixture
+      // (never routed through page.on('console'), which is the only thing
+      // that prefixes browser text with "Playwright:") used to be silently
+      // dropped by the `_ => null` fallback even with --show-flutter-logs
+      // set, leaving CI logs with no indication of the real failure cause.
+      test(
+        'passes through an unmatched raw line instead of dropping it',
+        () {
+          final captured = <String>[];
+          final reader = _buildReader(
+            capturedLogs: captured,
+            showFlutterLogs: true,
+          );
+
+          reader.parse('TimeoutError: locator.click: Timeout 30000ms exceeded');
+
+          expect(
+            captured,
+            contains('TimeoutError: locator.click: Timeout 30000ms exceeded'),
+          );
+        },
+      );
+
+      test(
+        'still drops unmatched lines when showFlutterLogs is false (default, unchanged)',
+        () {
+          final captured = <String>[];
+          final reader = _buildReader(
+            capturedLogs: captured,
+            showFlutterLogs: false,
+          );
+
+          reader.parse('TimeoutError: locator.click: Timeout 30000ms exceeded');
+
+          expect(captured, isEmpty);
+        },
+      );
+
+      test('still routes known-prefixed lines to their own parser, not the passthrough', () {
+        final captured = <String>[];
+        final reader = _buildReader(
+          capturedLogs: captured,
+          showFlutterLogs: true,
+        );
+
+        reader.parse('Playwright: hello from the browser console');
+
+        expect(captured, ['hello from the browser console']);
       });
     });
 

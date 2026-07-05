@@ -2,6 +2,7 @@ import * as fs from "fs"
 import * as path from "path"
 import { type BrowserContext, type Page, chromium, test as base } from "@playwright/test"
 import { parseAuthFlowSpec, runAuthFlow } from "./authFlows/oidc"
+import { hasSessionData, loadCachedSession, restoreCachedSession, saveCachedSession } from "./authFlows/sessionCache"
 import { isExcludedCoverageEntry } from "./coverageEntryFilter"
 import { writeCoverageSummary } from "./coverageSummary"
 import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate"
@@ -151,6 +152,26 @@ async function setupPage(page: Page) {
   // stays independent of the always-on console/pageerror logging.
   const errorGate = attachErrorGate(page, errorGateConfig)
 
+  // F-A speed follow-up — session-cache reuse (Playwright's documented
+  // "authenticate once, reuse everywhere" pattern, see authFlows/sessionCache.ts).
+  // Unset PATROL_WEB_AUTH_STATE_FILE (today's default for every existing
+  // caller) is a no-op: cachedSession is always null, so behaviour is
+  // unchanged beyond the bootTestName fix below. Read fresh on every
+  // setupPage call (not hoisted to module scope like authFlowSpec) because
+  // the cache file doesn't exist yet for the first page in a run but does
+  // for every subsequent one.
+  const authStateFile = process.env.PATROL_WEB_AUTH_STATE_FILE
+  const loadedSession = authStateFile ? loadCachedSession(authStateFile) : null
+  // A structurally-valid but empty session (e.g. a stale/blank cache file)
+  // must not be treated as "already authenticated" — only a session that
+  // actually carries cookies/localStorage skips the live login below.
+  const cachedSession = loadedSession && hasSessionData(loadedSession) ? loadedSession : null
+
+  if (cachedSession) {
+    logger.info("Auth flow: restoring cached session from %s (skipping login)", authStateFile)
+    await restoreCachedSession(page, cachedSession)
+  }
+
   await page.addInitScript(() => {
     window.__patrol__isInitialised = true
   })
@@ -166,17 +187,23 @@ async function setupPage(page: Page) {
 
   // F-A cross-origin auth prelude. Runs (still inside setupPage, so still
   // "between setupPage and the __patrol__runTest call") only when
-  // --web-auth-flow was passed. Drives the IdP round-trip on this SAME
-  // page/context — the errorGate and console/pageerror listeners above stay
-  // attached across the cross-origin navigation and back (Playwright page
-  // listeners are not origin-scoped) — then re-runs initialise() because the
-  // app reloaded fresh at the post-auth URL and its __patrol__runTest
-  // registration (if any survived the navigation) belongs to a destroyed
-  // Dart VM. See authFlows/oidc.ts's doc comment for why the re-initialise
-  // call lives here rather than inside runAuthFlow itself.
-  if (authFlowSpec) {
+  // --web-auth-flow was passed AND no cached session was restored above.
+  // Drives the IdP round-trip on this SAME page/context — the errorGate and
+  // console/pageerror listeners above stay attached across the cross-origin
+  // navigation and back (Playwright page listeners are not origin-scoped) —
+  // then re-runs initialise() because the app reloaded fresh at the
+  // post-auth URL and its __patrol__runTest registration (if any survived
+  // the navigation) belongs to a destroyed Dart VM. See authFlows/oidc.ts's
+  // doc comment for why the re-initialise call lives here rather than
+  // inside runAuthFlow itself.
+  if (authFlowSpec && !cachedSession) {
     await runAuthFlow(page, authFlowSpec)
     await initialise(page)
+
+    if (authStateFile) {
+      await saveCachedSession(page, authStateFile)
+      logger.info("Auth flow: cached session to %s for reuse by later tests in this run", authStateFile)
+    }
   }
 
   return errorGate

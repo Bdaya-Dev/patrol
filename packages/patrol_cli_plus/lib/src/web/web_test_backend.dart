@@ -12,9 +12,23 @@ import 'package:patrol_cli_plus/src/crossplatform/app_options.dart';
 import 'package:patrol_cli_plus/src/crossplatform/flutter_tool.dart';
 import 'package:patrol_cli_plus/src/devices.dart';
 import 'package:patrol_log_plus/patrol_log_reader.dart';
+import 'package:path/path.dart' as p;
 import 'package:process/process.dart';
 
 const _kDefaultWebServerTimeoutSeconds = 120;
+
+/// Resolves a `--web-auth-state-file` path against [Directory.current]
+/// (the invocation directory, i.e. the Flutter/patrol project root) when
+/// it isn't already absolute. Without this, a relative path like
+/// `.patrol_auth_state.json` would be forwarded verbatim to the Node/
+/// Playwright runner process, which resolves it relative to the runner's
+/// OWN working directory (`web_runner/`), not the caller's project root —
+/// silently writing/reading the cache file in the wrong place.
+String _resolveAuthStateFile(String authStateFile) {
+  return p.isAbsolute(authStateFile)
+      ? authStateFile
+      : p.join(Directory.current.path, authStateFile);
+}
 
 class WebTestBackend {
   WebTestBackend({
@@ -577,6 +591,10 @@ class WebTestBackend {
                   'PATROL_WEB_ERROR_ALLOW': options.errorAllow!,
                 if (options.authFlow != null)
                   'PATROL_WEB_AUTH_FLOW': options.authFlow!,
+                if (options.authStateFile != null)
+                  'PATROL_WEB_AUTH_STATE_FILE': _resolveAuthStateFile(
+                    options.authStateFile!,
+                  ),
               },
               runInShell: true,
             )

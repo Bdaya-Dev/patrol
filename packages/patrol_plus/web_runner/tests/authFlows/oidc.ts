@@ -46,6 +46,25 @@ export type AuthFlowSpec = {
    */
   triggerSelector?: string
   /**
+   * Name of a Dart test (a `PatrolTestEntry.name`, exactly what
+   * `window.__patrol__runTest` addresses) to invoke via
+   * `__patrol__runTest` BEFORE [triggerSelector] is awaited.
+   *
+   * Needed when the test bundle defers ALL widget pumping to the per-test
+   * callback (patrol_test's usual `patrolTest(name, ($) async { await
+   * startApp($); ... })` shape) — in that architecture nothing (not even the
+   * login trigger) exists on screen until some named test's body runs, so a
+   * bare `triggerSelector` click times out against an empty page. Its own
+   * Dart VM is later destroyed by the cross-origin redirect just like
+   * everything else driven from this page — it is disposable "get something
+   * on screen" scaffolding, not the test whose pass/fail is asserted by the
+   * harness.
+   *
+   * Omit when the app bundle already pumps a widget tree eagerly at boot
+   * (nothing changes for those callers — this field defaults to unset).
+   */
+  bootTestName?: string
+  /**
    * Whether to best-effort click the CanvasKit `flt-semantics-placeholder`
    * element immediately before [triggerSelector], enabling Flutter's
    * accessibility DOM overlay so ordinary DOM selectors (text=, role=, css)
@@ -141,6 +160,7 @@ export function parseAuthFlowSpec(raw: string | undefined): AuthFlowSpec | null 
 
   return {
     triggerSelector: spec.triggerSelector,
+    bootTestName: spec.bootTestName,
     enableAccessibility: spec.enableAccessibility,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     loginUrlPattern: spec.loginUrlPattern!,
@@ -223,6 +243,29 @@ export async function runAuthFlow(page: Page, spec: AuthFlowSpec): Promise<void>
 
   const loginName = requireCredential(spec.loginNameEnvVar)
   const password = requireCredential(spec.passwordEnvVar)
+
+  if (spec.bootTestName) {
+    logger.info("Auth flow: running boot test %s to render the login screen", spec.bootTestName)
+    const bootTestName = spec.bootTestName
+    const bootPromise = page.evaluate(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      async name => await window.__patrol__runTest!(name),
+      bootTestName,
+    )
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error(`Auth flow boot test "${bootTestName}" did not resolve within ${timeout}ms`)),
+        timeout,
+      )
+    })
+    const bootResult = await Promise.race([bootPromise, timeoutPromise])
+    if (bootResult?.result === "failure") {
+      throw new Error(
+        `Auth flow boot test "${spec.bootTestName}" failed before the trigger could be clicked: ` +
+          `${bootResult.details ?? "no details"}`,
+      )
+    }
+  }
 
   if (spec.triggerSelector) {
     if (spec.enableAccessibility !== false) {

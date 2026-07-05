@@ -101,7 +101,16 @@ class PatrolLogReader {
           _ when line.contains('I flutter :') => _parseFlutterAndroidLog(line),
           _ when line.contains('flutter:') => _parseFlutterIOsReleaseLog(line),
           _ when line.contains('Playwright:') => _parsePlaywrightLog(line),
-          _ => null,
+          // Pass through any other line verbatim instead of silently
+          // dropping it. Previously a raw Node/Playwright exception thrown
+          // out of the Playwright fixture (never routed through
+          // `page.on('console')`, the only thing that prefixes browser text
+          // with `Playwright:`) fell into this branch and vanished, leaving
+          // only a misleading "Total: 0 / Playwright process exited
+          // unexpectedly" in CI logs with no indication of the real cause.
+          // Scoped strictly inside `showFlutterLogs` (verbose mode) — the
+          // default (non-verbose) parse path above is unchanged.
+          _ => log(line),
         };
       }
     } catch (err) {

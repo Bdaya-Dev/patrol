@@ -431,6 +431,17 @@ abstract class PatrolCommand extends Command<int> {
             '"passwordEnvVar":"E2E_PASSWORD",'
             '"submitSelector":"button[type=submit]",'
             '"successUrlPattern":"https://app.example"}\'',
+      )
+      ..addOption(
+        'web-auth-state-file',
+        help:
+            'Path to a JSON file used to cache/reuse a --web-auth-flow '
+            'session across tests in the same run (Playwright storageState '
+            'reuse). Unset = auth flow runs fresh for every page needing it '
+            '(today\'s behavior). When set, only the first page in the run '
+            'that needs auth performs the live identity-provider round-trip; '
+            'every subsequent page restores the cached session instead.',
+        valueHelp: '.patrol_auth_state.json',
       );
   }
 
