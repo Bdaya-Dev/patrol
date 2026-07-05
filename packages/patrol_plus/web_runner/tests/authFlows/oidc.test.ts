@@ -154,6 +154,19 @@ test("parseAuthFlowSpec: optional triggerSelector/timeoutMs are carried through 
   assert.equal(spec.timeoutMs, 45000)
 })
 
+test(
+  "parseAuthFlowSpec: loginNameSubmitSelector is undefined by default, " + "carried through when set (two-step IdP)",
+  () => {
+    const spec = parseAuthFlowSpec(JSON.stringify(baseSpec))
+    assert.ok(spec)
+    assert.equal(spec.loginNameSubmitSelector, undefined)
+
+    const spec2 = parseAuthFlowSpec(JSON.stringify({ ...baseSpec, loginNameSubmitSelector: "text=Continue" }))
+    assert.ok(spec2)
+    assert.equal(spec2.loginNameSubmitSelector, "text=Continue")
+  },
+)
+
 test("parseAuthFlowSpec: enableAccessibility is undefined by default, " + "carried through as false when set", () => {
   const spec = parseAuthFlowSpec(JSON.stringify(baseSpec))
   assert.ok(spec)
@@ -190,6 +203,63 @@ test(
     assert.equal(nameFill.value, "autotest@example.com")
     assert.equal(passwordFill.selector, baseSpec.passwordSelector)
     assert.equal(passwordFill.value, "s3cr3t")
+  },
+)
+
+test(
+  "runAuthFlow: with loginNameSubmitSelector (two-step IdP, e.g. Zitadel), " +
+    "submits loginName BEFORE filling password",
+  async () => {
+    process.env.PATROL_TEST_ZITADEL_USERNAME = "autotest@example.com"
+    process.env.PATROL_TEST_ZITADEL_PASSWORD = "s3cr3t"
+
+    const page = new FakePage("https://dev-dashboard.invora.app/", [
+      "https://dev-auth.invora.app/loginname",
+      "https://dev-dashboard.invora.app/home",
+    ])
+
+    await run(page, { ...baseSpec, loginNameSubmitSelector: "text=Continue" })
+
+    assert.deepEqual(
+      page.calls.map(c => c.kind),
+      [
+        "waitForURL",
+        "fill", // loginName
+        "click", // loginNameSubmitSelector ("Continue")
+        "fill", // password
+        "click", // submitSelector
+        "waitForURL",
+      ],
+    )
+    const [nameFill, passwordFill] = page.calls.filter((c): c is Extract<Call, { kind: "fill" }> => c.kind === "fill")
+    assert.equal(nameFill.selector, baseSpec.loginNameSelector)
+    assert.equal(passwordFill.selector, baseSpec.passwordSelector)
+    const [loginNameSubmitClick, finalSubmitClick] = page.calls.filter(
+      (c): c is Extract<Call, { kind: "click" }> => c.kind === "click",
+    )
+    assert.equal(loginNameSubmitClick.selector, "text=Continue")
+    assert.equal(finalSubmitClick.selector, baseSpec.submitSelector)
+  },
+)
+
+test(
+  "runAuthFlow: without loginNameSubmitSelector, fills both fields " +
+    "before the single submit click (single-step IdP, unchanged)",
+  async () => {
+    process.env.PATROL_TEST_ZITADEL_USERNAME = "autotest@example.com"
+    process.env.PATROL_TEST_ZITADEL_PASSWORD = "s3cr3t"
+
+    const page = new FakePage("https://dev-dashboard.invora.app/", [
+      "https://dev-auth.invora.app/login",
+      "https://dev-dashboard.invora.app/home",
+    ])
+
+    await run(page, baseSpec)
+
+    assert.deepEqual(
+      page.calls.map(c => c.kind),
+      ["waitForURL", "fill", "fill", "click", "waitForURL"],
+    )
   },
 )
 

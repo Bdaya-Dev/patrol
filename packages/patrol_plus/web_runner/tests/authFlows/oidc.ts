@@ -68,6 +68,18 @@ export type AuthFlowSpec = {
    * "Credentials arrive from CI env ... never in the spec file or the repo").
    */
   loginNameEnvVar: string
+  /**
+   * Optional selector for a submit control to click after filling
+   * [loginNameSelector] and BEFORE filling [passwordSelector] — i.e. a
+   * two-step IdP where username and password are separate pages/steps
+   * (this is how Zitadel's own login-v2 UI works: loginName -> "Continue" ->
+   * a fresh page with the password field -> "Continue" again). Omit for a
+   * single-step IdP that shows both fields on one page with one submit
+   * ([submitSelector] alone). When set, [passwordSelector]'s own `.fill()`
+   * call auto-waits for the password step to render (Playwright locator
+   * actions auto-wait) — no separate explicit wait is needed.
+   */
+  loginNameSubmitSelector?: string
   /** Playwright selector for the password field on the IdP page. */
   passwordSelector: string
   /** Name of the environment variable holding the password. Same rules as [loginNameEnvVar]. */
@@ -136,6 +148,7 @@ export function parseAuthFlowSpec(raw: string | undefined): AuthFlowSpec | null 
     loginNameSelector: spec.loginNameSelector!,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     loginNameEnvVar: spec.loginNameEnvVar!,
+    loginNameSubmitSelector: spec.loginNameSubmitSelector,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     passwordSelector: spec.passwordSelector!,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -192,11 +205,14 @@ async function enableAccessibilityIfPresent(page: Page): Promise<void> {
  * Drives the cross-origin auth round-trip on [page] by selector: optional
  * trigger click (preceded by a best-effort accessibility-enable, see
  * [enableAccessibilityIfPresent]) -> wait for the IdP origin -> fill
- * loginName/password -> submit -> wait for the redirect back to the app
- * origin. See this module's doc comment for why it deliberately does NOT
- * re-run `initialise(page)` itself (the call site's job) and why every
- * required step is unguarded (a failure here must fail the test loudly, not
- * be swallowed).
+ * loginName -> optional intermediate submit for a two-step IdP (see
+ * [AuthFlowSpec.loginNameSubmitSelector] — Zitadel's own login-v2 UI is
+ * two-step: username page, "Continue", THEN a separate password page) ->
+ * fill password -> submit -> wait for the redirect back to the app origin.
+ * See this module's doc comment for why it deliberately does NOT re-run
+ * `initialise(page)` itself (the call site's job) and why every required
+ * step is unguarded (a failure here must fail the test loudly, not be
+ * swallowed).
  *
  * Credentials are resolved from the environment up front (before any
  * navigation), so a missing credential fails immediately rather than leaving
@@ -220,6 +236,12 @@ export async function runAuthFlow(page: Page, spec: AuthFlowSpec): Promise<void>
   await page.waitForURL(new RegExp(spec.loginUrlPattern), { timeout })
 
   await page.locator(spec.loginNameSelector).first().fill(loginName, { timeout })
+  if (spec.loginNameSubmitSelector) {
+    logger.info("Auth flow: submitting login name (two-step IdP), selector %s", spec.loginNameSubmitSelector)
+    await page.locator(spec.loginNameSubmitSelector).first().click({ timeout })
+  }
+  // Playwright locator actions auto-wait for the target to appear, so no
+  // separate wait is needed here for a two-step IdP's password page to load.
   await page.locator(spec.passwordSelector).first().fill(password, { timeout })
   await page.locator(spec.submitSelector).first().click({ timeout })
 
