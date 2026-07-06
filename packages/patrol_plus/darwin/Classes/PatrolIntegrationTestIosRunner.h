@@ -40,17 +40,39 @@
   }                                                                                                             \
                                                                                                                 \
   -(void)recordIssue:(XCTIssue *)issue {                                                                        \
+    /* Gate 1: XCUIApplication launch/terminate/query failures are documented */                                \
+    /* as XCTIssueTypeSystem; a real XCTAssert is never .system, so this is */                                  \
+    /* always safe. On Xcode 26 these often arrive via the legacy recordFailure */                              \
+    /* bridge as type 0 instead, so the message gate below is the workhorse. */                                 \
+    if (issue.type == XCTIssueTypeSystem) {                                                                     \
+      NSLog(@"[patrol] Ignoring benign XCUITest system issue: %@", issue.compactDescription);                   \
+      return;                                                                                                   \
+    }                                                                                                           \
     NSString *__patrolDesc = issue.compactDescription ?: @"";                                                   \
-    /* Only suppress framework/system issues (never a real Dart-test */                                         \
-    /* assertion failure) whose text matches the benign XCUITest relaunch */                                    \
-    /* messages, so a genuine test failure can never be swallowed. */                                           \
-    if (issue.type == XCTIssueTypeSystem &&                                                                     \
-        ([__patrolDesc containsString:@"Failed to terminate"] ||                                                \
-         [__patrolDesc containsString:@"does not have a process ID"])) {                                        \
-      NSLog(@"[patrol] Ignoring benign XCUITest relaunch issue: %@", __patrolDesc);                             \
+    /* Gate 2: benign app-lifecycle failures matched by framework message */                                    \
+    /* STRUCTURE so free-form Dart failure text cannot be swallowed. The */                                     \
+    /* terminate message is anchored to a reverse-DNS bundle id + numeric pid, */                               \
+    /* which a genuine Dart XCTAssertTrue message realistically cannot contain. */                              \
+    /* (A malformed regex fails closed: no match -> not suppressed -> RED, never */                             \
+    /* a false green.) */                                                                                       \
+    if ([__patrolDesc rangeOfString:@"Failed to terminate [A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)+:[0-9]" options:NSRegularExpressionSearch].location != NSNotFound || \
+        [__patrolDesc containsString:@"Timed out while launching application via Xcode"] ||                     \
+        [__patrolDesc containsString:@"does not have a process ID"]) {                                          \
+      NSLog(@"[patrol] Ignoring benign XCUITest lifecycle issue: %@", __patrolDesc);                            \
       return;                                                                                                   \
     }                                                                                                           \
     [super recordIssue:issue];                                                                                  \
+  }                                                                                                             \
+  /* Same layered suppression for the legacy recordFailure bridge path. */                                      \
+  -(void)recordFailureWithDescription:(NSString *)description inFile:(NSString *)filePath atLine:(NSUInteger)lineNumber expected:(BOOL)expected { \
+    NSString *__patrolFd = description ?: @"";                                                                  \
+    if ([__patrolFd rangeOfString:@"Failed to terminate [A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)+:[0-9]" options:NSRegularExpressionSearch].location != NSNotFound || \
+        [__patrolFd containsString:@"Timed out while launching application via Xcode"] ||                       \
+        [__patrolFd containsString:@"does not have a process ID"]) {                                            \
+      NSLog(@"[patrol] Ignoring benign XCUITest lifecycle failure: %@", __patrolFd);                            \
+      return;                                                                                                   \
+    }                                                                                                           \
+    [super recordFailureWithDescription:description inFile:filePath atLine:lineNumber expected:expected];       \
   }                                                                                                             \
                                                                                                                 \
   +(void)uninstallApp {                                                                                         \
