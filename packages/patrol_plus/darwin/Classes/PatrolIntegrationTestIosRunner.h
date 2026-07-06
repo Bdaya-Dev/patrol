@@ -9,6 +9,14 @@
 
 // For every Flutter dart test, dynamically generate an Objective-C method mirroring the test results
 // so it is reported as a native XCTest run result.
+// NOTE (Xcode 16+/26): the target that expands this macro (typically RunnerUITests) is
+// pure Objective-C. Add an empty `RunnerUITests.swift` (a single `import Foundation`) to
+// that target so Xcode links the Swift runtime. Without it, a Swift-based pod (e.g.
+// google_maps_flutter, Firebase) that back-deploys the Swift compatibility libraries
+// fails to link the target with:
+//   Undefined symbols: __swift_FORCE_LOAD_$_swiftCompatibility56
+// On CI where the Metal toolchain is the active toolchain (GitHub macos-26 / Xcode 26),
+// also set TOOLCHAINS=com.apple.dt.toolchain.XcodeDefault for the build step.
 #define PATROL_INTEGRATION_TEST_IOS_RUNNER(__test_class)                                                        \
   @interface __test_class : XCTestCase                                                                          \
   @property(class, strong, nonatomic) NSDictionary *selectedTest;                                               \

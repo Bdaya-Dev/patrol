@@ -366,6 +366,28 @@ Check out our video version of this tutorial on YouTube!
         </Step>
 
         <Step>
+          Add an **empty Swift file** to the `RunnerUITests` target. In Xcode select
+            `File > New > File from Template… > Swift File`, name it `RunnerUITests.swift`,
+            and make sure only the `RunnerUITests` target is checked. Its contents can be a
+            single line:
+
+          ```swift title="ios/RunnerUITests/RunnerUITests.swift"
+          import Foundation
+          ```
+
+          On Xcode 16+/26 the presence of a Swift file makes the linker link the Swift
+            runtime for this otherwise pure-Objective-C target. Without it, a Swift-based
+            pod (e.g. `google_maps_flutter`, Firebase) that back-deploys the Swift
+            compatibility libraries fails to link with
+            `Undefined symbols: __swift_FORCE_LOAD_$_swiftCompatibility56`.
+
+          On CI runners where the **Metal toolchain** is the active toolchain (e.g. GitHub
+            `macos-26` / Xcode 26), also set `TOOLCHAINS=com.apple.dt.toolchain.XcodeDefault`
+            for the build/test step, which pins the default toolchain that still ships those
+            libraries.
+        </Step>
+
+        <Step>
           Replace contents of `RunnerUITests.m` file with the following:
 
           ```objective-c title="ios/RunnerUITests/RunnerUITests.m"

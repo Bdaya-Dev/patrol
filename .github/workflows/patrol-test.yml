@@ -187,6 +187,16 @@ jobs:
       - name: Run iOS tests
         if: matrix.platform == 'ios'
         working-directory: ${{ inputs.working-directory }}
+        # Xcode 26 moved the Swift back-deployment compatibility libs
+        # (libswiftCompatibility56 / libswiftCompatibilityConcurrency) out of the
+        # active Metal.xctoolchain. A Swift static pod (e.g. GoogleMapsUtils) that
+        # force-loads them then fails to link the pure-Obj-C RunnerUITests target
+        # ("Undefined symbols: __swift_FORCE_LOAD_$_swiftCompatibility56"). Pin the
+        # default Xcode toolchain, which still ships those libs. (End users hit the
+        # same class of failure; the portable fix is an empty RunnerUITests.swift --
+        # see the iOS setup docs.)
+        env:
+          TOOLCHAINS: com.apple.dt.toolchain.XcodeDefault
         run: |
           ARGS="-d $PATROL_IOS_UDID"
           if [ -n "${{ inputs.test-target }}" ]; then
