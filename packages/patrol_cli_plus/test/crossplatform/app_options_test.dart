@@ -276,7 +276,7 @@ void main() {
               ...['-xctestrun', xcTestRunPath],
               ...['-only-testing', 'RunnerUITests/RunnerUITests'],
               ...['-destination', 'platform=iOS,name=iPhone 13'],
-              ...['-destination-timeout', '1'],
+              ...['-destination-timeout', '30'],
               ...['-resultBundlePath', ''],
             ]),
           );
@@ -362,7 +362,7 @@ void main() {
               ...['-xctestrun', xcTestRunPath],
               ...['-only-testing', 'RunnerUITests/RunnerUITests'],
               ...['-destination', 'platform=iOS,name=iPhone 13'],
-              ...['-destination-timeout', '1'],
+              ...['-destination-timeout', '30'],
               ...['-resultBundlePath', ''],
             ]),
           );
@@ -484,7 +484,7 @@ void main() {
             ...['-xctestrun', 'some.xctestrun'],
             ...['-only-testing', 'RunnerUITests/RunnerUITests'],
             ...['-destination', 'id=$iosSimulatorDeviceId'],
-            ...['-destination-timeout', '1'],
+            ...['-destination-timeout', '30'],
             ...['-resultBundlePath', ''],
           ]),
         );

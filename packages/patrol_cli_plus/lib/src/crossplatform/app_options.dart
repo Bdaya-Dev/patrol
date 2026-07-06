@@ -1,4 +1,5 @@
 import 'dart:convert' show base64Encode, utf8;
+import 'dart:io' show Platform;
 
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' show basename;
@@ -300,12 +301,34 @@ class IOSAppOptions {
         else
           'id=${device.id}',
       ],
-      ...['-destination-timeout', '1'],
+      ...['-destination-timeout', _iosDestinationTimeoutSeconds()],
       ...['-resultBundlePath', resultBundlePath],
     ];
 
     return cmd;
   }
+}
+
+/// The `-destination-timeout` value (in seconds) for `xcodebuild
+/// test-without-building` when targeting a booted simulator by its UDID.
+///
+/// Resolving a freshly-booted simulator can take several seconds on slow or
+/// first-boot CI images (notably the macOS 26 / Xcode 26 runner, where the
+/// initial CoreSimulator/CoreDevice enumeration is slow), so the previous
+/// hardcoded `1` produced spurious "Unable to find a device matching the
+/// provided destination specifier" (exit 70) failures even though the device
+/// was already booted. Defaults to `30`; override with the
+/// `PATROL_DESTINATION_TIMEOUT` environment variable (a positive integer
+/// number of seconds).
+String _iosDestinationTimeoutSeconds() {
+  final raw = Platform.environment['PATROL_DESTINATION_TIMEOUT'];
+  if (raw != null) {
+    final parsed = int.tryParse(raw.trim());
+    if (parsed != null && parsed > 0) {
+      return parsed.toString();
+    }
+  }
+  return '30';
 }
 
 class MacOSAppOptions {
