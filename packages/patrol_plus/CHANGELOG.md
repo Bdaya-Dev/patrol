@@ -1,3 +1,7 @@
+## 5.6.1
+
+ - **FIX**(patrol_plus): make Xcode-26 iOS CI green by suppressing benign XCUITest lifecycle failures. ([332ab76a](https://github.com/Bdaya-Dev/patrol/commit/332ab76a65a09138b4babfecdbeee1b7776606c5))
+
 ## 5.6.0
 
  - **FIX**(patrol_plus): address CodeRabbit findings on PR [#34](https://github.com/Bdaya-Dev/patrol/issues/34). ([b40c18e0](https://github.com/Bdaya-Dev/patrol/commit/b40c18e0c263b3102dca72267e22e203e21e680f))

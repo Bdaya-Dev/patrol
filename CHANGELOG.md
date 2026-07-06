@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-07-06
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`patrol_cli_plus` - `v5.4.1`](#patrol_cli_plus---v541)
+ - [`patrol_plus` - `v5.6.1`](#patrol_plus---v561)
+
+---
+
+#### `patrol_cli_plus` - `v5.4.1`
+
+ - **FIX**(patrol_cli_plus): make xcodebuild -destination-timeout configurable (default 30s). ([0d46094d](https://github.com/Bdaya-Dev/patrol/commit/0d46094dc155dbd6b456092e4fe8836cf158000c))
+
+#### `patrol_plus` - `v5.6.1`
+
+ - **FIX**(patrol_plus): make Xcode-26 iOS CI green by suppressing benign XCUITest lifecycle failures. ([332ab76a](https://github.com/Bdaya-Dev/patrol/commit/332ab76a65a09138b4babfecdbeee1b7776606c5))
+
+
 ## 2026-07-05
 
 ### Changes
