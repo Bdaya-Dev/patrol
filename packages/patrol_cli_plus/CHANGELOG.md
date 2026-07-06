@@ -1,3 +1,7 @@
+## 5.4.1
+
+ - **FIX**(patrol_cli_plus): make xcodebuild -destination-timeout configurable (default 30s). ([0d46094d](https://github.com/Bdaya-Dev/patrol/commit/0d46094dc155dbd6b456092e4fe8836cf158000c))
+
 ## 5.4.0
 
  - **FIX**(patrol_plus): address CodeRabbit findings on PR [#34](https://github.com/Bdaya-Dev/patrol/issues/34). ([b40c18e0](https://github.com/Bdaya-Dev/patrol/commit/b40c18e0c263b3102dca72267e22e203e21e680f))
