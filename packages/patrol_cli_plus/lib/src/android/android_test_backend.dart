@@ -21,17 +21,16 @@ import 'package:process/process.dart';
 /// Provides functionality to build, install, run, and uninstall Android apps.
 ///
 /// This class must be stateless.
-/// Whether a finished Android run executed nothing while still looking like a
+/// Whether a finished Android run executed nothing while still reporting
 /// success.
 ///
-/// Gradle exits 0 when `connectedAndroidTest` enumerates zero JUnit classes --
-/// which is what happens when the app has no `androidTest` source set, or its
-/// `testInstrumentationRunner` is not `PatrolJUnitRunner`. Judging the run by
-/// exit code alone therefore reports a ~7-second "Total: 0" as green, and the
-/// consumer ships a permanently vacuous Android job believing it is covered.
-/// That is how Bdaya-Dev/oidc#418 reached users past a green CI.
+/// Gradle exits 0 when `connectedAndroidTest` enumerates zero JUnit classes,
+/// which happens when the app has no `androidTest` source set or its
+/// `testInstrumentationRunner` is not `PatrolJUnitRunner`. Judging by exit code
+/// alone would report such a run as passing, leaving the consumer with an
+/// Android job that verifies nothing.
 ///
-/// `interruptible` (develop mode) is excluded: it legitimately ends with no
+/// Develop mode (`interruptible`) is excluded: it legitimately ends with no
 /// completed test.
 bool isVacuousRun({
   required int exitCode,
@@ -363,16 +362,8 @@ class AndroidTestBackend {
         _logger.info(patrolLogReader.summary);
       }
 
-      // A run that executed NOTHING is a failure, not a success. Gradle exits 0
-      // when connectedAndroidTest enumerates zero JUnit classes -- which is what
-      // happens when the app has no androidTest source set, or its
-      // testInstrumentationRunner is not PatrolJUnitRunner -- so exit code alone
-      // reports a 7-second "Total: 0" run as green. A consumer then ships a
-      // permanently vacuous Android job believing it is covered; that is exactly
-      // how Bdaya-Dev/oidc#418 reached users past a green CI.
-      //
-      // Only when we are actually executing tests: develop mode (interruptible)
-      // legitimately ends with no completed test.
+      // A run that executed nothing is a failure, not a success; see
+      // isVacuousRun for why exit code alone is not sufficient here.
       if (isVacuousRun(
         exitCode: exitCode,
         interruptible: interruptible,

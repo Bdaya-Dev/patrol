@@ -1,14 +1,9 @@
 import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:test/test.dart';
 
-// Regression for Bdaya-Dev/oidc#418.
-//
-// Gradle exits 0 when connectedAndroidTest enumerates zero JUnit classes --
-// which is what happens when the app has no androidTest source set, or its
-// testInstrumentationRunner is not PatrolJUnitRunner. Judging the run by exit
-// code alone therefore reports a ~7-second "Total: 0" as a pass. The consuming
-// repo's Android job was green for its entire life having never executed a
-// single test, which is why it could not catch an Android redirect regression.
+// Gradle exits 0 when connectedAndroidTest enumerates zero JUnit classes, so
+// judging a run by exit code alone reports "Total: 0" as a pass. These pin the
+// predicate that turns that case into a failure.
 
 void main() {
   group('isVacuousRun', () {

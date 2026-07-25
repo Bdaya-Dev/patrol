@@ -104,12 +104,10 @@ class DesktopTestBackend {
           testNames.addAll(tests);
 
           if (testNames.isEmpty) {
-            // Deliberately a FAILURE, not a warning. Completing green here
-            // means a desktop run that discovered nothing is indistinguishable
-            // from one that passed everything -- the same blind spot that let
-            // Bdaya-Dev/oidc#418 ship past a green Android job for the entire
-            // life of that job. If PatrolAppService returns an empty list, the
-            // bundle or the test directory is misconfigured; say so loudly.
+            // A failure, not a warning: completing here would make a run that
+            // discovered nothing indistinguishable from one that passed
+            // everything. An empty list means the bundle or the test directory
+            // is misconfigured.
             task.fail('No tests found in $subject');
             throwToolExit(
               'No tests were discovered: PatrolAppService returned an empty '
