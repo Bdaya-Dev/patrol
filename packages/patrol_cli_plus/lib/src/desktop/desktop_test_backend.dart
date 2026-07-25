@@ -104,9 +104,18 @@ class DesktopTestBackend {
           testNames.addAll(tests);
 
           if (testNames.isEmpty) {
-            _logger.warn('No tests discovered');
-            task.complete('No tests found in $subject');
-            return;
+            // A failure, not a warning: completing here would make a run that
+            // discovered nothing indistinguishable from one that passed
+            // everything.
+            task.fail('No tests found in $subject');
+            throwToolExit(
+              'No tests were discovered: PatrolAppService returned an empty '
+              'test list for $subject. Either --tags/--exclude-tags matched no '
+              'test (the bundle is generated with those filters already '
+              'applied, so a non-matching tag yields an empty bundle), or the '
+              'test directory contains no *_test.dart files, or the bundle is '
+              'stale and needs regenerating.',
+            );
           }
 
           _logger.info('Discovered ${testNames.length} test(s)');

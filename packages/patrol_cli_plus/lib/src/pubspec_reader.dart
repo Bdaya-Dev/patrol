@@ -154,7 +154,12 @@ class PubspecReader {
       macos: macosConfig,
     );
 
-    final patrol = yaml['patrol_plus'] as Map?;
+    // This fork reads `patrol_plus`, but upstream patrol's docs still publish
+    // `patrol:`. Accepting the legacy key avoids discarding a consumer's whole
+    // config block (app_name, package_name, bundle ids, and with them the
+    // per-platform uninstall finalizers) with no diagnostic. PubspecReader has
+    // no logger, so the deprecation notice lives in the docs.
+    final patrol = (yaml['patrol_plus'] ?? yaml['patrol']) as Map?;
     if (patrol == null) {
       return config;
     }

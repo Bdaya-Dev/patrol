@@ -18,6 +18,24 @@ import 'package:patrol_log_plus/patrol_log_reader.dart';
 import 'package:platform/platform.dart';
 import 'package:process/process.dart';
 
+/// Whether a finished Android run executed nothing while still reporting
+/// success.
+///
+/// Gradle exits 0 when `connectedAndroidTest` enumerates zero JUnit classes,
+/// which happens when the app has no `androidTest` source set or its
+/// `testInstrumentationRunner` is not `PatrolJUnitRunner`. Judging by exit code
+/// alone would report such a run as passing, leaving the consumer with an
+/// Android job that verifies nothing.
+///
+/// Develop mode (`interruptible`) is excluded: it legitimately ends with no
+/// completed test.
+bool isVacuousRun({
+  required int exitCode,
+  required bool interruptible,
+  required int totalTests,
+}) =>
+    exitCode == 0 && !interruptible && totalTests == 0;
+
 /// Provides functionality to build, install, run, and uninstall Android apps.
 ///
 /// This class must be stateless.
@@ -342,6 +360,23 @@ class AndroidTestBackend {
       // Don't print the summary in develop
       if (!interruptible) {
         _logger.info(patrolLogReader.summary);
+      }
+
+      // A run that executed nothing is a failure, not a success; see
+      // isVacuousRun for why exit code alone is not sufficient here.
+      if (isVacuousRun(
+        exitCode: exitCode,
+        interruptible: interruptible,
+        totalTests: patrolLogReader.totalTests,
+      )) {
+        task.fail('No tests executed for $subject');
+        throwToolExit(
+          'Gradle succeeded but ZERO tests executed for $subject. The app '
+          'almost certainly has no androidTest source set, or its '
+          'testInstrumentationRunner is not pl.leancode.patrol.PatrolJUnitRunner '
+          '- see the Android setup steps in the patrol docs. Treating this as a '
+          'pass would report a green run that verified nothing.',
+        );
       }
 
       if (exitCode == 0) {
