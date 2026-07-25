@@ -154,7 +154,15 @@ class PubspecReader {
       macos: macosConfig,
     );
 
-    final patrol = yaml['patrol_plus'] as Map?;
+    // The fork renamed this key to `patrol_plus`, but upstream patrol's docs
+    // still publish `patrol:` -- so a consumer who followed those docs had
+    // their ENTIRE config block discarded here with no warning and no error,
+    // silently losing app_name, package_name and the bundle ids (and with them
+    // the per-platform uninstall finalizers). Bdaya-Dev/oidc hit exactly this.
+    // Accepting the legacy key is strictly better than dropping the config;
+    // PubspecReader has no logger to warn through, so the deprecation notice
+    // lives in the docs rather than at runtime.
+    final patrol = (yaml['patrol_plus'] ?? yaml['patrol']) as Map?;
     if (patrol == null) {
       return config;
     }
