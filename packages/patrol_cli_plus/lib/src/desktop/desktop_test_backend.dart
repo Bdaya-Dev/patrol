@@ -106,13 +106,15 @@ class DesktopTestBackend {
           if (testNames.isEmpty) {
             // A failure, not a warning: completing here would make a run that
             // discovered nothing indistinguishable from one that passed
-            // everything. An empty list means the bundle or the test directory
-            // is misconfigured.
+            // everything.
             task.fail('No tests found in $subject');
             throwToolExit(
               'No tests were discovered: PatrolAppService returned an empty '
-              'test list for $subject. Check that the test directory contains '
-              '*_test.dart files and that the bundle was regenerated.',
+              'test list for $subject. Either --tags/--exclude-tags matched no '
+              'test (the bundle is generated with those filters already '
+              'applied, so a non-matching tag yields an empty bundle), or the '
+              'test directory contains no *_test.dart files, or the bundle is '
+              'stale and needs regenerating.',
             );
           }
 

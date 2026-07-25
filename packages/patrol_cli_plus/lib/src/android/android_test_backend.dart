@@ -18,9 +18,6 @@ import 'package:patrol_log_plus/patrol_log_reader.dart';
 import 'package:platform/platform.dart';
 import 'package:process/process.dart';
 
-/// Provides functionality to build, install, run, and uninstall Android apps.
-///
-/// This class must be stateless.
 /// Whether a finished Android run executed nothing while still reporting
 /// success.
 ///
@@ -39,6 +36,9 @@ bool isVacuousRun({
 }) =>
     exitCode == 0 && !interruptible && totalTests == 0;
 
+/// Provides functionality to build, install, run, and uninstall Android apps.
+///
+/// This class must be stateless.
 class AndroidTestBackend {
   AndroidTestBackend({
     required Adb adb,
