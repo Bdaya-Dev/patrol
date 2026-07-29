@@ -342,6 +342,8 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       shard: stringArg('web-shard'),
       headless: stringArg('web-headless'),
       webPort: intArg('web-port'),
+      webTlsCertPath: stringArg('web-tls-cert-path'),
+      webTlsCertKeyPath: stringArg('web-tls-cert-key-path'),
       serverTimeout: intArg('web-server-timeout'),
       initTimeout: intArg('web-init-timeout'),
       browserArgs: stringArg('web-browser-args'),

@@ -486,6 +486,8 @@ class WebAppOptions {
     this.shard,
     this.headless,
     this.webPort,
+    this.webTlsCertPath,
+    this.webTlsCertKeyPath,
     this.serverTimeout,
     this.browserArgs,
     this.initTimeout,
@@ -520,6 +522,25 @@ class WebAppOptions {
   final String? shard;
   final String? headless;
   final int? webPort;
+
+  /// Path to the TLS certificate Flutter's web server serves with, forwarded
+  /// as `--web-tls-cert-path`.
+  ///
+  /// Serving the app over https is not cosmetic for an OpenID Connect relying
+  /// party: OpenID Connect Dynamic Client Registration 1.0 section 2 requires a
+  /// client whose `application_type` is `web` to register only https
+  /// `redirect_uris`, and a conformance provider refuses the authorization
+  /// request outright when an implicit or hybrid flow arrives with an http one.
+  /// Without this the implicit and hybrid profiles cannot be exercised at all.
+  ///
+  /// Must be set together with [webTlsCertKeyPath]; Flutter needs both and
+  /// silently stays on http given only one.
+  final String? webTlsCertPath;
+
+  /// Path to the key for [webTlsCertPath], forwarded as
+  /// `--web-tls-cert-key-path`.
+  final String? webTlsCertKeyPath;
+
   final String? browserArgs;
 
   /// Timeout in seconds for the web server to start.

@@ -4,6 +4,7 @@ import 'dart:io' as io;
 import 'dart:io';
 
 import 'package:dispose_scope/dispose_scope.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:patrol_cli_plus/src/base/logger.dart';
 import 'package:patrol_cli_plus/src/base/process.dart';
@@ -26,10 +27,69 @@ const _kDefaultWebServerTimeoutSeconds = 120;
 /// the caller's project root — silently reading/writing/importing the wrong
 /// file.
 String _resolveRelativeToCwd(String path) {
-  return p.isAbsolute(path)
-      ? path
-      : p.join(Directory.current.path, path);
+  return p.isAbsolute(path) ? path : p.join(Directory.current.path, path);
 }
+
+/// The `flutter run` command line that serves the app under test.
+///
+/// Extracted from [WebTestBackend] so the flag set can be asserted without
+/// starting a process -- the TLS pair below is unreachable from any other
+/// angle, and getting it half-right yields a server that quietly stays on
+/// http.
+@visibleForTesting
+List<String> buildFlutterWebRunArgs(
+  WebAppOptions options, {
+  required bool useChrome,
+  required bool develop,
+  required bool coverageEnabled,
+}) {
+  final certPath = options.webTlsCertPath;
+  final certKeyPath = options.webTlsCertKeyPath;
+  if ((certPath == null) != (certKeyPath == null)) {
+    // Flutter requires both and falls back to http given one, so a half
+    // configuration produces the exact failure TLS was enabled to prevent --
+    // and produces it silently, at the provider, minutes later.
+    throw ArgumentError(
+      'webTlsCertPath and webTlsCertKeyPath must be set together; got '
+      'cert=$certPath key=$certKeyPath.',
+    );
+  }
+
+  return [
+    options.flutter.command.executable,
+    ...options.flutter.command.arguments,
+    'run',
+    '-d',
+    if (useChrome) 'chrome' else 'web-server',
+    ...(develop || coverageEnabled) ? ['--verbose'] : [],
+    if (coverageEnabled && !develop) '--web-browser-flag=--headless=new',
+    if (options.webPort != null) '--web-port=${options.webPort}',
+    if (certPath != null) '--web-tls-cert-path=$certPath',
+    if (certKeyPath != null) '--web-tls-cert-key-path=$certKeyPath',
+    '--target=${options.flutter.target}',
+    '--${options.flutter.buildMode.name}',
+    // Note: --flavor is not supported for web, so we don't include it
+    ...options.flutter.dartDefines.entries.map(
+      (e) => '--dart-define=${e.key}=${e.value}',
+    ),
+    ...options.flutter.dartDefineFromFilePaths.map(
+      (e) => '--dart-define-from-file=$e',
+    ),
+  ];
+}
+
+/// The server URL Flutter announces on stdout, or null for any other line.
+///
+/// Matches https as well as http. It previously matched `http://` only, so
+/// enabling TLS would have left this scan blind: the completer never fires,
+/// and the run hangs to the server timeout instead of failing -- a worse
+/// outcome than the http-only server it replaced.
+///
+/// `ws://` is excluded deliberately; the DevTools notice arrives on the same
+/// stream and is not the app server.
+@visibleForTesting
+String? parseWebServerUrl(String line) =>
+    RegExp(r'https?://[^/\s]+:\d+').firstMatch(line)?.group(0);
 
 class WebTestBackend {
   WebTestBackend({
@@ -220,26 +280,14 @@ class WebTestBackend {
       'Starting Flutter web server (${useChrome ? "chrome" : "web-server"})...',
     );
 
-    final process = await _processManager.start([
-      options.flutter.command.executable,
-      ...options.flutter.command.arguments,
-      'run',
-      '-d',
-      if (useChrome) 'chrome' else 'web-server',
-      ...(develop || coverageEnabled) ? ['--verbose'] : [],
-      if (coverageEnabled && !develop)
-        '--web-browser-flag=--headless=new',
-      if (options.webPort != null) '--web-port=${options.webPort}',
-      '--target=${options.flutter.target}',
-      '--${options.flutter.buildMode.name}',
-      // Note: --flavor is not supported for web, so we don't include it
-      ...options.flutter.dartDefines.entries.map(
-        (e) => '--dart-define=${e.key}=${e.value}',
+    final process = await _processManager.start(
+      buildFlutterWebRunArgs(
+        options,
+        useChrome: useChrome,
+        develop: develop,
+        coverageEnabled: coverageEnabled,
       ),
-      ...options.flutter.dartDefineFromFilePaths.map(
-        (e) => '--dart-define-from-file=$e',
-      ),
-    ]);
+    );
 
     return process;
   }
@@ -265,12 +313,9 @@ class WebTestBackend {
         .listen((line) {
           _logger.detail('Flutter: $line');
 
-          // Look for the server URL in Flutter output
-          final urlMatch = RegExp(r'http://[^/]+:\d+').firstMatch(line);
-
           // [CHROME]: DevTools listening on ws://127.0.0.1:38861/devtools/browser/431953d3-ef67-428f-9321-9317256022d0
-          if (urlMatch != null && !completer.isCompleted) {
-            final url = urlMatch.group(0)!;
+          final url = parseWebServerUrl(line);
+          if (url != null && !completer.isCompleted) {
             _logger.info('Web server started at: $url');
 
             // Verify server is actually responding before completing
