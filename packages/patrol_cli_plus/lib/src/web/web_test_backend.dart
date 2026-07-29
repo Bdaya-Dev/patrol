@@ -33,9 +33,9 @@ String _resolveRelativeToCwd(String path) {
 /// The `flutter run` command line that serves the app under test.
 ///
 /// Extracted from [WebTestBackend] so the flag set can be asserted without
-/// starting a process -- the TLS pair below is unreachable from any other
-/// angle, and getting it half-right yields a server that quietly stays on
-/// http.
+/// starting a process. The list was previously built inline inside the method
+/// that spawns Flutter, so no test could reach it -- which is how an http-only
+/// server URL scan and a missing `--web-hostname` both went unnoticed.
 @visibleForTesting
 List<String> buildFlutterWebRunArgs(
   WebAppOptions options, {
@@ -46,9 +46,10 @@ List<String> buildFlutterWebRunArgs(
   final certPath = options.webTlsCertPath;
   final certKeyPath = options.webTlsCertKeyPath;
   if ((certPath == null) != (certKeyPath == null)) {
-    // Flutter requires both and falls back to http given one, so a half
-    // configuration produces the exact failure TLS was enabled to prevent --
-    // and produces it silently, at the provider, minutes later.
+    // Flutter rejects a half-pair on its own: `flutter run` routes both flags
+    // through `HttpsConfig.parse`, which throws. Validating here buys the
+    // failure before a process is spawned, and a message that names the option
+    // the caller actually set rather than Flutter's flag spelling.
     throw ArgumentError(
       'webTlsCertPath and webTlsCertKeyPath must be set together; got '
       'cert=$certPath key=$certKeyPath.',
@@ -64,6 +65,7 @@ List<String> buildFlutterWebRunArgs(
     ...(develop || coverageEnabled) ? ['--verbose'] : [],
     if (coverageEnabled && !develop) '--web-browser-flag=--headless=new',
     if (options.webPort != null) '--web-port=${options.webPort}',
+    if (options.webHostname != null) '--web-hostname=${options.webHostname}',
     if (certPath != null) '--web-tls-cert-path=$certPath',
     if (certKeyPath != null) '--web-tls-cert-key-path=$certKeyPath',
     '--target=${options.flutter.target}',
@@ -90,6 +92,17 @@ List<String> buildFlutterWebRunArgs(
 @visibleForTesting
 String? parseWebServerUrl(String line) =>
     RegExp(r'https?://[^/\s]+:\d+').firstMatch(line)?.group(0);
+
+/// The app URL Flutter's verbose output announces when launching the browser,
+/// as in `Launching Chromium (url = https://rp.oidc.test:22433, id = chrome)`.
+///
+/// Matches https as well as http, for the same reason as [parseWebServerUrl]:
+/// Flutter builds this URL with the https scheme once TLS is configured
+/// (`web_asset_server.dart` picks the scheme from the https config), so an
+/// http-only pattern silently captures nothing and leaves the base URL unset.
+@visibleForTesting
+String? parseLaunchingBaseUrl(String line) =>
+    RegExp(r'url = (https?://[^,\s]+)').firstMatch(line)?.group(1);
 
 class WebTestBackend {
   WebTestBackend({
@@ -434,11 +447,9 @@ class WebTestBackend {
 
           // Capture app base URL from verbose output:
           // "Launching Chromium (url = http://localhost:43185, ...)"
-          final baseUrlMatch = RegExp(
-            r'url = (http://[^,\s]+)',
-          ).firstMatch(line);
-          if (baseUrlMatch != null && _capturedBaseUrl == null) {
-            _capturedBaseUrl = baseUrlMatch.group(1);
+          final launchingBaseUrl = parseLaunchingBaseUrl(line);
+          if (launchingBaseUrl != null && _capturedBaseUrl == null) {
+            _capturedBaseUrl = launchingBaseUrl;
             _logger.detail('Captured base URL: $_capturedBaseUrl');
           }
 

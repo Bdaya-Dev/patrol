@@ -370,6 +370,17 @@ abstract class PatrolCommand extends Command<int> {
         valueHelp: '8080',
       )
       ..addOption(
+        'web-hostname',
+        help:
+            'Hostname the Flutter web server binds to. Defaults to localhost. '
+            'An OpenID Connect relying party running the implicit or hybrid '
+            'flow needs a real hostname as well as --web-tls-cert-path: OIDC '
+            'Dynamic Client Registration 1.0 section 2 bars a `web` client '
+            'from registering a localhost redirect_uri. Point the name at a '
+            'loopback address in your hosts file.',
+        valueHelp: 'rp.example.test',
+      )
+      ..addOption(
         'web-tls-cert-path',
         help:
             'Path to a TLS certificate for the Flutter web server, so the app '

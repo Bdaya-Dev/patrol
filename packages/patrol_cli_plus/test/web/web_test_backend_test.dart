@@ -5,36 +5,43 @@ import 'package:patrol_cli_plus/src/runner/flutter_command.dart';
 import 'package:patrol_cli_plus/src/web/web_test_backend.dart';
 import 'package:test/test.dart';
 
-// An RP served over plain http cannot be conformance-tested for the OpenID
-// Connect implicit or hybrid flows at all: OpenID Connect Dynamic Client
-// Registration 1.0 section 2 says a client whose `application_type` is `web`
-// "MUST only register URLs using the https scheme as redirect_uris", and a
-// conformance provider enforces it -- refusing the authorization request
-// outright rather than redirecting. Flutter's web server can serve TLS
-// (`--web-tls-cert-path` / `--web-tls-cert-key-path`), but patrol forwards
-// neither, so the flags cannot be reached through `patrol test`.
+// An RP served at http://localhost cannot be conformance-tested for the
+// OpenID Connect implicit or hybrid flows at all. Dynamic Client Registration
+// 1.0 section 2: "Web Clients using the OAuth Implicit Grant Type MUST only
+// register URLs using the https scheme as redirect_uris; they MUST NOT use
+// localhost as the hostname." A conformance provider enforces this by refusing
+// the authorization request outright rather than redirecting.
 //
-// The URL scan below is the second half of the same feature. Adding the flags
-// without it produces a WORSE failure than the one being fixed: Flutter prints
-// an `https://` URL, the scan never matches, and the run hangs to the server
-// timeout with no error rather than failing.
+// Flutter can satisfy both halves (`--web-tls-cert-path` /
+// `--web-tls-cert-key-path` and `--web-hostname`); patrol forwarded none of
+// them, so they were unreachable through `patrol test`.
+//
+// The two URL scans are the other half of the same feature. Forwarding the
+// flags without fixing them produces a WORSE failure than the one being fixed:
+// Flutter builds its URLs with the https scheme once TLS is on, an http-only
+// pattern never matches, and the run hangs to the server timeout with no error
+// instead of failing.
 
-WebAppOptions _options({String? certPath, String? certKeyPath}) =>
-    WebAppOptions(
-      flutter: const FlutterAppOptions(
-        command: FlutterCommand('flutter'),
-        target: 'integration_test/app_test.dart',
-        buildMode: BuildMode.debug,
-        flavor: null,
-        buildName: null,
-        buildNumber: null,
-        dartDefines: {},
-        dartDefineFromFilePaths: [],
-      ),
-      webPort: 22433,
-      webTlsCertPath: certPath,
-      webTlsCertKeyPath: certKeyPath,
-    );
+WebAppOptions _options({
+  String? certPath,
+  String? certKeyPath,
+  String? hostname,
+}) => WebAppOptions(
+  flutter: const FlutterAppOptions(
+    command: FlutterCommand('flutter'),
+    target: 'integration_test/app_test.dart',
+    buildMode: BuildMode.debug,
+    flavor: null,
+    buildName: null,
+    buildNumber: null,
+    dartDefines: {},
+    dartDefineFromFilePaths: [],
+  ),
+  webPort: 22433,
+  webTlsCertPath: certPath,
+  webTlsCertKeyPath: certKeyPath,
+  webHostname: hostname,
+);
 
 void main() {
   group('buildFlutterWebRunArgs forwards the TLS flags', () {
@@ -65,9 +72,12 @@ void main() {
     });
 
     test('a cert without its key is not forwarded half-configured', () {
-      // Flutter needs both. Sending one produces a server that silently stays
-      // on http, which is the failure this feature exists to remove -- so it
-      // must be refused here, loudly, rather than half-applied.
+      // Flutter itself rejects a half-pair -- `HttpsConfig.parse`
+      // (flutter_tools/lib/src/web/devfs_config.dart) throws an ArgumentError,
+      // and `flutter run` routes both flags through it. So this guard is not
+      // preventing a silent http fallback; it is failing before a process is
+      // spawned, naming patrol's own option names rather than Flutter's, so
+      // the message points at the option the caller actually set.
       expect(
         () => buildFlutterWebRunArgs(
           _options(certPath: '/certs/rp.pem'),
@@ -77,6 +87,75 @@ void main() {
         ),
         throwsA(isA<ArgumentError>()),
       );
+    });
+  });
+
+  group('buildFlutterWebRunArgs forwards the hostname', () {
+    // https alone is only half of the requirement. OpenID Connect Dynamic
+    // Client Registration 1.0 section 2: "Web Clients using the OAuth Implicit
+    // Grant Type MUST only register URLs using the https scheme as
+    // redirect_uris; they MUST NOT use localhost as the hostname." Serving on
+    // localhost therefore keeps an implicit/hybrid RP non-conformant even once
+    // TLS is on -- a conformance provider is entitled to reject it, and the
+    // suite checking only the scheme today does not make the registration
+    // legal.
+    test('the hostname is passed through when set', () {
+      final args = buildFlutterWebRunArgs(
+        _options(
+          hostname: 'rp.oidc.test',
+          certPath: '/certs/rp.pem',
+          certKeyPath: '/certs/rp.key',
+        ),
+        useChrome: false,
+        develop: false,
+        coverageEnabled: false,
+      );
+
+      expect(args, contains('--web-hostname=rp.oidc.test'));
+      // The hostname and the TLS pair have to survive together: the cert is
+      // issued for this name, and the redirect_uri origin is built from it.
+      expect(args, contains('--web-tls-cert-path=/certs/rp.pem'));
+      expect(args, contains('--web-port=22433'));
+    });
+
+    test('no hostname flag appears when unset', () {
+      final args = buildFlutterWebRunArgs(
+        _options(),
+        useChrome: false,
+        develop: false,
+        coverageEnabled: false,
+      );
+
+      // Flutter defaults to localhost; patrol must not force a hostname on
+      // callers that never asked for one.
+      expect(args.where((a) => a.startsWith('--web-hostname')), isEmpty);
+    });
+  });
+
+  group('the develop base-URL scan accepts TLS', () {
+    // Same http-only blindness as parseWebServerUrl, in the develop path's
+    // "Launching Chromium (url = ...)" line. Under TLS this never matched, so
+    // the captured base URL stayed null.
+    test('an https launch URL is recognised', () {
+      expect(
+        parseLaunchingBaseUrl(
+          'Launching Chromium (url = https://rp.oidc.test:22433, id = chrome)',
+        ),
+        'https://rp.oidc.test:22433',
+      );
+    });
+
+    test('an http launch URL still is', () {
+      expect(
+        parseLaunchingBaseUrl(
+          'Launching Chromium (url = http://localhost:43185, id = chrome)',
+        ),
+        'http://localhost:43185',
+      );
+    });
+
+    test('a line with no launch URL yields null', () {
+      expect(parseLaunchingBaseUrl('Flutter: some unrelated log line'), isNull);
     });
   });
 
