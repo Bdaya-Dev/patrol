@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-07-30
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`patrol_cli_plus` - `v5.5.0`](#patrol_cli_plus---v550)
+
+---
+
+#### `patrol_cli_plus` - `v5.5.0`
+
+ - **FIX**(patrol_cli_plus): fail a run that executed zero tests ([#42](https://github.com/Bdaya-Dev/patrol/issues/42)). ([cf2fcc8b](https://github.com/Bdaya-Dev/patrol/commit/cf2fcc8b1f866ec0869204bced5b4778cf240bc6))
+ - **FEAT**(patrol_cli_plus): serve web tests over https at a real hostname ([#44](https://github.com/Bdaya-Dev/patrol/issues/44)). ([59a3f5ae](https://github.com/Bdaya-Dev/patrol/commit/59a3f5ae2d9c4629ae4a0093bbabcb2b283d77fc))
+
+
 ## 2026-07-06
 
 ### Changes
