@@ -486,6 +486,9 @@ class WebAppOptions {
     this.shard,
     this.headless,
     this.webPort,
+    this.webHostname,
+    this.webTlsCertPath,
+    this.webTlsCertKeyPath,
     this.serverTimeout,
     this.browserArgs,
     this.initTimeout,
@@ -520,6 +523,37 @@ class WebAppOptions {
   final String? shard;
   final String? headless;
   final int? webPort;
+
+  /// Hostname Flutter's web server binds to, forwarded as `--web-hostname`.
+  ///
+  /// Flutter defaults to `localhost`, which is the other half of the OpenID
+  /// Connect registration problem [webTlsCertPath] addresses. Dynamic Client
+  /// Registration 1.0 section 2: "Web Clients using the OAuth Implicit Grant
+  /// Type MUST only register URLs using the https scheme as `redirect_uris`;
+  /// they MUST NOT use localhost as the hostname." Both halves bind, so an
+  /// implicit or hybrid RP needs a real hostname as well as TLS -- resolve it
+  /// to a loopback address in `hosts` and issue the certificate for it.
+  final String? webHostname;
+
+  /// Path to the TLS certificate Flutter's web server serves with, forwarded
+  /// as `--web-tls-cert-path`.
+  ///
+  /// Serving the app over https is not cosmetic for an OpenID Connect relying
+  /// party: OpenID Connect Dynamic Client Registration 1.0 section 2 requires a
+  /// client whose `application_type` is `web` to register only https
+  /// `redirect_uris`, and a conformance provider refuses the authorization
+  /// request outright when an implicit or hybrid flow arrives with an http one.
+  /// Without this the implicit and hybrid profiles cannot be exercised at all.
+  ///
+  /// Must be set together with [webTlsCertKeyPath]. Flutter rejects a half-pair
+  /// itself -- `HttpsConfig.parse` throws -- so patrol validates early only to
+  /// fail before spawning a process, with a message naming these option names.
+  final String? webTlsCertPath;
+
+  /// Path to the key for [webTlsCertPath], forwarded as
+  /// `--web-tls-cert-key-path`.
+  final String? webTlsCertKeyPath;
+
   final String? browserArgs;
 
   /// Timeout in seconds for the web server to start.

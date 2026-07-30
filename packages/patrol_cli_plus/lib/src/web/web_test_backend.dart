@@ -4,6 +4,7 @@ import 'dart:io' as io;
 import 'dart:io';
 
 import 'package:dispose_scope/dispose_scope.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:patrol_cli_plus/src/base/logger.dart';
 import 'package:patrol_cli_plus/src/base/process.dart';
@@ -26,9 +27,108 @@ const _kDefaultWebServerTimeoutSeconds = 120;
 /// the caller's project root — silently reading/writing/importing the wrong
 /// file.
 String _resolveRelativeToCwd(String path) {
-  return p.isAbsolute(path)
-      ? path
-      : p.join(Directory.current.path, path);
+  return p.isAbsolute(path) ? path : p.join(Directory.current.path, path);
+}
+
+/// The `flutter run` command line that serves the app under test.
+///
+/// Extracted from [WebTestBackend] so the flag set can be asserted without
+/// starting a process. The list was previously built inline inside the method
+/// that spawns Flutter, so no test could reach it -- which is how an http-only
+/// server URL scan and a missing `--web-hostname` both went unnoticed.
+@visibleForTesting
+List<String> buildFlutterWebRunArgs(
+  WebAppOptions options, {
+  required bool useChrome,
+  required bool develop,
+  required bool coverageEnabled,
+}) {
+  final certPath = options.webTlsCertPath;
+  final certKeyPath = options.webTlsCertKeyPath;
+  if ((certPath == null) != (certKeyPath == null)) {
+    // Flutter rejects a half-pair on its own: `flutter run` routes both flags
+    // through `HttpsConfig.parse`, which throws. Validating here buys the
+    // failure before a process is spawned, and a message that names the option
+    // the caller actually set rather than Flutter's flag spelling.
+    throw ArgumentError(
+      'webTlsCertPath and webTlsCertKeyPath must be set together; got '
+      'cert=$certPath key=$certKeyPath.',
+    );
+  }
+
+  return [
+    options.flutter.command.executable,
+    ...options.flutter.command.arguments,
+    'run',
+    '-d',
+    if (useChrome) 'chrome' else 'web-server',
+    ...(develop || coverageEnabled) ? ['--verbose'] : [],
+    if (coverageEnabled && !develop) '--web-browser-flag=--headless=new',
+    if (options.webPort != null) '--web-port=${options.webPort}',
+    if (options.webHostname != null) '--web-hostname=${options.webHostname}',
+    if (certPath != null) '--web-tls-cert-path=$certPath',
+    if (certKeyPath != null) '--web-tls-cert-key-path=$certKeyPath',
+    '--target=${options.flutter.target}',
+    '--${options.flutter.buildMode.name}',
+    // Note: --flavor is not supported for web, so we don't include it
+    ...options.flutter.dartDefines.entries.map(
+      (e) => '--dart-define=${e.key}=${e.value}',
+    ),
+    ...options.flutter.dartDefineFromFilePaths.map(
+      (e) => '--dart-define-from-file=$e',
+    ),
+  ];
+}
+
+/// The server URL Flutter announces on stdout, or null for any other line.
+///
+/// Matches https as well as http. It previously matched `http://` only, so
+/// enabling TLS would have left this scan blind: the completer never fires,
+/// and the run hangs to the server timeout instead of failing -- a worse
+/// outcome than the http-only server it replaced.
+///
+/// `ws://` is excluded deliberately; the DevTools notice arrives on the same
+/// stream and is not the app server.
+@visibleForTesting
+String? parseWebServerUrl(String line) =>
+    RegExp(r'https?://[^/\s]+:\d+').firstMatch(line)?.group(0);
+
+/// The app URL Flutter's verbose output announces when launching the browser,
+/// as in `Launching Chromium (url = https://rp.oidc.test:22433, id = chrome)`.
+///
+/// Matches https as well as http, for the same reason as [parseWebServerUrl]:
+/// Flutter builds this URL with the https scheme once TLS is configured
+/// (`web_asset_server.dart` picks the scheme from the https config), so an
+/// http-only pattern silently captures nothing and leaves the base URL unset.
+@visibleForTesting
+String? parseLaunchingBaseUrl(String line) =>
+    RegExp(r'url = (https?://[^,\s]+)').firstMatch(line)?.group(1);
+
+/// Trust configuration for the Dart-side web-server readiness probe.
+///
+/// Returns null when no certificate was supplied, leaving the default trust
+/// store in place.
+///
+/// The probe is an [HttpClient], and its trust store is entirely separate from
+/// the browser's -- `--web-browser-args`, and Chromium's
+/// `--ignore-certificate-errors` with it, do not reach it. A self-signed
+/// development certificate therefore fails the probe while the browser is
+/// perfectly happy with it:
+///
+///     Server verification failed: HandshakeException: Handshake error in
+///     client (OS Error: CERTIFICATE_VERIFY_FAILED: self signed certificate)
+///
+/// So the supplied certificate is added as a trusted root, rather than
+/// verification being switched off. The probe stays a real check: a server
+/// presenting some OTHER certificate still fails it. `withTrustedRoots` is kept
+/// on so this is additive to the public roots.
+@visibleForTesting
+SecurityContext? webProbeSecurityContext(String? certPath) {
+  if (certPath == null) {
+    return null;
+  }
+  return SecurityContext(withTrustedRoots: true)
+    ..setTrustedCertificates(certPath);
 }
 
 class WebTestBackend {
@@ -106,6 +206,7 @@ class WebTestBackend {
       final baseUrl = await _waitForWebServer(
         flutterProcess,
         serverTimeout: options.serverTimeout,
+        tlsCertPath: options.webTlsCertPath,
       );
 
       // Run Playwright tests
@@ -220,26 +321,14 @@ class WebTestBackend {
       'Starting Flutter web server (${useChrome ? "chrome" : "web-server"})...',
     );
 
-    final process = await _processManager.start([
-      options.flutter.command.executable,
-      ...options.flutter.command.arguments,
-      'run',
-      '-d',
-      if (useChrome) 'chrome' else 'web-server',
-      ...(develop || coverageEnabled) ? ['--verbose'] : [],
-      if (coverageEnabled && !develop)
-        '--web-browser-flag=--headless=new',
-      if (options.webPort != null) '--web-port=${options.webPort}',
-      '--target=${options.flutter.target}',
-      '--${options.flutter.buildMode.name}',
-      // Note: --flavor is not supported for web, so we don't include it
-      ...options.flutter.dartDefines.entries.map(
-        (e) => '--dart-define=${e.key}=${e.value}',
+    final process = await _processManager.start(
+      buildFlutterWebRunArgs(
+        options,
+        useChrome: useChrome,
+        develop: develop,
+        coverageEnabled: coverageEnabled,
       ),
-      ...options.flutter.dartDefineFromFilePaths.map(
-        (e) => '--dart-define-from-file=$e',
-      ),
-    ]);
+    );
 
     return process;
   }
@@ -247,6 +336,7 @@ class WebTestBackend {
   Future<String> _waitForWebServer(
     Process flutterProcess, {
     int? serverTimeout,
+    String? tlsCertPath,
   }) {
     final timeoutDuration = Duration(
       seconds: serverTimeout ?? _kDefaultWebServerTimeoutSeconds,
@@ -265,16 +355,13 @@ class WebTestBackend {
         .listen((line) {
           _logger.detail('Flutter: $line');
 
-          // Look for the server URL in Flutter output
-          final urlMatch = RegExp(r'http://[^/]+:\d+').firstMatch(line);
-
           // [CHROME]: DevTools listening on ws://127.0.0.1:38861/devtools/browser/431953d3-ef67-428f-9321-9317256022d0
-          if (urlMatch != null && !completer.isCompleted) {
-            final url = urlMatch.group(0)!;
+          final url = parseWebServerUrl(line);
+          if (url != null && !completer.isCompleted) {
             _logger.info('Web server started at: $url');
 
             // Verify server is actually responding before completing
-            _verifyServerReady(url)
+            _verifyServerReady(url, tlsCertPath: tlsCertPath)
                 .then((isReady) {
                   if (!completer.isCompleted && isReady) {
                     // IMPORTANT: Do NOT cancel subscriptions here!
@@ -389,11 +476,9 @@ class WebTestBackend {
 
           // Capture app base URL from verbose output:
           // "Launching Chromium (url = http://localhost:43185, ...)"
-          final baseUrlMatch = RegExp(
-            r'url = (http://[^,\s]+)',
-          ).firstMatch(line);
-          if (baseUrlMatch != null && _capturedBaseUrl == null) {
-            _capturedBaseUrl = baseUrlMatch.group(1);
+          final launchingBaseUrl = parseLaunchingBaseUrl(line);
+          if (launchingBaseUrl != null && _capturedBaseUrl == null) {
+            _capturedBaseUrl = launchingBaseUrl;
             _logger.detail('Captured base URL: $_capturedBaseUrl');
           }
 
@@ -792,12 +877,14 @@ class WebTestBackend {
     }
   }
 
-  Future<bool> _verifyServerReady(String url) async {
+  Future<bool> _verifyServerReady(String url, {String? tlsCertPath}) async {
     try {
       _logger.detail('Verifying server is ready at: $url');
 
-      // Try to make a simple HTTP request to verify server is responding
-      final client = HttpClient()
+      // Try to make a simple HTTP request to verify server is responding.
+      // When the caller supplied a TLS certificate, trust it here too -- this
+      // client does not share the browser's trust store.
+      final client = HttpClient(context: webProbeSecurityContext(tlsCertPath))
         ..connectionTimeout = const Duration(seconds: 5);
 
       final request = await client.getUrl(Uri.parse(url));

@@ -370,6 +370,36 @@ abstract class PatrolCommand extends Command<int> {
         valueHelp: '8080',
       )
       ..addOption(
+        'web-hostname',
+        help:
+            'Hostname the Flutter web server binds to. Defaults to localhost. '
+            'An OpenID Connect relying party running the implicit or hybrid '
+            'flow needs a real hostname as well as --web-tls-cert-path: OIDC '
+            'Dynamic Client Registration 1.0 section 2 bars a `web` client '
+            'from registering a localhost redirect_uri. Point the name at a '
+            'loopback address in your hosts file.',
+        valueHelp: 'rp.example.test',
+      )
+      ..addOption(
+        'web-tls-cert-path',
+        help:
+            'Path to a TLS certificate for the Flutter web server, so the app '
+            'under test is served over https. Required together with '
+            '--web-tls-cert-key-path. An OpenID Connect relying party needs '
+            'this to exercise the implicit and hybrid flows: OIDC Dynamic '
+            'Client Registration 1.0 section 2 requires a `web` client to '
+            'register https redirect_uris, and a conformance provider refuses '
+            'the request outright when an http one arrives.',
+        valueHelp: 'path/to/cert.pem',
+      )
+      ..addOption(
+        'web-tls-cert-key-path',
+        help:
+            'Path to the key for --web-tls-cert-path. Required together with '
+            'it; Flutter falls back to http when only one is given.',
+        valueHelp: 'path/to/cert.key',
+      )
+      ..addOption(
         'web-server-timeout',
         help:
             'Maximum time in seconds to wait for the Flutter web server to start. '
