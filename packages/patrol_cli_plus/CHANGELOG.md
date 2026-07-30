@@ -1,3 +1,8 @@
+## 5.5.0
+
+ - **FIX**(patrol_cli_plus): fail a run that executed zero tests ([#42](https://github.com/Bdaya-Dev/patrol/issues/42)). ([cf2fcc8b](https://github.com/Bdaya-Dev/patrol/commit/cf2fcc8b1f866ec0869204bced5b4778cf240bc6))
+ - **FEAT**(patrol_cli_plus): serve web tests over https at a real hostname ([#44](https://github.com/Bdaya-Dev/patrol/issues/44)). ([59a3f5ae](https://github.com/Bdaya-Dev/patrol/commit/59a3f5ae2d9c4629ae4a0093bbabcb2b283d77fc))
+
 ## 5.4.1
 
  - **FIX**(patrol_cli_plus): make xcodebuild -destination-timeout configurable (default 30s). ([0d46094d](https://github.com/Bdaya-Dev/patrol/commit/0d46094dc155dbd6b456092e4fe8836cf158000c))
