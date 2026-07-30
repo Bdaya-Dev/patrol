@@ -104,6 +104,33 @@ String? parseWebServerUrl(String line) =>
 String? parseLaunchingBaseUrl(String line) =>
     RegExp(r'url = (https?://[^,\s]+)').firstMatch(line)?.group(1);
 
+/// Trust configuration for the Dart-side web-server readiness probe.
+///
+/// Returns null when no certificate was supplied, leaving the default trust
+/// store in place.
+///
+/// The probe is an [HttpClient], and its trust store is entirely separate from
+/// the browser's -- `--web-browser-args`, and Chromium's
+/// `--ignore-certificate-errors` with it, do not reach it. A self-signed
+/// development certificate therefore fails the probe while the browser is
+/// perfectly happy with it:
+///
+///     Server verification failed: HandshakeException: Handshake error in
+///     client (OS Error: CERTIFICATE_VERIFY_FAILED: self signed certificate)
+///
+/// So the supplied certificate is added as a trusted root, rather than
+/// verification being switched off. The probe stays a real check: a server
+/// presenting some OTHER certificate still fails it. `withTrustedRoots` is kept
+/// on so this is additive to the public roots.
+@visibleForTesting
+SecurityContext? webProbeSecurityContext(String? certPath) {
+  if (certPath == null) {
+    return null;
+  }
+  return SecurityContext(withTrustedRoots: true)
+    ..setTrustedCertificates(certPath);
+}
+
 class WebTestBackend {
   WebTestBackend({
     required ProcessManager processManager,
@@ -179,6 +206,7 @@ class WebTestBackend {
       final baseUrl = await _waitForWebServer(
         flutterProcess,
         serverTimeout: options.serverTimeout,
+        tlsCertPath: options.webTlsCertPath,
       );
 
       // Run Playwright tests
@@ -308,6 +336,7 @@ class WebTestBackend {
   Future<String> _waitForWebServer(
     Process flutterProcess, {
     int? serverTimeout,
+    String? tlsCertPath,
   }) {
     final timeoutDuration = Duration(
       seconds: serverTimeout ?? _kDefaultWebServerTimeoutSeconds,
@@ -332,7 +361,7 @@ class WebTestBackend {
             _logger.info('Web server started at: $url');
 
             // Verify server is actually responding before completing
-            _verifyServerReady(url)
+            _verifyServerReady(url, tlsCertPath: tlsCertPath)
                 .then((isReady) {
                   if (!completer.isCompleted && isReady) {
                     // IMPORTANT: Do NOT cancel subscriptions here!
@@ -848,12 +877,14 @@ class WebTestBackend {
     }
   }
 
-  Future<bool> _verifyServerReady(String url) async {
+  Future<bool> _verifyServerReady(String url, {String? tlsCertPath}) async {
     try {
       _logger.detail('Verifying server is ready at: $url');
 
-      // Try to make a simple HTTP request to verify server is responding
-      final client = HttpClient()
+      // Try to make a simple HTTP request to verify server is responding.
+      // When the caller supplied a TLS certificate, trust it here too -- this
+      // client does not share the browser's trust store.
+      final client = HttpClient(context: webProbeSecurityContext(tlsCertPath))
         ..connectionTimeout = const Duration(seconds: 5);
 
       final request = await client.getUrl(Uri.parse(url));
