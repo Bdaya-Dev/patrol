@@ -1,3 +1,7 @@
+## 5.5.1
+
+ - **FIX**(patrol_cli_plus): don't await close() on a listenerless VM-connection controller ([#46](https://github.com/Bdaya-Dev/patrol/issues/46)). ([634b964e](https://github.com/Bdaya-Dev/patrol/commit/634b964eab4104a33b10a6f603b0772e144b5681))
+
 ## 5.5.0
 
  - **FIX**(patrol_cli_plus): fail a run that executed zero tests ([#42](https://github.com/Bdaya-Dev/patrol/issues/42)). ([cf2fcc8b](https://github.com/Bdaya-Dev/patrol/commit/cf2fcc8b1f866ec0869204bced5b4778cf240bc6))
