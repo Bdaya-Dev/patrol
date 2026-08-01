@@ -353,7 +353,7 @@ class AndroidTestBackend {
           .disposedBy(scope);
 
       final exitCode = await process.exitCode;
-      await _vmConnectionController.close();
+      await closeVmConnectionController(_vmConnectionController);
       patrolLogReader.stopTimer();
       processLogcat.kill();
 

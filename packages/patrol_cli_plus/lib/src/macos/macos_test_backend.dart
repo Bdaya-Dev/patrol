@@ -223,7 +223,7 @@ class MacOSTestBackend {
 
       final exitCode = await process.exitCode;
       _filePoller?.cancel();
-      await _vmConnectionController.close();
+      await closeVmConnectionController(_vmConnectionController);
 
       if (exitCode == 0) {
         task.complete('Completed executing $subject');

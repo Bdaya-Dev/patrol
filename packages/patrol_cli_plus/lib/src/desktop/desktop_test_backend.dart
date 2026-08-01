@@ -166,7 +166,7 @@ class DesktopTestBackend {
       task.fail('Failed to execute tests of $subject ($e)');
       rethrow;
     } finally {
-      await _vmConnectionController.close();
+      await closeVmConnectionController(_vmConnectionController);
     }
   }
 
