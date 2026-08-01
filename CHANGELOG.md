@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-08-01
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`patrol_cli_plus` - `v5.5.1`](#patrol_cli_plus---v551)
+ - [`patrol_plus` - `v5.6.3`](#patrol_plus---v563)
+
+---
+
+#### `patrol_cli_plus` - `v5.5.1`
+
+ - **FIX**(patrol_cli_plus): don't await close() on a listenerless VM-connection controller ([#46](https://github.com/Bdaya-Dev/patrol/issues/46)). ([634b964e](https://github.com/Bdaya-Dev/patrol/commit/634b964eab4104a33b10a6f603b0772e144b5681))
+
+#### `patrol_plus` - `v5.6.3`
+
+ - **FIX**(patrol_plus): install the textinput mock on web so enterText delivers text ([#43](https://github.com/Bdaya-Dev/patrol/issues/43)). ([833ff0ed](https://github.com/Bdaya-Dev/patrol/commit/833ff0ed0ca64356821af84bc83f40d8190f1430))
+
+
 ## 2026-07-30
 
 ### Changes

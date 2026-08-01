@@ -1,3 +1,7 @@
+## 5.6.3
+
+ - **FIX**(patrol_plus): install the textinput mock on web so enterText delivers text ([#43](https://github.com/Bdaya-Dev/patrol/issues/43)). ([833ff0ed](https://github.com/Bdaya-Dev/patrol/commit/833ff0ed0ca64356821af84bc83f40d8190f1430))
+
 ## 5.6.2
 
 - Fix `enterText` silently writing nothing on Flutter web. `PatrolBinding.registerTestTextInput`
