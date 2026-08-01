@@ -256,7 +256,7 @@ class IOSTestBackend {
       process.listenStdErr((l) => _logger.detail('\t$l')).disposedBy(scope);
 
       final exitCode = await process.exitCode;
-      await _vmConnectionController.close();
+      await closeVmConnectionController(_vmConnectionController);
       patrolLogReader.stopTimer();
       processLogs.kill();
 
