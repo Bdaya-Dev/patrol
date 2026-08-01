@@ -164,8 +164,24 @@ class PatrolBinding extends LiveTestWidgetsFlutterBinding {
   @override
   bool get overrideHttpClient => false;
 
+  /// Whether to install the `flutter/textinput` mock.
+  ///
+  /// False on native, where Patrol drives the platform's REAL keyboard through
+  /// native automation and the mock would intercept text meant for it.
+  ///
+  /// True on web, where there is no native automation: nothing else installs
+  /// the mock, so `tester.enterText` completes normally and delivers NOTHING.
+  /// The field keeps its previous value and any validator on it fires, which
+  /// surfaces as a form rejecting valid input rather than as a lost keystroke.
+  ///
+  /// It has to be decided HERE rather than at the call site. Registering the
+  /// mock inside `PatrolTester.enterText` is too late: by then the field has
+  /// been focused and its text-input connection already opened against no mock,
+  /// so the first `enterText` of each test still writes nothing (measured — the
+  /// dialog under test stayed open on a blank required field). Deciding it at
+  /// binding init puts the mock in place before anything can focus a field.
   @override
-  bool get registerTestTextInput => false;
+  bool get registerTestTextInput => kIsWeb;
 
   /// Logger used by this binding.
   void Function(String message) logger = _defaultPrintLogger;

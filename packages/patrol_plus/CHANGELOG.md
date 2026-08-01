@@ -1,3 +1,12 @@
+## 5.6.2
+
+- Fix `enterText` silently writing nothing on Flutter web. `PatrolBinding.registerTestTextInput`
+  was `false` on every platform, and on web nothing else installs the `flutter/textinput` mock,
+  so `tester.enterText` completed normally and delivered no text — the field kept its previous
+  value and any validator on it fired. It now returns `kIsWeb`: still false on native (where
+  Patrol drives the real keyboard through native automation and the mock would intercept text
+  meant for it), true on web.
+
 ## 5.6.1
 
  - **FIX**(patrol_plus): guard Xcode-26 RunnerUITests Swift-linking for Swift pods. ([c1179a16](https://github.com/Bdaya-Dev/patrol/commit/c1179a16e62da885b397f776dea5dd60233ca509))
