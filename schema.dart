@@ -312,6 +312,29 @@ class GetOsVersionResponse {
   late int osVersion;
 }
 
+class AndroidTakeScreenshotRequest {
+  late String path;
+}
+
+class AndroidTakeScreenshotResponse {
+  late String path;
+  late int sizeBytes;
+}
+
+class AndroidStartScreenRecordingRequest {
+  late String path;
+  late int? timeLimitSeconds;
+  late int? bitRate;
+  late int? width;
+  late int? height;
+}
+
+class AndroidStopScreenRecordingResponse {
+  late String path;
+  late int sizeBytes;
+  late int durationMillis;
+}
+
 class AndroidTakeCameraPhotoRequest {
   AndroidSelector? shutterButtonSelector;
   AndroidSelector? doneButtonSelector;
@@ -427,6 +450,13 @@ abstract class AndroidAutomator<AndroidServer, DartClient> {
 
   // notifications
   void tapOnNotification(AndroidTapOnNotificationRequest request);
+
+  // capture
+  AndroidTakeScreenshotResponse takeScreenshot(
+    AndroidTakeScreenshotRequest request,
+  );
+  void startScreenRecording(AndroidStartScreenRecordingRequest request);
+  AndroidStopScreenRecordingResponse stopScreenRecording();
 
   // camera
   void takeCameraPhoto(AndroidTakeCameraPhotoRequest request);

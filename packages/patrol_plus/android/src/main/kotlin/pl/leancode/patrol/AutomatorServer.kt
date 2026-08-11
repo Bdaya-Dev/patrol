@@ -262,6 +262,33 @@ class AutomatorServer(private val automation: Automator) : MobileAutomatorServer
         }
     }
 
+    override fun takeScreenshot(request: Contracts.AndroidTakeScreenshotRequest): Contracts.AndroidTakeScreenshotResponse {
+        val result = automation.takeScreenshot(request.path)
+        return Contracts.AndroidTakeScreenshotResponse(
+            path = result.path,
+            sizeBytes = result.sizeBytes
+        )
+    }
+
+    override fun startScreenRecording(request: Contracts.AndroidStartScreenRecordingRequest) {
+        automation.startScreenRecording(
+            path = request.path,
+            timeLimitSeconds = request.timeLimitSeconds,
+            bitRate = request.bitRate,
+            width = request.width,
+            height = request.height
+        )
+    }
+
+    override fun stopScreenRecording(): Contracts.AndroidStopScreenRecordingResponse {
+        val result = automation.stopScreenRecording()
+        return Contracts.AndroidStopScreenRecordingResponse(
+            path = result.path,
+            sizeBytes = result.sizeBytes,
+            durationMillis = result.durationMillis
+        )
+    }
+
     override fun takeCameraPhoto(request: Contracts.AndroidTakeCameraPhotoRequest) {
         val isEmulator = isVirtualDevice().isVirtualDevice
 

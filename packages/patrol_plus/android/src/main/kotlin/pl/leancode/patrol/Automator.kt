@@ -31,6 +31,7 @@ import pl.leancode.patrol.contracts.Contracts.KeyboardBehavior
 import pl.leancode.patrol.contracts.Contracts.Notification
 import pl.leancode.patrol.contracts.Contracts.Point2D
 import pl.leancode.patrol.contracts.Contracts.Rectangle
+import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -70,6 +71,20 @@ private fun fromUiObject2(obj: UiObject2): AndroidNativeView {
         children = obj.children?.map { fromUiObject2(it) } ?: listOf()
     )
 }
+
+/** How long [Automator.startScreenRecording] waits for `screenrecord` to create its output file. */
+private const val SCREEN_RECORDING_START_TIMEOUT_MILLIS = 5_000L
+
+/** How long [Automator.stopScreenRecording] waits for `screenrecord` to exit and finalize the container. */
+private const val SCREEN_RECORDING_STOP_TIMEOUT_MILLIS = 10_000L
+
+private const val SCREEN_RECORDING_POLL_INTERVAL_MILLIS = 100L
+
+/** A still capture written to the device. */
+data class ScreenshotResult(val path: String, val sizeBytes: Long)
+
+/** A screen recording written to the device. */
+data class ScreenRecordingResult(val path: String, val sizeBytes: Long, val durationMillis: Long)
 
 class Automator private constructor() {
     private var timeoutMillis: Long = 10_000
@@ -130,6 +145,185 @@ class Automator private constructor() {
     }
 
     private fun delay(ms: Long = 1000) = SystemClock.sleep(ms)
+
+    // capture
+
+    private var screenRecordingThread: Thread? = null
+    private var screenRecordingPath: String? = null
+    private var screenRecordingStartedAt: Long = 0L
+
+    @Volatile private var screenRecordingFailure: Throwable? = null
+
+    /** Runs [cmd] as the shell user and returns its output, without the fixed [delay]. */
+    private fun shell(cmd: String): String = uiDevice.executeShellCommand(cmd)
+
+    private fun shellQuote(value: String) = "'" + value.replace("'", "'\\''") + "'"
+
+    /**
+     * Resolves [path] to a file on the device.
+     *
+     * A relative path is resolved against the app's external files directory. That
+     * directory is writable both by this process (which writes screenshots) and by
+     * the shell user (which `screenrecord` runs as), and can be pulled with
+     * `adb pull` without root — an absolute path such as `/sdcard/foo.png` is not
+     * writable by this process on current Android versions.
+     */
+    private fun resolveCapturePath(path: String): File {
+        val file = if (File(path).isAbsolute) File(path) else File(targetContext.getExternalFilesDir(null), path)
+        file.parentFile?.mkdirs()
+        return file
+    }
+
+    /**
+     * Size of [file] in bytes, or -1 when it does not exist.
+     *
+     * Asks the shell instead of using [File.length] because a recording is written
+     * by the shell user and need not be stat-able by this process.
+     */
+    private fun captureSizeBytes(file: File): Long {
+        val output = shell("stat -c %s ${shellQuote(file.absolutePath)}").trim()
+        return output.toLongOrNull() ?: -1L
+    }
+
+    fun takeScreenshot(path: String): ScreenshotResult {
+        val file = resolveCapturePath(path)
+
+        // Remove any previous capture first. Silently returning a stale file is worse
+        // than failing: it looks exactly like fresh evidence.
+        if (file.exists() && !file.delete()) {
+            throw PatrolException("takeScreenshot(): failed to remove the existing file at ${file.absolutePath}")
+        }
+
+        if (!uiDevice.takeScreenshot(file)) {
+            throw PatrolException("takeScreenshot(): the device failed to capture the screen to ${file.absolutePath}")
+        }
+
+        val sizeBytes = if (file.exists()) file.length() else captureSizeBytes(file)
+        if (sizeBytes <= 0L) {
+            throw PatrolException("takeScreenshot(): no image data was written to ${file.absolutePath} (size=$sizeBytes)")
+        }
+
+        return ScreenshotResult(path = file.absolutePath, sizeBytes = sizeBytes)
+    }
+
+    fun startScreenRecording(
+        path: String,
+        timeLimitSeconds: Long?,
+        bitRate: Long?,
+        width: Long?,
+        height: Long?
+    ): String {
+        screenRecordingThread?.let {
+            throw PatrolException(
+                "startScreenRecording(): a recording of $screenRecordingPath is already running; " +
+                    "call stopScreenRecording() first"
+            )
+        }
+
+        val file = resolveCapturePath(path)
+        shell("rm -f ${shellQuote(file.absolutePath)}")
+
+        val cmd = StringBuilder("screenrecord")
+        if (timeLimitSeconds != null) {
+            cmd.append(" --time-limit ").append(timeLimitSeconds)
+        }
+        if (bitRate != null) {
+            cmd.append(" --bit-rate ").append(bitRate)
+        }
+        if (width != null && height != null) {
+            cmd.append(" --size ").append(width).append("x").append(height)
+        }
+        cmd.append(' ').append(shellQuote(file.absolutePath))
+
+        screenRecordingFailure = null
+        screenRecordingPath = file.absolutePath
+        screenRecordingStartedAt = SystemClock.elapsedRealtime()
+
+        // `screenrecord` runs until interrupted, so it cannot be awaited here.
+        val thread = Thread {
+            try {
+                uiDevice.executeShellCommand(cmd.toString())
+            } catch (e: Throwable) {
+                screenRecordingFailure = e
+            }
+        }
+        thread.name = "patrol-screenrecord"
+        thread.isDaemon = true
+        thread.start()
+        screenRecordingThread = thread
+
+        // Fail fast. `screenrecord` creates its output file as soon as it starts; if
+        // that file never appears the command did not run, and only discovering it in
+        // stopScreenRecording() would waste the entire flow being recorded.
+        val deadline = SystemClock.elapsedRealtime() + SCREEN_RECORDING_START_TIMEOUT_MILLIS
+        while (SystemClock.elapsedRealtime() < deadline) {
+            screenRecordingFailure?.let { failure ->
+                resetScreenRecordingState()
+                throw PatrolException("startScreenRecording(): screenrecord failed to start: ${failure.message}")
+            }
+            if (captureSizeBytes(file) >= 0L) {
+                return file.absolutePath
+            }
+            SystemClock.sleep(SCREEN_RECORDING_POLL_INTERVAL_MILLIS)
+        }
+
+        interruptScreenRecordProcess()
+        resetScreenRecordingState()
+        throw PatrolException(
+            "startScreenRecording(): screenrecord did not create ${file.absolutePath} " +
+                "within $SCREEN_RECORDING_START_TIMEOUT_MILLIS ms"
+        )
+    }
+
+    fun stopScreenRecording(): ScreenRecordingResult {
+        val thread = screenRecordingThread
+            ?: throw PatrolException("stopScreenRecording(): no recording is running")
+        val path = screenRecordingPath
+            ?: throw PatrolException("stopScreenRecording(): no recording is running")
+
+        interruptScreenRecordProcess()
+        thread.join(SCREEN_RECORDING_STOP_TIMEOUT_MILLIS)
+
+        val durationMillis = SystemClock.elapsedRealtime() - screenRecordingStartedAt
+        val stillRunning = thread.isAlive
+        val failure = screenRecordingFailure
+        resetScreenRecordingState()
+
+        if (failure != null) {
+            throw PatrolException("stopScreenRecording(): screenrecord failed: ${failure.message}")
+        }
+        if (stillRunning) {
+            throw PatrolException(
+                "stopScreenRecording(): screenrecord did not exit within " +
+                    "$SCREEN_RECORDING_STOP_TIMEOUT_MILLIS ms, so $path is not playable"
+            )
+        }
+
+        val sizeBytes = captureSizeBytes(File(path))
+        if (sizeBytes <= 0L) {
+            throw PatrolException("stopScreenRecording(): no video was written to $path (size=$sizeBytes)")
+        }
+
+        return ScreenRecordingResult(path = path, sizeBytes = sizeBytes, durationMillis = durationMillis)
+    }
+
+    /**
+     * Interrupts `screenrecord` with SIGINT, never SIGKILL.
+     *
+     * `screenrecord` writes the MP4 `moov` atom as it shuts down. A killed process
+     * leaves a file of the very same byte size that no player can open, so a size
+     * check alone cannot tell the two apart.
+     */
+    private fun interruptScreenRecordProcess() {
+        shell("pkill -INT screenrecord")
+    }
+
+    private fun resetScreenRecordingState() {
+        screenRecordingThread = null
+        screenRecordingPath = null
+        screenRecordingStartedAt = 0L
+        screenRecordingFailure = null
+    }
 
     fun openApp(packageName: String) {
         val intent = targetContext.packageManager!!.getLaunchIntentForPackage(packageName)

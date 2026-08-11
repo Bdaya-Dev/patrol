@@ -1,7 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol_plus/src/platform/android/android_automator_config.dart';
 import 'package:patrol_plus/src/platform/contracts/contracts.dart'
-    show AndroidGetNativeViewsResponse, GoogleApp, KeyboardBehavior;
+    show
+        AndroidGetNativeViewsResponse,
+        AndroidStopScreenRecordingResponse,
+        AndroidTakeScreenshotResponse,
+        GoogleApp,
+        KeyboardBehavior;
 import 'package:patrol_plus/src/platform/mobile/mobile_automator.dart';
 import 'package:patrol_plus/src/platform/selector.dart'
     show AndroidSelector, IOSSelector;
@@ -266,6 +271,47 @@ abstract interface class AndroidAutomator implements MobileAutomator {
     AndroidSelector? doneButtonSelector,
     Duration? timeout,
   });
+
+  /// Saves a PNG screenshot of the whole device screen and returns where it was
+  /// written and how large it is.
+  ///
+  /// A relative [path] resolves against the app's external files directory on
+  /// the device, which is writable by the app and can be pulled with `adb pull`
+  /// without root. An absolute [path] is used as given and must be writable by
+  /// the app process — `/sdcard/shot.png` is not, on current Android versions.
+  ///
+  /// Any previous file at [path] is removed first, and this throws rather than
+  /// return if no image data was written. A stale or empty capture must never be
+  /// mistakable for a fresh one.
+  Future<AndroidTakeScreenshotResponse> takeScreenshot({required String path});
+
+  /// Starts recording the device screen to an MP4 file at [path], resolved the
+  /// same way as in [takeScreenshot].
+  ///
+  /// Returns only once the recorder has actually started, and throws if it did
+  /// not — a recording that silently never began would otherwise be discovered
+  /// only after the whole flow had run.
+  ///
+  /// Without a [timeLimit] the platform default of 3 minutes applies; pass
+  /// [Duration.zero] to record without a limit. [bitRate] is in bits per second.
+  /// [width] and [height] are only applied together.
+  ///
+  /// Call [stopScreenRecording] to finish the recording.
+  Future<void> startScreenRecording({
+    required String path,
+    Duration? timeLimit,
+    int? bitRate,
+    int? width,
+    int? height,
+  });
+
+  /// Stops the recording started by [startScreenRecording] and returns where it
+  /// was written, its size, and how long it ran.
+  ///
+  /// Throws if the recorder did not shut down cleanly. The MP4 index is written
+  /// during shutdown, so a recording that is cut short leaves a file of the very
+  /// same size that no player can open.
+  Future<AndroidStopScreenRecordingResponse> stopScreenRecording();
 
   /// Pick an image from the gallery
   ///

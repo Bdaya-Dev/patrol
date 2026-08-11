@@ -481,6 +481,29 @@ public struct GetOsVersionResponse: Codable {
   public var osVersion: Int
 }
 
+public struct AndroidTakeScreenshotRequest: Codable {
+  public var path: String
+}
+
+public struct AndroidTakeScreenshotResponse: Codable {
+  public var path: String
+  public var sizeBytes: Int
+}
+
+public struct AndroidStartScreenRecordingRequest: Codable {
+  public var path: String
+  public var timeLimitSeconds: Int?
+  public var bitRate: Int?
+  public var width: Int?
+  public var height: Int?
+}
+
+public struct AndroidStopScreenRecordingResponse: Codable {
+  public var path: String
+  public var sizeBytes: Int
+  public var durationMillis: Int
+}
+
 public struct AndroidTakeCameraPhotoRequest: Codable {
   public var shutterButtonSelector: AndroidSelector?
   public var doneButtonSelector: AndroidSelector?

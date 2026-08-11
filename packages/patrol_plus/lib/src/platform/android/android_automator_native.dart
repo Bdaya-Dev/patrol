@@ -540,6 +540,59 @@ class AndroidAutomator extends NativeMobileAutomator
     });
   }
 
+  /// Saves a PNG screenshot of the whole device screen and returns where it was
+  /// written and how large it is.
+  ///
+  /// See [android_automator.AndroidAutomator.takeScreenshot].
+  @override
+  Future<AndroidTakeScreenshotResponse> takeScreenshot({
+    required String path,
+  }) async {
+    late AndroidTakeScreenshotResponse response;
+    await wrapRequest('takeScreenshot', () async {
+      response = await _client.takeScreenshot(
+        AndroidTakeScreenshotRequest(path: path),
+      );
+    });
+    return response;
+  }
+
+  /// Starts recording the device screen to an MP4 file at [path].
+  ///
+  /// See [android_automator.AndroidAutomator.startScreenRecording].
+  @override
+  Future<void> startScreenRecording({
+    required String path,
+    Duration? timeLimit,
+    int? bitRate,
+    int? width,
+    int? height,
+  }) async {
+    await wrapRequest('startScreenRecording', () async {
+      await _client.startScreenRecording(
+        AndroidStartScreenRecordingRequest(
+          path: path,
+          timeLimitSeconds: timeLimit?.inSeconds,
+          bitRate: bitRate,
+          width: width,
+          height: height,
+        ),
+      );
+    });
+  }
+
+  /// Stops the recording started by [startScreenRecording].
+  ///
+  /// See [android_automator.AndroidAutomator.stopScreenRecording].
+  @override
+  Future<AndroidStopScreenRecordingResponse> stopScreenRecording() async {
+    late AndroidStopScreenRecordingResponse response;
+    await wrapRequest('stopScreenRecording', () async {
+      response = await _client.stopScreenRecording();
+    });
+    return response;
+  }
+
   /// Pick an image from the gallery
   ///
   /// This method opens the gallery and selects a single image.
