@@ -1,6 +1,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import { chromium, type FullConfig, type Page } from "@playwright/test"
+import { resolveBrowserArgs } from "./browserArgs"
 import { initialise } from "./initialise"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
 import { resolveLocale } from "./resolveLocale"
@@ -8,14 +9,10 @@ import { DartTestEntry, PatrolTestEntry } from "./types"
 
 async function setup(config: FullConfig) {
   const { baseURL } = config.projects[0].use
-  const browserArgs: string[] | undefined = process.env.PATROL_WEB_BROWSER_ARGS
-    ? JSON.parse(process.env.PATROL_WEB_BROWSER_ARGS)
-    : undefined
-
   const locale = resolveLocale()
 
   const browser = await chromium.launch({
-    args: browserArgs,
+    args: resolveBrowserArgs(),
   })
 
   const page = await browser.newPage({ locale })

@@ -1,4 +1,5 @@
 import { defineConfig, PlaywrightTestOptions, ReporterDescription, TraceMode, VideoMode } from "@playwright/test"
+import { resolveBrowserArgs } from "./tests/browserArgs"
 import { resolveLocale } from "./tests/resolveLocale"
 
 const outputDir = process.env.PATROL_TEST_RESULTS_DIR || "./test-results"
@@ -40,9 +41,7 @@ const viewport = process.env.PATROL_WEB_VIEWPORT
 // and native test-level sharding over a single dynamically-generated spec is
 // exactly what produced the flaky empty-shard "Total: 0" hang.
 const headless = process.env.PATROL_WEB_HEADLESS ? process.env.PATROL_WEB_HEADLESS === "true" : false
-const browserArgs = process.env.PATROL_WEB_BROWSER_ARGS
-  ? (JSON.parse(process.env.PATROL_WEB_BROWSER_ARGS) as string[])
-  : undefined
+const browserArgs = resolveBrowserArgs()
 
 export default defineConfig({
   use: {
@@ -57,7 +56,7 @@ export default defineConfig({
     permissions,
     userAgent,
     viewport,
-    launchOptions: browserArgs ? { args: browserArgs } : undefined,
+    launchOptions: { args: browserArgs },
   },
   globalSetup: require.resolve("./tests/setup"),
   outputDir,
