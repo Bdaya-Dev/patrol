@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:patrol_gen_plus/src/generators/android/android_config.dart';
 import 'package:patrol_gen_plus/src/generators/fork_notice.dart';
 import 'package:patrol_gen_plus/src/generators/output_file.dart';

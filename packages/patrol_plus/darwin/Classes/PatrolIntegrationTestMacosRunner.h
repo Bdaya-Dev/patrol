@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 // This file is a one giant macro to make the setup as easy as possible for the developer.
 // To edit it:
 //  1. Remove the trailing backslashes: $ sed 's/\\$//' PatrolIntegrationTestMacosRunner.h

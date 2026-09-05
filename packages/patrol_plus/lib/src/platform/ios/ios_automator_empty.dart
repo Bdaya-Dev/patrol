@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:patrol_plus/src/platform/ios/ios_automator.dart' as ios_automator;
 import 'package:patrol_plus/src/platform/ios/ios_automator_config.dart';
 

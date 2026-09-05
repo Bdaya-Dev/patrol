@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'dart:async';
 
 import 'package:dispose_scope/dispose_scope.dart';
@@ -48,7 +49,7 @@ $additionalInfo
 To resolve this issue:
 $resolveSteps
 
-Check the compatibility table at: https://patrol.leancode.co/documentation/compatibility-table
+Check the compatibility table at: https://github.com/Bdaya-Dev/patrol/blob/master/docs/documentation/compatibility-table.mdx
 ''';
   }
 

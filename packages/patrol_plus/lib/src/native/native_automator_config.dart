@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:patrol_plus/src/native/native_automator.dart';
 import 'package:patrol_plus/src/platform/contracts/contracts.dart';
 import 'package:patrol_plus/src/platform/platform_automator.dart';

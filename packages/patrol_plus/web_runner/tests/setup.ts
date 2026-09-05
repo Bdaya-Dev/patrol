@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import * as fs from "fs"
 import * as path from "path"
 import { chromium, type FullConfig, type Page } from "@playwright/test"

@@ -1,0 +1,52 @@
+name: Apache-2.0 §4(b) notices
+
+# Every file this fork changed from upstream leancodepl/patrol must carry a
+# "Modified by Bdaya-Dev ..." notice, and NOTICE.md must list the full set.
+# tool/apache_notice computes the set by comparing the working tree against
+# the upstream fork-point commit, so that commit has to be fetched first —
+# a shallow checkout of this repo alone does not contain it.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  UPSTREAM_FORK_POINT: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189
+
+jobs:
+  apache-notice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Fetch upstream fork-point commit
+        run: git fetch --depth 1 https://github.com/leancodepl/patrol.git "$UPSTREAM_FORK_POINT"
+
+      - uses: dart-lang/setup-dart@v1
+
+      - name: Install tool dependencies
+        working-directory: tool/apache_notice
+        run: dart pub get
+
+      - name: Analyze tool
+        working-directory: tool/apache_notice
+        run: dart analyze --fatal-infos
+
+      - name: Test tool
+        working-directory: tool/apache_notice
+        run: dart test
+
+      - name: Check notices
+        working-directory: tool/apache_notice
+        run: dart run bin/apache_notice.dart --check --repo "$GITHUB_WORKSPACE" --fork-point "$UPSTREAM_FORK_POINT"

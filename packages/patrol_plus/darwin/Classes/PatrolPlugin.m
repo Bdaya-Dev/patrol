@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 #import "PatrolPlugin.h"
 #if __has_include(<patrol_plus/patrol_plus-Swift.h>)
 #import <patrol_plus/patrol_plus-Swift.h>

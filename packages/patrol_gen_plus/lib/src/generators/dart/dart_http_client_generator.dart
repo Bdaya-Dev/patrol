@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as path;
 import 'package:patrol_gen_plus/src/generators/dart/dart_config.dart';
