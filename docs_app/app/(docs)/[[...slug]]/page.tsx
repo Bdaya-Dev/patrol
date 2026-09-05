@@ -50,7 +50,7 @@ export async function generateMetadata(props: PageProps<"/[[...slug]]">): Promis
     metadataBase: new URL(
       process.env.VERCEL_PROJECT_PRODUCTION_URL
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-        : "https://patrol.leancode.co",
+        : "https://github.com/Bdaya-Dev/patrol",
     ),
     title: page.data.headTitleOverride ?? title,
     description: page.data.description,

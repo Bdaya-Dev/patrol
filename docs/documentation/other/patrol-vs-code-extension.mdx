@@ -6,8 +6,8 @@ title: "Guide for Patrol VS Code extension"
 
 <Steps>
     <Step>
-    Install the extension from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=LeanCode.patrol-vscode) 
-    or [Open VSX Registry for other VSCode-like editors, eg. Cursor](https://open-vsx.org/extension/LeanCode/patrol-vscode). 
+    Install the "Patrol" extension by searching for it in the VS Code Marketplace,
+    or in the Open VSX Registry for other VS Code-like editors, eg. Cursor.
     It requires Dart extension - if you don't have it, you'll be prompted to install it.
     </Step>
 
@@ -53,14 +53,14 @@ You should now see patrol tests in the Test Explorer tab in VS Code. They should
 
 ## Features
 
-Let's go through features of our extension, that can help you developing and running Patrol tests.
+Let's go through features of the extension, that can help you developing and running Patrol tests.
 
 ### Test Explorer
 
 Test Explorer is a tab on the left sidebar of VS Code. You can find there a list 
 of tests discovered in the opened project. You should see there all kinds of 
 tests in the project - unit, widget and integration - which comes from the Dart 
-extension. Our extension adds a section with Patrol tests.
+extension. The extension adds a section with Patrol tests.
 
 ![VS Code test explorer](/assets/vsc-ext-testexplorer.png)
 
@@ -78,8 +78,8 @@ The test execution can be stopped using stop button at the top. (5)
 
 ![VS Code stop button](/assets/vsc-ext-stop-button.png)
 
-Keep in mind that running and debugging tests use commands from `patrol_cli` under 
-the hood, and you still have to have `patrol_cli` installed on your machine - activated 
+Keep in mind that running and debugging tests use commands from `patrol_cli_plus` under 
+the hood, and you still have to have `patrol_cli_plus` installed on your machine - activated 
 globally through pub or added to the project as a dependency in `pubspec.yaml`.
 
 ### Running tests from file
@@ -93,8 +93,8 @@ Be aware that if you have more than one test in the file, this button will run t
 
 ### Debugging tests
 
-We combined Patrol's `develop` command with debugging feature of VS Code - now
- you can debug your tests easier in our extension!
+The extension combines Patrol's `develop` command with VS Code's debugging feature - now
+ you can debug your tests easier!
 
 To start debugging, click on debug icon in the Test explorer tab (as shown on
  screenshot above, by no. 3). It will start the test in `develop` mode. This
@@ -137,7 +137,7 @@ Both those ways lead to this dropdown, where you can choose the tab of devtools
 
 ### Additional arguments to patrol commands
 
-Since test execution through the extension is using patrol_cli commands under the hood,
+Since test execution through the extension is using patrol_cli_plus commands under the hood,
 you may want to pass more arguments to those commands beside the target file and the device.
 You can modify those in VS Code settings.
 

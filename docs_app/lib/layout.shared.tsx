@@ -50,7 +50,7 @@ export function baseOptions(): Partial<DocsLayoutProps> {
     links: [
       {
         type: "custom",
-        children: <GithubInfo owner="leancodepl" repo="patrol" className="lg:-mx-2" />,
+        children: <GithubInfo owner="Bdaya-Dev" repo="patrol" className="lg:-mx-2" />,
       },
     ],
   }

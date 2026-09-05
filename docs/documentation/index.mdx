@@ -16,9 +16,9 @@ Check out our video version of this tutorial on YouTube!
 
 <Steps>
     <Step>
-    Install `patrol_cli`:
+    Install `patrol_cli_plus`:
     ```
-      flutter pub global activate patrol_cli
+      flutter pub global activate patrol_cli_plus
     ```
     
     [Patrol CLI] (command-line interface) is a small program that enables running
@@ -60,12 +60,12 @@ Check out our video version of this tutorial on YouTube!
     </Step>
 
     <Step>
-    Add a dependency on the `patrol` package in the
-    `dev_dependencies` section of `pubspec.yaml`.  `patrol` package requires
+    Add a dependency on the `patrol_plus` package in the
+    `dev_dependencies` section of `pubspec.yaml`.  `patrol_plus` package requires
     Android SDK version 21 or higher.
 
     ```
-    flutter pub add patrol --dev
+    flutter pub add patrol_plus --dev
     ```
     </Step>
 
@@ -642,7 +642,7 @@ Check out our video version of this tutorial on YouTube!
 
         import 'package:flutter/material.dart';
         import 'package:flutter_test/flutter_test.dart';
-        import 'package:patrol/patrol.dart';
+        import 'package:patrol_plus/patrol.dart';
 
         void main() {
           patrolTest(
@@ -855,14 +855,14 @@ To learn how to write Patrol tests, see [finders] and [native automation] sectio
 [finders]: /documentation/finders/usage
 [Using Patrol finders in widget tests]: /documentation/finders/finders-setup
 [Here's why]: /documentation/native/advanced#embrace-the-native-tests
-[Patrol CLI]: https://pub.dev/packages/patrol_cli
+[Patrol CLI]: https://pub.dev/packages/patrol_cli_plus
 [FAQ]: /documentation#faq
 [Compatibility table]: /documentation/compatibility-table
-[README]: https://pub.dev/packages/patrol_cli#installation
-[example app]: https://github.com/leancodepl/patrol/tree/master/packages/patrol/example
-[example]: https://github.com/leancodepl/patrol/blob/d2c7493f9399a028e39cb94fd204affdb932c5fc/dev/e2e_app/patrol_test/common.dart#L17-L33
+[README]: https://pub.dev/packages/patrol_cli_plus#installation
+[example app]: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_plus/example
+[example]: https://github.com/Bdaya-Dev/patrol/blob/master/dev/e2e_app/patrol_test/common.dart
 [Learn more]: https://developer.android.com/build/jdks
 [this video]: https://www.youtube.com/watch?v=9LdEJR59fW4
 [Patrol Discord Server]: https://discord.gg/ukBK5t4EZg
 [Initializing app inside a test]: /documentation#initializing-app-inside-a-test
-[`common.dart`]: https://github.com/leancodepl/patrol/blob/master/dev/e2e_app/integration_test/common.dart
+[`common.dart`]: https://github.com/Bdaya-Dev/patrol/blob/master/dev/e2e_app/patrol_test/common.dart
