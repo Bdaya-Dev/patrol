@@ -330,8 +330,9 @@ abstract interface class AndroidAutomator implements MobileAutomator {
 
   /// Stops a recording that [startScreenRecording] began and the test never
   /// stopped, logging that it was abandoned. Does nothing when no recording is
-  /// running, and never throws — it runs on cleanup paths, where an exception
-  /// would mask the failure that caused them.
+  /// running, and never throws — not for a native refusal, a dropped
+  /// connection, or a client timeout — because it runs on cleanup paths, where
+  /// an exception would mask the failure that caused them.
   ///
   /// Called by `patrolTest` after every test body; tests do not need to.
   @internal

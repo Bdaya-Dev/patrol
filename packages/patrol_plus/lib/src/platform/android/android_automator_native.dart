@@ -625,11 +625,16 @@ class AndroidAutomator extends NativeMobileAutomator
     _patrolLog.log(LogEntry(message: '$message ($path)'));
     try {
       await stopScreenRecording();
-    } on PatrolActionException catch (err) {
-      // Logged, not rethrown: this runs on cleanup paths, and a throw here would
-      // replace the failure that actually ended the test.
+    } on Object catch (err, stackTrace) {
+      // Logged, never rethrown -- whatever it is. This runs in patrolTest's
+      // `finally`, so anything escaping here would replace the failure that
+      // actually ended the test. A native-side refusal arrives as
+      // PatrolActionException, but the app crashing mid-recording (the very
+      // case this cleanup exists for) shows up as a dropped connection or a
+      // client timeout, which wrapRequest does not convert.
       _config.logger(
-        'stopAbandonedScreenRecording(): stopping $path failed: ${err.message}',
+        'stopAbandonedScreenRecording(): stopping $path failed: $err\n'
+        '$stackTrace',
       );
     }
   }
