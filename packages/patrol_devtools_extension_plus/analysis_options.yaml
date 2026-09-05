@@ -1,3 +1,4 @@
+# Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 include: package:leancode_lint/analysis_options.yaml
 
 analyzer:
@@ -5,3 +6,5 @@ analyzer:
     - custom_lint
   exclude:
     - lib/**/*.g.dart
+    - build/**
+    - web/**

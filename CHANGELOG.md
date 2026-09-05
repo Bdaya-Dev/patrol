@@ -3,6 +3,47 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-09-05
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`adb_plus` - `v5.0.1`](#adb_plus---v501)
+ - [`patrol_cli_plus` - `v5.5.2`](#patrol_cli_plus---v552)
+ - [`patrol_finders_plus` - `v5.0.2`](#patrol_finders_plus---v502)
+ - [`patrol_log_plus` - `v5.0.2`](#patrol_log_plus---v502)
+ - [`patrol_plus` - `v5.6.4`](#patrol_plus---v564)
+
+---
+
+#### `adb_plus` - `v5.0.1`
+
+ - **DOCS**: independent-fork notice, LeanCode de-branding, Apache-2.0 §4(b) notices ([#50](https://github.com/Bdaya-Dev/patrol/issues/50)). ([17cee4d8](https://github.com/Bdaya-Dev/patrol/commit/17cee4d8aa1a5938bddfef408340017fea7a1001))
+
+#### `patrol_cli_plus` - `v5.5.2`
+
+ - **DOCS**: independent-fork notice, LeanCode de-branding, Apache-2.0 §4(b) notices ([#50](https://github.com/Bdaya-Dev/patrol/issues/50)). ([17cee4d8](https://github.com/Bdaya-Dev/patrol/commit/17cee4d8aa1a5938bddfef408340017fea7a1001))
+
+#### `patrol_finders_plus` - `v5.0.2`
+
+ - **DOCS**: independent-fork notice, LeanCode de-branding, Apache-2.0 §4(b) notices ([#50](https://github.com/Bdaya-Dev/patrol/issues/50)). ([17cee4d8](https://github.com/Bdaya-Dev/patrol/commit/17cee4d8aa1a5938bddfef408340017fea7a1001))
+
+#### `patrol_log_plus` - `v5.0.2`
+
+ - **DOCS**: independent-fork notice, LeanCode de-branding, Apache-2.0 §4(b) notices ([#50](https://github.com/Bdaya-Dev/patrol/issues/50)). ([17cee4d8](https://github.com/Bdaya-Dev/patrol/commit/17cee4d8aa1a5938bddfef408340017fea7a1001))
+
+#### `patrol_plus` - `v5.6.4`
+
+ - **DOCS**: independent-fork notice, LeanCode de-branding, Apache-2.0 §4(b) notices ([#50](https://github.com/Bdaya-Dev/patrol/issues/50)). ([17cee4d8](https://github.com/Bdaya-Dev/patrol/commit/17cee4d8aa1a5938bddfef408340017fea7a1001))
+
+
 ## 2026-08-01
 
 ### Changes

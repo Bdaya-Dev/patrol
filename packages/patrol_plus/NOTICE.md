@@ -12,6 +12,7 @@ Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-2
 
 - CHANGELOG.md (notice in file)
 - README.md (notice in file)
+- analysis_options.yaml (notice in file)
 - android/build.gradle (notice in file)
 - android/src/main/kotlin/pl/leancode/patrol/Automator.kt (notice in file)
 - android/src/main/kotlin/pl/leancode/patrol/AutomatorServer.kt (notice in file)
@@ -27,6 +28,7 @@ Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-2
 - darwin/Classes/PatrolPlugin.m (notice in file)
 - darwin/patrol_plus.podspec (notice in file)
 - example/README.md (notice in file)
+- example/analysis_options.yaml (notice in file)
 - example/ios/RunnerUITests/RunnerUITests.m (notice in file)
 - example/lib/ui/images.dart (notice in file)
 - example/lib/ui/widgets/logos_hero.dart (notice in file)
