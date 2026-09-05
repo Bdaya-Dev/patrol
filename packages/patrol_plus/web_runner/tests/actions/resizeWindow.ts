@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import type { Page } from "playwright"
 import type { ResizeWindowRequest } from "../contracts"
 // NOTE: explicit `.ts` extensions — see setLocale.ts's identical note.

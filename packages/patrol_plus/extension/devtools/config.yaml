@@ -1,4 +1,5 @@
+# Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 name: patrol
-issueTracker: https://github.com/leancodepl/patrol/issues
+issueTracker: https://github.com/Bdaya-Dev/patrol/issues
 version: 1.0.1
 materialIconCodePoint: '0xea4b'

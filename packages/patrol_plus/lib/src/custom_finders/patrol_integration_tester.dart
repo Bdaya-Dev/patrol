@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 // The following ignore directive is here because 'NativeAutomator' and 'NativeAutomator2' are marked as deprecated.
 // Its usage is necessary to provide backward compatibility for users relying on 'nativeAutomator'.
 // ignore_for_file: deprecated_member_use_from_same_package

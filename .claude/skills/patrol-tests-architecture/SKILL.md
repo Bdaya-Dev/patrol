@@ -1,7 +1,8 @@
 ---
 name: patrol-tests-architecture
-description: Rules for writing Patrol E2E tests with LeanCode's recommended architecture (modules, system, api clients)
+description: Rules for writing Patrol E2E tests with the recommended Patrol test architecture (modules, system, api clients)
 ---
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 
 # Order of actions when writing new tests
 
@@ -52,7 +53,7 @@ When working with Patrol tests:
 - ALWAYS inspect Patrol API before implementing test actions:
   - Search codebase for existing Patrol API usage patterns
   - Check $.platform APIs for the specific action
-  - If method not found in codebase, check: https://patrol.leancode.co/
+  - If method not found in codebase, check the upstream project at https://github.com/leancodepl/patrol or this repo's docs/
   - Only implement after confirming the correct API method
 - ALWAYS inspect `$.platform` methods before implementing test actions
 - Don't use flutter_test package. Use only patrol api

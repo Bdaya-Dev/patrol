@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:patrol_cli_plus/src/crossplatform/app_options.dart';
 import 'package:patrol_cli_plus/src/ios/ios_test_backend.dart';
 import 'package:patrol_cli_plus/src/runner/flutter_command.dart';

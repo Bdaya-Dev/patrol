@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'dart:convert';
 import 'dart:io' as io;
 
@@ -40,7 +41,9 @@ class Analytics {
   }) : _fs = fs,
        _platform = platform,
        _httpClient = httpClient ?? http.Client(),
-       _postUrl = _getAnalyticsUrl(measurementId, apiSecret),
+       _postUrl = measurementId.isEmpty || apiSecret.isEmpty
+           ? null
+           : _getAnalyticsUrl(measurementId, apiSecret),
        _isCI = isCI,
        _envAnalyticsEnabled = envAnalyticsEnabled,
        _logger = logger;
@@ -49,7 +52,10 @@ class Analytics {
   final Platform _platform;
 
   final http.Client _httpClient;
-  final String _postUrl;
+
+  /// Null when no measurement id / api secret was supplied -- this fork
+  /// ships none, so nothing is ever posted.
+  final String? _postUrl;
 
   final bool _isCI;
   final bool? _envAnalyticsEnabled;
@@ -64,6 +70,11 @@ class Analytics {
     String name, {
     Map<String, Object?> eventData = const {},
   }) async {
+    final postUrl = _postUrl;
+    if (postUrl == null) {
+      return false;
+    }
+
     final uuid = _config?.clientId;
     if (uuid == null) {
       return false;
@@ -79,7 +90,7 @@ class Analytics {
 
     try {
       await _httpClient.post(
-        Uri.parse(_postUrl),
+        Uri.parse(postUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -98,6 +109,9 @@ class Analytics {
       return false;
     }
   }
+
+  /// Whether a Google Analytics destination was configured at all.
+  bool get telemetryConfigured => _postUrl != null;
 
   bool get firstRun => _config == null;
 

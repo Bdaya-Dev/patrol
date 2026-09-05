@@ -1,15 +1,12 @@
+# Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 name: patrol_cli_plus
 description: >
-  Command-line tool for Patrol, a powerful Flutter-native UI testing framework.
+  Command-line tool for patrol_plus, a fork of the Patrol Flutter UI testing framework.
 version: 5.5.1  # Must be kept in sync with constants.dart
-homepage: https://patrol.leancode.co
+homepage: https://github.com/Bdaya-Dev/patrol
 repository: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_cli_plus
 issue_tracker: https://github.com/Bdaya-Dev/patrol/issues?q=is%3Aopen+is%3Aissue+label%3A%22package%3A+patrol_cli_plus%22
-documentation: https://patrol.leancode.co
 topics: [test, cli, patrol]
-screenshots:
-  - description: The Patrol framework logo.
-    path: screenshots/logo.png
 
 environment:
   sdk: '>=3.8.0 <4.0.0'

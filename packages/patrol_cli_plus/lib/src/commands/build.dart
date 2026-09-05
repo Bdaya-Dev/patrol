@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:patrol_cli_plus/src/analytics/analytics.dart';
 import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:patrol_cli_plus/src/base/logger.dart';
