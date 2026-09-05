@@ -1,6 +1,6 @@
 import 'package:e2e_app/main.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:patrol/patrol.dart';
+import 'package:patrol_plus/patrol.dart';
 
 /// Run this test with command:
 /// patrol test -t patrol_test/define_test.dart --dart-define-from-file=defines_1.json --dart-define-from-file=defines_2.json --dart-define-from-file=defines_3.env --verbose

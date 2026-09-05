@@ -20,7 +20,7 @@
 		9862560529F9A72100B267FA /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9862560429F9A72100B267FA /* RunnerTests.swift */; };
 		A07B3CD65BEF7DEDB6785AE7 /* Pods_Runner_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB6F93355A1B5285BC30A204 /* Pods_Runner_RunnerTests.framework */; };
 		AB7E2F012D5B8A0000000001 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = AB7E2F012D5B8A0000000002 /* FlutterGeneratedPluginSwiftPackage */; };
-		EE9F4A102D5B8A0000000003 /* patrol in Frameworks */ = {isa = PBXBuildFile; productRef = EE9F4A102D5B8A0000000002 /* patrol */; };
+		EE9F4A102D5B8A0000000003 /* patrol_plus in Frameworks */ = {isa = PBXBuildFile; productRef = EE9F4A102D5B8A0000000002 /* patrol_plus */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -103,7 +103,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE9F4A102D5B8A0000000003 /* patrol in Frameworks */,
+				EE9F4A102D5B8A0000000003 /* patrol_plus in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -273,7 +273,7 @@
 			);
 			name = RunnerTests;
 			packageProductDependencies = (
-				EE9F4A102D5B8A0000000002 /* patrol */,
+				EE9F4A102D5B8A0000000002 /* patrol_plus */,
 			);
 			productName = RunnerTests;
 			productReference = 9862560229F9A72100B267FA /* RunnerTests.xctest */;
@@ -315,7 +315,7 @@
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
 				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */,
-				EE9F4A102D5B8A0000000001 /* XCLocalSwiftPackageReference "patrol" */,
+				EE9F4A102D5B8A0000000001 /* XCLocalSwiftPackageReference "patrol_plus" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -1097,9 +1097,9 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage;
 		};
-		EE9F4A102D5B8A0000000001 /* XCLocalSwiftPackageReference "patrol" */ = {
+		EE9F4A102D5B8A0000000001 /* XCLocalSwiftPackageReference "patrol_plus" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../packages/patrol/darwin/patrol;
+			relativePath = ../../../packages/patrol_plus/darwin/patrol_plus;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -1112,9 +1112,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = FlutterGeneratedPluginSwiftPackage;
 		};
-		EE9F4A102D5B8A0000000002 /* patrol */ = {
+		EE9F4A102D5B8A0000000002 /* patrol_plus */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = patrol;
+			productName = patrol_plus;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -7,7 +7,7 @@ void main() {
   // This test is skipped by default, because it must be run with correct
   // build-name (1.2.3) and build-number (123) flags.
   // You can change `skip` to `true` and run it with:
-  // dart run ../../packages/patrol_cli/bin/main.dart test \
+  // dart run ../../packages/patrol_cli_plus/bin/main.dart test \
   // --target patrol_test/app_version_test.dart \
   // --build-name=1.2.3 --build-number=123
   patrolTest(

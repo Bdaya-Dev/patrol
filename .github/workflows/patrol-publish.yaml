@@ -42,18 +42,18 @@ jobs:
           channel: ${{ matrix.flutter-channel }}
 
       - name: Build DevTools extension
-        working-directory: packages/patrol_devtools_extension
+        working-directory: packages/patrol_devtools_extension_plus
         run: ./publish_to_patrol_extension
 
       - name: Verify that built DevTools extension is in the correct location
-        working-directory: packages/patrol
+        working-directory: packages/patrol_plus
         run: test ! -z "$(ls -lA extension/devtools/build)"
 
       - name: Publish to pub.dev
         id: pub_release
         uses: leancodepl/mobile-tools/.github/actions/pub-release@pub-release-v1
         with:
-          path: packages/patrol
+          path: packages/patrol_plus
 
   notify:
     name: Notify on Slack

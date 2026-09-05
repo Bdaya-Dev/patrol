@@ -1,4 +1,4 @@
-import 'package:patrol/patrol.dart';
+import 'package:patrol_plus/patrol.dart';
 
 class CameraHelpers {
   CameraHelpers(this.$);

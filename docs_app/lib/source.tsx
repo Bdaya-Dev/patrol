@@ -28,8 +28,8 @@ const commonLinks = [
   },
   {
     type: "page" as const,
-    name: "patrol_finders API reference",
-    url: "https://pub.dev/documentation/patrol_finders/latest/index.html",
+    name: "patrol_finders_plus API reference",
+    url: "https://pub.dev/documentation/patrol_finders_plus/latest/index.html",
     external: true,
     icon: <FontAwesomeIcon icon={faCode} />,
   },

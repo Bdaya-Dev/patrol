@@ -1,10 +1,10 @@
-name: patrol_finders prepare
+name: patrol_finders_plus prepare
 
 on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'packages/patrol_finders/**'
+      - 'packages/patrol_finders_plus/**'
 
 jobs:
   prepare:
@@ -19,7 +19,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/patrol_finders
+        working-directory: packages/patrol_finders_plus
 
     steps:
       - name: Clone repository
@@ -64,12 +64,12 @@ jobs:
 
       - name: flutter pub get (example app)
         if: success() || failure()
-        working-directory: ./packages/patrol_finders/example
+        working-directory: ./packages/patrol_finders_plus/example
         run: flutter pub get
 
       - name: flutter test (example app)
         if: success() || failure()
-        working-directory: ./packages/patrol_finders/example
+        working-directory: ./packages/patrol_finders_plus/example
         run: flutter test
 
   pana-score:
@@ -88,4 +88,4 @@ jobs:
         continue-on-error: true
         uses: leancodepl/mobile-tools/.github/actions/pana-score@e9f138c252f8e2254c88273367958fcc6bb39cad # pana-score-v1.3
         with:
-          path: packages/patrol_finders
+          path: packages/patrol_finders_plus

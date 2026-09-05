@@ -1,10 +1,10 @@
-name: patrol_finders check semver
+name: patrol_finders_plus check semver
 
 on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'packages/patrol_finders/**'
+      - 'packages/patrol_finders_plus/**'
 
 jobs:
   check_semver:
@@ -42,5 +42,5 @@ jobs:
         - name: Check API changes
           run: |
             dart-apitool diff \
-            --old pub://patrol_finders/${{ steps.get_last_released_version.outputs.last_version }} \
-            --new packages/patrol_finders
+            --old pub://patrol_finders_plus/${{ steps.get_last_released_version.outputs.last_version }} \
+            --new packages/patrol_finders_plus

@@ -1,9 +1,9 @@
 'package: adb':
-  - packages/adb/**/*
-'package: patrol_cli':
-  - packages/patrol_cli/**/*
+  - packages/adb_plus/**/*
+'package: patrol_cli_plus':
+  - packages/patrol_cli_plus/**/*
 'package: patrol':
-  - packages/patrol/**/*
+  - packages/patrol_plus/**/*
 'docs':
   - docs/**/*
   - docs.json

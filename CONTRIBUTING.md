@@ -12,17 +12,17 @@ Use `## Unreleased` title if you're not sure what should be next version number.
 
 Be aware that `test android emulator` and `test android emulator webview` workflows will fails due to insufficient permission of a contributor. Those will have to be re-run by someone with the write access in the repository.
 
-## Running patrol_cli locally
+## Running patrol_cli_plus locally
 
-If you want to work with a local version of patrol_cli, you can pick one of two approaches:
+If you want to work with a local version of patrol_cli_plus, you can pick one of two approaches:
 
-Activate patrol_cli locally by typing `dart pub global activate --source path [path to packages/patrol_cli]`. After that you can use `patrol` command exactly the same as any other pub package.
+Activate patrol_cli_plus locally by typing `dart pub global activate --source path [path to packages/patrol_cli_plus]`. After that you can use `patrol` command exactly the same as any other pub package.
 
 OR
 
-Use `dart run [path to packages/patrol_cli] <command you want to test>`.
+Use `dart run [path to packages/patrol_cli_plus] <command you want to test>`.
 
-## Debugging patrol_cli
+## Debugging patrol_cli_plus
 
 Changes to Patrol CLI can be debugged using the following configuration:
 
@@ -39,7 +39,7 @@ want to test and updating paths to the target tests in `args`.
       "name": "Patrol CLI",
       "request": "launch",
       "type": "dart",
-      "program": "patrol/packages/patrol_cli/bin/main.dart",
+      "program": "patrol/packages/patrol_cli_plus/bin/main.dart",
       "cwd": "dev/e2e_app",
       "args": ["test", "-t", "patrol_test/example_test.dart"]
     }
@@ -54,9 +54,9 @@ project you want to test and updating paths to the target tests in `arguments`.
 
 ```xml
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="patrol_cli" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application">
+  <configuration default="false" name="patrol_cli_plus" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application">
     <option name="arguments" value="test -t patrol_test/example_test.dart" />
-    <option name="filePath" value="$PROJECT_DIR$/packages/patrol_cli/bin/main.dart" />
+    <option name="filePath" value="$PROJECT_DIR$/packages/patrol_cli_plus/bin/main.dart" />
     <option name="workingDirectory" value="$PROJECT_DIR$/dev/e2e_app" />
     <method v="2" />
   </configuration>
@@ -74,15 +74,15 @@ Native methods API is generated from a schema. If you wish to modify any of thes
 
 Note: On iOS, during development you should remove `#if PATROL_ENABLED` from `AutomatorServer.swift` and `Automator.swift` to make code completion work.
 
-## Working with patrol_devtools_extension
+## Working with patrol_devtools_extension_plus
 
-If you plan to use the local version of Patrol to test/modify the Patrol DevTools extension, you need to deploy it first. To do this, navigate to the `patrol_devtools_extension` folder and run the `./publish_to_patrol_extension` script.
+If you plan to use the local version of Patrol to test/modify the Patrol DevTools extension, you need to deploy it first. To do this, navigate to the `patrol_devtools_extension_plus` folder and run the `./publish_to_patrol_extension` script.
 
 ## Adding a new language or new strings to existing language for native OS interactions
 
 ### iOS
 
-1. Go to `packages/patrol/darwin/Resources/` folder.
+1. Go to `packages/patrol_plus/darwin/Resources/` folder.
 2. Add a new language folder with the name of the language or use existing one.
 3. Add a new `Localizable.strings` or add strings to the existing file.
 4. Add the new language to the `getLocalizedStrings` function in `IOSAutomator.swift` file.
@@ -91,7 +91,7 @@ If you plan to use the local version of Patrol to test/modify the Patrol DevTool
 
 ### Android
 
-1. Go to `packages/patrol/android/src/main/res/values-<language>/` folder.
+1. Go to `packages/patrol_plus/android/src/main/res/values-<language>/` folder.
 2. Add a new `strings.xml` with language folder name or add strings to the existing file.
 3. If you added a new string, you need to add it to proper function in Automator.kt, for example look at the `toggleAirplaneMode()` function.
 4. Add the new language to the `getLocalizedString` function in `Localization.kt` file. 

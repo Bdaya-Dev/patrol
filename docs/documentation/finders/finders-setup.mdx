@@ -2,18 +2,18 @@
 title: Using Patrol finders in widget tests
 ---
 
-Since `patrol_finders` is a separate package, referenced in `patrol` package,
+Since `patrol_finders_plus` is a separate package, referenced in `patrol` package,
 you can use it in your widget or golden tests, without depending on `patrol`.
 Below you can find a short tutorial on how to use `$` in already existing widget tests.
 
 ### Install
 
-First, add the `patrol_finders` package as a `dev_dependency` in your app's
+First, add the `patrol_finders_plus` package as a `dev_dependency` in your app's
 `pubspec.yaml`. You can do this by executing the following command in the app's
 directory:
 
 ```console
-flutter pub add patrol_finders --dev
+flutter pub add patrol_finders_plus --dev
 ```
 
 ### Use
@@ -26,7 +26,7 @@ flutter pub add patrol_finders --dev
 To use Patrol finders in your test files, first import it:
 
 ```dart
-import 'package:patrol_finders/patrol_finders.dart';
+import 'package:patrol_finders_plus/patrol_finders.dart';
 ```
 
 Once imported, you can use it in widget tests:

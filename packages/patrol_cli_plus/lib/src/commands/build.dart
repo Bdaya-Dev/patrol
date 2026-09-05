@@ -1,0 +1,72 @@
+import 'package:patrol_cli_plus/src/analytics/analytics.dart';
+import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
+import 'package:patrol_cli_plus/src/base/logger.dart';
+import 'package:patrol_cli_plus/src/commands/build_android.dart';
+import 'package:patrol_cli_plus/src/commands/build_ios.dart';
+import 'package:patrol_cli_plus/src/commands/build_macos.dart';
+import 'package:patrol_cli_plus/src/compatibility_checker/compatibility_checker.dart';
+import 'package:patrol_cli_plus/src/dart_defines_reader.dart';
+import 'package:patrol_cli_plus/src/ios/ios_test_backend.dart';
+import 'package:patrol_cli_plus/src/macos/macos_test_backend.dart';
+import 'package:patrol_cli_plus/src/pubspec_reader.dart';
+import 'package:patrol_cli_plus/src/runner/patrol_command.dart';
+import 'package:patrol_cli_plus/src/test_bundler.dart';
+import 'package:patrol_cli_plus/src/test_finder.dart';
+
+class BuildCommand extends PatrolCommand {
+  BuildCommand({
+    required TestFinderFactory testFinderFactory,
+    required TestBundler testBundler,
+    required DartDefinesReader dartDefinesReader,
+    required PubspecReader pubspecReader,
+    required AndroidTestBackend androidTestBackend,
+    required IOSTestBackend iosTestBackend,
+    required MacOSTestBackend macosTestBackend,
+    required Analytics analytics,
+    required CompatibilityChecker compatibilityChecker,
+    required Logger logger,
+  }) {
+    addSubcommand(
+      BuildAndroidCommand(
+        testFinderFactory: testFinderFactory,
+        testBundler: testBundler,
+        dartDefinesReader: dartDefinesReader,
+        pubspecReader: pubspecReader,
+        androidTestBackend: androidTestBackend,
+        compatibilityChecker: compatibilityChecker,
+        analytics: analytics,
+        logger: logger,
+      ),
+    );
+    addSubcommand(
+      BuildIOSCommand(
+        testFinderFactory: testFinderFactory,
+        testBundler: testBundler,
+        dartDefinesReader: dartDefinesReader,
+        pubspecReader: pubspecReader,
+        iosTestBackend: iosTestBackend,
+        compatibilityChecker: compatibilityChecker,
+        analytics: analytics,
+        logger: logger,
+      ),
+    );
+    addSubcommand(
+      BuildMacOSCommand(
+        testFinderFactory: testFinderFactory,
+        testBundler: testBundler,
+        dartDefinesReader: dartDefinesReader,
+        pubspecReader: pubspecReader,
+        macosTestBackend: macosTestBackend,
+        compatibilityChecker: compatibilityChecker,
+        analytics: analytics,
+        logger: logger,
+      ),
+    );
+  }
+
+  @override
+  String get name => 'build';
+
+  @override
+  String get description => 'Build app binaries for integration testing.';
+}

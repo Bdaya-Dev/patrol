@@ -25,4 +25,4 @@ jobs:
       - name: Publish to pub.dev
         uses: leancodepl/mobile-tools/.github/actions/pub-release@pub-release-v1
         with:
-          path: packages/adb
+          path: packages/adb_plus

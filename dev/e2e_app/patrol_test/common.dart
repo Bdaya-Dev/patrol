@@ -1,10 +1,10 @@
 import 'package:e2e_app/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta/meta.dart';
-import 'package:patrol/patrol.dart';
+import 'package:patrol_plus/patrol.dart';
 
 export 'package:flutter_test/flutter_test.dart';
-export 'package:patrol/patrol.dart';
+export 'package:patrol_plus/patrol.dart';
 
 final _patrolTesterConfig = PatrolTesterConfig(printLogs: true);
 

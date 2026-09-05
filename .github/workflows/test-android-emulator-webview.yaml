@@ -8,12 +8,12 @@ on:
   pull_request_target:
     types: [opened, synchronize]
     paths:
-      - 'packages/patrol/**'
-      - 'packages/patrol_finders/**'
-      - 'packages/patrol_log/**'
-      - 'packages/patrol_cli/**'
-      - 'packages/adb/**'
-      - 'packages/patrol_gen/**'
+      - 'packages/patrol_plus/**'
+      - 'packages/patrol_finders_plus/**'
+      - 'packages/patrol_log_plus/**'
+      - 'packages/patrol_cli_plus/**'
+      - 'packages/adb_plus/**'
+      - 'packages/patrol_gen_plus/**'
       - 'dev/e2e_app/**'
       - 'schema.dart'
       - 'gen_from_schema'
@@ -94,7 +94,7 @@ jobs:
           melos bootstrap
 
       - name: Set up Patrol CLI
-        working-directory: packages/patrol_cli
+        working-directory: packages/patrol_cli_plus
         run: dart pub global activate --source path . && patrol
 
       - name: Generate Gradle wrapper

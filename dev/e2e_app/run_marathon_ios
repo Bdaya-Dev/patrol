@@ -32,7 +32,7 @@ fi
 
 if ! command -v patrol >/dev/null 2>&1; then
   echo "error: patrol CLI not found. From the patrol repo root run:" >&2
-  echo "  dart pub global activate --source path packages/patrol_cli" >&2
+  echo "  dart pub global activate --source path packages/patrol_cli_plus" >&2
   exit 1
 fi
 

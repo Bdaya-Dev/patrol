@@ -21,7 +21,7 @@ every run; it's what lets you triage without re-reading dozens of past issues.
 - **Don't guess versions or facts.** If the version triple, logs, or repro aren't in the
   issue, that absence *is* the finding (→ likely "Information needed").
 - **Reproduction beats theory.** The strongest evidence for "Patrol bug" is a repro in
-  Patrol's own `dev/e2e_app` or a reproducible example the reporter attached; the strongest evidence for "User issue" is that it only breaks in the reporter's project. Reproduce when it's cheap and would sharpen the verdict — and a **device-free repro** (a `patrol_finders` widget test, a CLI-only case) is exactly that cheap case: one `flutter test`/command, no device. Run it during triage instead of theorising.
+  Patrol's own `dev/e2e_app` or a reproducible example the reporter attached; the strongest evidence for "User issue" is that it only breaks in the reporter's project. Reproduce when it's cheap and would sharpen the verdict — and a **device-free repro** (a `patrol_finders_plus` widget test, a CLI-only case) is exactly that cheap case: one `flutter test`/command, no device. Run it during triage instead of theorising.
 
 ## Where you're running
 
@@ -31,7 +31,7 @@ every run; it's what lets you triage without re-reading dozens of past issues.
   build-, or platform-dependent. Say so, lower your confidence, and recommend
   "reproduce locally" rather than asserting a bug/no-bug. Static triage (version
   compatibility, missing-info, duplicate search, feature/docs classification) is still valid.
-  Exception: a **device-free repro** (a pure `patrol_finders` widget test, a CLI-only case)
+  Exception: a **device-free repro** (a pure `patrol_finders_plus` widget test, a CLI-only case)
   *is* runnable on CI — reproduce those instead of deferring them.
 
 ## Procedure
@@ -41,7 +41,7 @@ every run; it's what lets you triage without re-reading dozens of past issues.
    fall back to `--json body,comments,labels,author`). Note the reporter's later comments —
    the real cause often surfaces there (verbose logs, "works on emulator", etc.).
 2. **Extract the facts grid** — what's present vs missing:
-   versions (`patrol`, `patrol_cli`, `flutter`), `patrol doctor`, device vs emulator + OS/API
+   versions (`patrol`, `patrol_cli_plus`, `flutter`), `patrol doctor`, device vs emulator + OS/API
    level, platform (Android/iOS/web/CI), the exact command run, the exact error, and whether
    a **minimal reproducible repo** was shared. This grid drives everything below.
 3. **Match the catalog first.** Check [`references/common-issues.md`](references/common-issues.md)
@@ -61,7 +61,7 @@ every run; it's what lets you triage without re-reading dozens of past issues.
 Pick the **primary** verdict from these. A split is allowed and expected — if it's
 genuinely 60/40, say so and give both (the human breaks the tie).
 
-**Patrol bug** — reproducible in `dev/e2e_app`/`packages/patrol/example`; cites a
+**Patrol bug** — reproducible in `dev/e2e_app`/`packages/patrol_plus/example`; cites a
 Patrol-generated file or internal source by path (`test_bundle.dart`, `Automator.swift`,
 `app_options.dart`); a clean "worked before upgrading X" regression boundary; a documented
 Patrol flag/API not behaving as specified.

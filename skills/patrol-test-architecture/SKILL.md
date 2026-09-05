@@ -48,7 +48,7 @@ When working with Patrol tests:
 
 ## Patrol API
 
-- Any file that directly uses Patrol APIs (`$()`, `.scrollTo()`, `.tap()`, `.enterText()`, `.waitUntilVisible()`, etc.) should `import 'package:patrol/patrol.dart';`
+- Any file that directly uses Patrol APIs (`$()`, `.scrollTo()`, `.tap()`, `.enterText()`, `.waitUntilVisible()`, etc.) should `import 'package:patrol_plus/patrol.dart';`
 - ALWAYS inspect Patrol API before implementing test actions:
   - Search codebase for existing Patrol API usage patterns
   - Check $.platform APIs for the specific action
@@ -300,7 +300,7 @@ Feature module example
 patrol_test/modules/home.dart
 
 ```dart
-import 'package:patrol/patrol.dart';
+import 'package:patrol_plus/patrol.dart';
 import 'module.dart';
 
 final class Home extends Module {

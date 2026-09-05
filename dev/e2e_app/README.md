@@ -7,7 +7,7 @@ This application is used to test Patrol itself.
 Make sure to use the compatible Patrol CLI version. The easiest way is to run:
 
 ```console
-$ dart pub global activate --source path packages/patrol_cli && patrol
+$ dart pub global activate --source path packages/patrol_cli_plus && patrol
 ```
 
 from the repository root.

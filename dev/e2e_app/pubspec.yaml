@@ -28,9 +28,9 @@ dependencies:
   webview_flutter: ^4.4.2
 
 dependency_overrides:
-  # patrol_mcp pulls patrol_cli from pub; force the local one.
-  patrol_cli:
-    path: ../../packages/patrol_cli
+  # patrol_mcp pulls patrol_cli_plus from pub; force the local one.
+  patrol_cli_plus:
+    path: ../../packages/patrol_cli_plus
   # Due to: https://github.com/Baseflow/flutter-permission-handler/issues/1450#issuecomment-2673836556
   permission_handler_apple: 9.4.5
 
@@ -39,10 +39,10 @@ dev_dependencies:
     sdk: flutter
   gpx: ^2.3.0
   leancode_lint: ^17.0.0
-  patrol:
-    path: ../../packages/patrol
-  patrol_cli:
-    path: ../../packages/patrol_cli
+  patrol_plus:
+    path: ../../packages/patrol_plus
+  patrol_cli_plus:
+    path: ../../packages/patrol_cli_plus
   patrol_mcp:
     path: ../../packages/patrol_mcp
 
@@ -52,7 +52,7 @@ flutter:
     - assets/gpx.gpx
     - assets/iframe_content.html
 
-patrol:
+patrol_plus:
   app_name: Patrol example
   android:
     package_name: pl.leancode.patrol.e2e_app

@@ -27,7 +27,7 @@ This document describes all GitHub Actions workflows used in the Patrol project.
 
 | Workflow name | Triggered | Flutter version | Tags | Description |
 |--------------|-----------|----------------|------|-------------|
-| [test flutter main channel][test-flutter-main] | Weekly Tue 4:00 UTC, manual | Flutter master | — | Rebases `fix/flutter-patrol-tests` onto `master`, then runs internal tests (`flutter analyze` + `flutter test` on `patrol_finders` and `patrol_cli`) against Flutter main channel. Always creates a PR with test results. Sends Slack notification on failure when triggered by schedule. |
+| [test flutter main channel][test-flutter-main] | Weekly Tue 4:00 UTC, manual | Flutter master | — | Rebases `fix/flutter-patrol-tests` onto `master`, then runs internal tests (`flutter analyze` + `flutter test` on `patrol_finders_plus` and `patrol_cli_plus`) against Flutter main channel. Always creates a PR with test results. Sends Slack notification on failure when triggered by schedule. |
 | [test web][test-web] | No | Flutter 3.38.x (stable) | — | Runs web-specific E2E tests on Chrome in headless mode. Triggers on PR for web-related changes. Uses target file instead of tags. |
 | [test macos][test-macos] | PR, daily at 00:00 UTC | Flutter 3.38.x (stable) | — | Runs E2E tests on macOS desktop platform. Triggers on PR for changes to packages, e2e_app, and schema (excludes docs). Runs tests from `patrol_test/macos` directory. Uses xcresultparser to generate JUnit reports and converts them to CTRF format for test reporting. |
 | [test patrol develop][test-patrol-develop] | PR (opened/synchronize on package, e2e_app, and schema changes; excludes docs), manual | Flutter 3.38.x (stable) | — | Tests `patrol develop` command on Linux (Android emulator, API 34) and macOS (iOS simulator: iPhone 17 on iOS 26.2). The macOS job pins simulator runtime and passes `--ios 26.2` to `patrol_develop_test.dart` to keep xcode destination selection deterministic. Timeout: 30 minutes per job. |
@@ -37,26 +37,26 @@ This document describes all GitHub Actions workflows used in the Patrol project.
 | Workflow name | Triggered | Dart/Flutter version | Description |
 |--------------|---------|---------------------|-------------|
 | [patrol prepare][patrol-prepare] | PR (on patrol package changes), manual | Flutter 3.38.x (stable) | Runs CI checks for the `patrol` package: Android builds (Windows/Linux), Darwin code formatting (swift-format, clang-format), Flutter tests, analyzer, formatter, schema regeneration, and a [pana][pana-score-action] pub.dev score check (non-blocking). |
-| [patrol_cli prepare][patrol_cli-prepare] | PR (on patrol_cli changes), manual | Flutter 3.38.x (stable) | Runs CI checks for `patrol_cli` package on Ubuntu and Windows: builds executable, runs tests, analyzer, formatter, pub publish dry-run, and a [pana][pana-score-action] pub.dev score check (non-blocking). |
-| [patrol_finders prepare][patrol_finders-prepare] | PR (on patrol_finders changes), manual | Flutter 3.38.x (stable) | Runs CI checks for `patrol_finders` package: tests, analyzer, formatter, pub publish dry-run, and a [pana][pana-score-action] pub.dev score check (non-blocking). |
-| [patrol_log prepare][patrol_log-prepare] | PR (on patrol_log changes), manual | Flutter 3.38.x (stable) | Runs CI checks for `patrol_log` package: analyzer, formatter, pub publish dry-run, and a [pana][pana-score-action] pub.dev score check (non-blocking). |
-| [patrol_devtools_extension prepare][patrol_devtools_extension-prepare] | PR (on devtools extension changes), manual | Flutter 3.38.x (stable) | Runs CI checks for DevTools extension: tests, analyzer, formatter, and builds extension. |
+| [patrol_cli_plus prepare][patrol_cli-prepare] | PR (on patrol_cli_plus changes), manual | Flutter 3.38.x (stable) | Runs CI checks for `patrol_cli_plus` package on Ubuntu and Windows: builds executable, runs tests, analyzer, formatter, pub publish dry-run, and a [pana][pana-score-action] pub.dev score check (non-blocking). |
+| [patrol_finders_plus prepare][patrol_finders-prepare] | PR (on patrol_finders_plus changes), manual | Flutter 3.38.x (stable) | Runs CI checks for `patrol_finders_plus` package: tests, analyzer, formatter, pub publish dry-run, and a [pana][pana-score-action] pub.dev score check (non-blocking). |
+| [patrol_log_plus prepare][patrol_log-prepare] | PR (on patrol_log_plus changes), manual | Flutter 3.38.x (stable) | Runs CI checks for `patrol_log_plus` package: analyzer, formatter, pub publish dry-run, and a [pana][pana-score-action] pub.dev score check (non-blocking). |
+| [patrol_devtools_extension_plus prepare][patrol_devtools_extension-prepare] | PR (on devtools extension changes), manual | Flutter 3.38.x (stable) | Runs CI checks for DevTools extension: tests, analyzer, formatter, and builds extension. |
 | [adb prepare][adb-prepare] | PR (on adb package changes), manual | Dart 3.8 | Runs CI checks for `adb` package: tests, analyzer, formatter, pub publish dry-run, and a [pana][pana-score-action] pub.dev score check (non-blocking). |
 | [prepare e2e_app][prepare-e2e_app] | PR (on all changes except docs), manual | Flutter 3.38.x (stable) | Runs CI checks for E2E test app: Android builds (Windows/Linux) with ktlint, iOS builds with swift-format/clang-format and unit tests, Flutter tests, analyzer, and formatter. |
-| [patrol_gen prepare][patrol_gen-prepare] | PR (on patrol_gen changes), manual | Dart 3.8 | Runs CI checks for patrol contracts generator: analyzer and formatter. |
-| [patrol_mcp prepare][patrol_mcp-prepare] | PR (on patrol_mcp changes), manual | Dart (stable) | Runs the MCP server checks on Ubuntu and Windows against the newest and floor `patrol_cli` (from pub.dev): a smoke test (starts, handshakes, shuts down on stdin EOF), unit tests (`dart test`), and a [pana][pana-score-action] pub.dev score check (non-blocking). The floor run guards against a stale `patrol_cli` constraint. |
-| [patrol_mcp cli-compat][patrol_mcp-cli-compat] | PR (on patrol_cli `lib/` or pubspec changes), manual | Flutter 3.38.x (stable) | Non-blocking: builds `patrol_mcp` against the PR's local `patrol_cli` and warns (annotation + job summary, never fails CI) if the barrel API it consumes broke. |
+| [patrol_gen_plus prepare][patrol_gen-prepare] | PR (on patrol_gen_plus changes), manual | Dart 3.8 | Runs CI checks for patrol contracts generator: analyzer and formatter. |
+| [patrol_mcp prepare][patrol_mcp-prepare] | PR (on patrol_mcp changes), manual | Dart (stable) | Runs the MCP server checks on Ubuntu and Windows against the newest and floor `patrol_cli_plus` (from pub.dev): a smoke test (starts, handshakes, shuts down on stdin EOF), unit tests (`dart test`), and a [pana][pana-score-action] pub.dev score check (non-blocking). The floor run guards against a stale `patrol_cli_plus` constraint. |
+| [patrol_mcp cli-compat][patrol_mcp-cli-compat] | PR (on patrol_cli_plus `lib/` or pubspec changes), manual | Flutter 3.38.x (stable) | Non-blocking: builds `patrol_mcp` against the PR's local `patrol_cli_plus` and warns (annotation + job summary, never fails CI) if the barrel API it consumes broke. |
 
-Package-level `pana` scoring only runs for packages published to pub.dev (`patrol`, `patrol_cli`, `patrol_finders`, `patrol_log`, `adb`, `patrol_mcp`) — `patrol_devtools_extension` and `patrol_gen` set `publish_to: none` and are skipped. Each of those prepare workflows has a dedicated `pana-score` job that runs the [pana-score][pana-score-action] composite action from `leancodepl/mobile-tools`, which scores the package the same way pub.dev would, publishes a `pana (<package>)` commit status, and writes a Markdown breakdown to the job summary. The step uses `continue-on-error: true` so a low score is informational and never blocks the PR.
+Package-level `pana` scoring only runs for packages published to pub.dev (`patrol`, `patrol_cli_plus`, `patrol_finders_plus`, `patrol_log_plus`, `adb`, `patrol_mcp`) — `patrol_devtools_extension_plus` and `patrol_gen_plus` set `publish_to: none` and are skipped. Each of those prepare workflows has a dedicated `pana-score` job that runs the [pana-score][pana-score-action] composite action from `leancodepl/mobile-tools`, which scores the package the same way pub.dev would, publishes a `pana (<package>)` commit status, and writes a Markdown breakdown to the job summary. The step uses `continue-on-error: true` so a low score is informational and never blocks the PR.
 
 ## Publishing Workflows
 
 | Workflow name | Triggered | Description |
 |--------------|---------|-------------|
 | [patrol publish][patrol-publish] | Tag push (`patrol-v*`) | Publishes `patrol` package to pub.dev. Builds DevTools extension before publishing. Sends Slack notification for releases. |
-| [patrol_cli publish][patrol_cli-publish] | Tag push (`patrol_cli-v*`) | Publishes `patrol_cli` package to pub.dev. Verifies version consistency. Sends Slack notification for releases. |
-| [patrol_finders publish][patrol_finders-publish] | Tag push (`patrol_finders-v*`) | Publishes `patrol_finders` package to pub.dev. Sends Slack notification for releases. |
-| [patrol_log publish][patrol_log-publish] | Tag push (`patrol_log-v*`) | Publishes `patrol_log` package to pub.dev. Sends Slack notification for releases. |
+| [patrol_cli_plus publish][patrol_cli-publish] | Tag push (`patrol_cli-v*`) | Publishes `patrol_cli_plus` package to pub.dev. Verifies version consistency. Sends Slack notification for releases. |
+| [patrol_finders_plus publish][patrol_finders-publish] | Tag push (`patrol_finders-v*`) | Publishes `patrol_finders_plus` package to pub.dev. Sends Slack notification for releases. |
+| [patrol_log_plus publish][patrol_log-publish] | Tag push (`patrol_log-v*`) | Publishes `patrol_log_plus` package to pub.dev. Sends Slack notification for releases. |
 | [adb publish][adb-publish] | Tag push (`adb-v*`) | Publishes `adb` package to pub.dev. |
 
 ### PR-Triggered Workflows with Permission Checks
@@ -72,8 +72,8 @@ These workflows verify the user has write access before running. If you don't ha
 | Workflow name | Runs on | Description |
 |--------------|---------|-------------|
 | [patrol check semver][patrol-check-semver] | PR (on patrol package changes) | Verifies semantic versioning compliance for `patrol` package changes. |
-| [patrol_finders check semver][patrol_finders-check-semver] | PR (on patrol_finders changes) | Verifies semantic versioning compliance for `patrol_finders` package changes. |
-| [patrol_log check semver][patrol_log-check-semver] | PR (on patrol_log changes) | Verifies semantic versioning compliance for `patrol_log` package changes. |
+| [patrol_finders_plus check semver][patrol_finders-check-semver] | PR (on patrol_finders_plus changes) | Verifies semantic versioning compliance for `patrol_finders_plus` package changes. |
+| [patrol_log_plus check semver][patrol_log-check-semver] | PR (on patrol_log_plus changes) | Verifies semantic versioning compliance for `patrol_log_plus` package changes. |
 
 ## Documentation Workflows
 

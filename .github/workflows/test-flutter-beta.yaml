@@ -55,7 +55,7 @@ jobs:
           melos bootstrap
 
       - name: Set up Patrol CLI
-        working-directory: packages/patrol_cli
+        working-directory: packages/patrol_cli_plus
         run: dart pub global activate --source path . && patrol
 
       - name: Refresh e2e app dependencies

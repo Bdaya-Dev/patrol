@@ -47,7 +47,7 @@ Doc anchors used in replies (paste the exact one — the team does this):
 
 Maintainers can't act without these; their absence is the finding. Ask only for what's missing:
 
-1. **Version triple** — `patrol`, `patrol_cli`, `flutter` — checked against the compatibility table.
+1. **Version triple** — `patrol`, `patrol_cli_plus`, `flutter` — checked against the compatibility table.
 2. **`patrol doctor`** output.
 3. **A minimal, reproducible public repo** (or a repro against `dev/e2e_app`). The single most-requested item.
 4. **`--verbose` run logs** (as text, not screenshots).
@@ -66,9 +66,9 @@ Silicon", CI-only) with no local repro; "it used to work" with no diff of what c
 
 ## A — User-issue signature cards (setup / environment / app-side)
 
-### A1 — patrol ↔ patrol_cli version mismatch  ·  *#1 user-error cause*
+### A1 — patrol ↔ patrol_cli_plus version mismatch  ·  *#1 user-error cause*
 - **Symptom:** `NativeAutomatorClientException`, "Connection refused … /initialize", native automator never initializes.
-- **Confirm:** the pubspec `patrol` + installed `patrol_cli` pair violates the compatibility table.
+- **Confirm:** the pubspec `patrol` + installed `patrol_cli_plus` pair violates the compatibility table.
 - **Verdict:** User issue.
 - **Reply:** "Looks like a version mismatch. Please check your versions against the [compatibility table](https://patrol.leancode.co/documentation/compatibility-table) and share `patrol doctor` output."
 
@@ -118,17 +118,17 @@ Silicon", CI-only) with no local repro; "it used to work" with no diff of what c
 ### B1 — Malformed generated `test_bundle.dart` import
 - **Symptom:** build fails at `compileFlutterBuildDebug`/`kernel_snapshot`; generated `test_bundle.dart` has an invalid import, e.g. `import 'C:/…/foo_test.dart' as C:__…;` → "Expected ';' after this" / "StandardFileSystem only supports file:* and data:* URIs".
 - **Confirm:** open the generated `test_bundle.dart` — the import path/alias is literally broken. Triggered by Windows drive letters, custom `test_directory` under `test/`, or absolute `-t` paths.
-- **Package:** `patrol_cli` (`test_bundler.dart`). **Verdict:** Patrol bug. (Precedent #1814, #2835, #3021; Windows fix #3117.)
+- **Package:** `patrol_cli_plus` (`test_bundler.dart`). **Verdict:** Patrol bug. (Precedent #1814, #2835, #3021; Windows fix #3117.)
 
 ### B2 — `enterText()` regression on focused / autofocus field
 - **Symptom:** text enters the first field only; a focused/autofocus/second field silently gets nothing; on Android the autofocus keyboard won't dismiss and covers widgets.
 - **Confirm:** two fields or an `autofocus: true` field; first works, focused one fails.
-- **Package:** `patrol_finders`/`patrol`. **Verdict:** Patrol bug (regression). Precedent #2395, #1868, #2502, #2202 — fixed in patrol_finders 2.7.2 / 3.5.0, so **check the reporter's version first** (may already be fixed → "please upgrade").
+- **Package:** `patrol_finders_plus`/`patrol`. **Verdict:** Patrol bug (regression). Precedent #2395, #1868, #2502, #2202 — fixed in patrol_finders_plus 2.7.2 / 3.5.0, so **check the reporter's version first** (may already be fixed → "please upgrade").
 
 ### B3 — iOS "Could not launch RunnerUITests" / `OSStatus -10661` / runs on macOS
 - **Symptom:** "Failed to install or launch the test runner … LaunchServices error -10661"; "Using the first of multiple matching destinations"; test runs on macOS instead of the chosen simulator.
 - **Confirm:** non-latest iOS simulator, or Xcode 15; duplicate destinations in the log.
-- **Package:** `patrol_cli` (`app_options.dart` `-destination`) + Xcode interaction. **Verdict:** Patrol bug / Xcode regression. Workaround: pin OS via `--ios <version>`. (Distinguish A3, a *build* failure.)
+- **Package:** `patrol_cli_plus` (`app_options.dart` `-destination`) + Xcode interaction. **Verdict:** Patrol bug / Xcode regression. Workaround: pin OS via `--ios <version>`. (Distinguish A3, a *build* failure.)
 
 ### B4 — Permission dialog not detected in non-English locale
 - **Symptom:** `isPermissionDialogVisible()` false though the dialog shows; grant/deny never taps.

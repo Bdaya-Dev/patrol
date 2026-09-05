@@ -30,7 +30,7 @@ changes include:
 
 - **Minimum Flutter version**: The minimum supported Flutter version has been
   bumped to 3.16 to make it compatible with a few breaking changes that were
-  introduced to the `flutter_test` package that `patrol` and `patrol_finders`
+  introduced to the `flutter_test` package that `patrol` and `patrol_finders_plus`
   depend on. We hope you'll have an easy time upgrading to 3.16, but if not, you
   can always use Patrol v2 until you're ready to upgrade.
 
@@ -48,18 +48,18 @@ changes include:
 - **Patrol CLI version requirement**: Patrol v3 requires Patrol CLI v2.3.0 or
   newer, so make sure to `patrol update`!
 
-## `patrol_finders` v2
+## `patrol_finders_plus` v2
 
-Along with `patrol` v3, we are releasing the v2 of [patrol_finders]. In case you
-missed it, we split `patrol_finders` from `patrol` a few months ago in response
+Along with `patrol` v3, we are releasing the v2 of [patrol_finders_plus]. In case you
+missed it, we split `patrol_finders_plus` from `patrol` a few months ago in response
 to our community members who loved Patrol's lean finders syntax, but weren't
 interested in developing integration tests. [Here's the docs
-page][patrol_finders_docs] about `patrol_finders` in case you missed it.
+page][patrol_finders_docs] about `patrol_finders_plus` in case you missed it.
 
-### Changes in `patrol_finders` v2:
+### Changes in `patrol_finders_plus` v2:
 
 - **Minimum Flutter version**: The minimum supported Flutter version of
-  `patrol_finders` has been bumped to 3.16, just like in `patrol`'s case.
+  `patrol_finders_plus` has been bumped to 3.16, just like in `patrol`'s case.
 - The deprecated `andSettle` method has been removed from all `PatrolTester` and
   `PatrolFinder` methods like `tap()`, `enterText()`, and so on. Developers
   should now use `settlePolicy` as a replacement, which has been available since
@@ -75,6 +75,6 @@ forward to your feedback and ideas for new features as we continue to evolve the
 Patrol ecosystem. Meanwhile, we're getting back to work on Patrol, with a single
 goal in mind – to make it the go-to UI testing framework for Flutter apps.
 
-[patrol_finders]: https://pub.dev/packages/patrol_finders
+[patrol_finders_plus]: https://pub.dev/packages/patrol_finders_plus
 [patrol_finders_docs]: https://patrol.leancode.co/patrol-finders-release
-[SettlePolicy.trySettle]: https://pub.dev/documentation/patrol_finders/latest/patrol_finders/SettlePolicy.html#trySettle
+[SettlePolicy.trySettle]: https://pub.dev/documentation/patrol_finders_plus/latest/patrol_finders_plus/SettlePolicy.html#trySettle

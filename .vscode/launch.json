@@ -5,7 +5,7 @@
         "name": "Patrol CLI",
         "request": "launch",
         "type": "dart",
-        "program": "patrol/packages/patrol_cli/bin/main.dart",
+        "program": "patrol/packages/patrol_cli_plus/bin/main.dart",
         "cwd": "dev/e2e_app",
         "args": [
           "test",

@@ -1,7 +1,7 @@
 // We want to keep tests on deprecated APIs.
 // ignore_for_file: deprecated_member_use
 
-import 'package:patrol/patrol.dart';
+import 'package:patrol_plus/patrol.dart';
 
 class CameraHelpers {
   CameraHelpers(this.$);

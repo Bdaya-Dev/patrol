@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'packages/patrol/**'
+      - 'packages/patrol_plus/**'
 
 jobs:
   check_semver:
@@ -43,4 +43,4 @@ jobs:
           run: |
             dart-apitool diff \
             --old pub://patrol/${{ steps.get_last_released_version.outputs.last_version }} \
-            --new packages/patrol
+            --new packages/patrol_plus

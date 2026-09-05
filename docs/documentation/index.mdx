@@ -42,9 +42,9 @@ Check out our video version of this tutorial on YouTube!
 
 <Steps>
     <Step id="install-patrol-cli">
-    Install `patrol_cli`:
+    Install `patrol_cli_plus`:
     ```
-      flutter pub global activate patrol_cli
+      flutter pub global activate patrol_cli_plus
     ```
     
     [Patrol CLI] (command-line interface) is a small program that enables running
@@ -91,7 +91,7 @@ Check out our video version of this tutorial on YouTube!
     Android SDK version 21 or higher.
 
     ```
-    flutter pub add patrol --dev
+    flutter pub add patrol_plus --dev
     ```
     </Step>
 
@@ -404,7 +404,7 @@ Check out our video version of this tutorial on YouTube!
 
           ```objective-c title="ios/RunnerUITests/RunnerUITests.m"
           @import XCTest;
-          @import patrol;
+          @import patrol_plus;
           @import ObjectiveC.runtime;
 
           #if !defined(PATROL_INTEGRATION_TEST_IOS_RUNNER)
@@ -560,7 +560,7 @@ Check out our video version of this tutorial on YouTube!
 
           ```objective-c title="macos/RunnerUITests/RunnerUITests.m"
           @import XCTest;
-          @import patrol;
+          @import patrol_plus;
           @import ObjectiveC.runtime;
 
           #if !defined(PATROL_INTEGRATION_TEST_MACOS_RUNNER)
@@ -700,7 +700,7 @@ Check out our video version of this tutorial on YouTube!
 
         import 'package:flutter/material.dart';
         import 'package:flutter_test/flutter_test.dart';
-        import 'package:patrol/patrol.dart';
+        import 'package:patrol_plus/patrol.dart';
 
         void main() {
           patrolTest(
@@ -829,8 +829,8 @@ Check out our video version of this tutorial on YouTube!
 <Accordions>
 
 <Accordion id="faq-test-bundle-error" title="Testing fails with error inside 'patrol_test/test_bundle.dart'">
-  The reason is probably a mismatch of `patrol` and `patrol_cli` versions. Go to [Compatibility table]
-  and make sure that the versions of `patrol` and `patrol_cli` you are using are compatible.
+  The reason is probably a mismatch of `patrol` and `patrol_cli_plus` versions. Go to [Compatibility table]
+  and make sure that the versions of `patrol` and `patrol_cli_plus` you are using are compatible.
 </Accordion>
 
 <Accordion id="faq-app-not-running-in-test" title="'example_test.dart' passed but I can't get my application to run within the patrol test.">
@@ -953,11 +953,11 @@ Using AI? [Patrol MCP] lets an agent run your tests, and [agent skills] teach it
 [finders]: /documentation/finders/usage
 [Using Patrol finders in widget tests]: /documentation/finders/finders-setup
 [Here's why]: /documentation/native/advanced#embrace-the-native-tests
-[Patrol CLI]: https://pub.dev/packages/patrol_cli
+[Patrol CLI]: https://pub.dev/packages/patrol_cli_plus
 [FAQ]: /documentation#faq
 [Compatibility table]: /documentation/compatibility-table
-[README]: https://pub.dev/packages/patrol_cli#installation
-[example app]: https://github.com/leancodepl/patrol/tree/master/packages/patrol/example
+[README]: https://pub.dev/packages/patrol_cli_plus#installation
+[example app]: https://github.com/leancodepl/patrol/tree/master/packages/patrol_plus/example
 [example]: https://github.com/leancodepl/patrol/blob/d2c7493f9399a028e39cb94fd204affdb932c5fc/dev/e2e_app/patrol_test/common.dart#L17-L33
 [Learn more]: https://developer.android.com/build/jdks
 [this video]: https://www.youtube.com/watch?v=9LdEJR59fW4

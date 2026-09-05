@@ -63,7 +63,7 @@ Use unique endpoint prefixes (`mySdk*`) to avoid route collisions.
 
 ### 3) Generate contracts/clients (recommended)
 
-Run `patrol_gen` for the package schema to produce:
+Run `patrol_gen_plus` for the package schema to produce:
 
 - Dart client (`DartClient` enabled)
 - Android server contracts/routes (`AndroidServer` enabled)
@@ -136,7 +136,7 @@ full Objective-C runtime (which is unsafe in large UITest binaries):
 
 ```objc title="darwin/patrol_my_sdk/Sources/PatrolMySdk/MySdkServerExtensionRegistration.m"
 #import <Foundation/Foundation.h>
-#import <patrol/PatrolExtensionRegistry.h>
+#import <patrol_plus/PatrolExtensionRegistry.h>
 
 @interface MySdkExtensionLoader : NSObject
 @end

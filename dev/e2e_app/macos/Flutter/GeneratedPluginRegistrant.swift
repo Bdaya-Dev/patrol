@@ -14,7 +14,7 @@ import flutter_timezone
 import geolocator_apple
 import package_info_plus
 import path_provider_foundation
-import patrol
+import patrol_plus
 import webview_flutter_wkwebview
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {

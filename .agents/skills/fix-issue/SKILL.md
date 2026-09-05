@@ -24,11 +24,11 @@ reproduce failing first is a fix you can't prove works.
 
    | Symptom | Package |
    |---|---|
-   | `patrol test` / `patrol build` / `patrol develop`, bundle generation, CLI flags, device handling | `patrol_cli` |
-   | `PatrolTester`/`$`/finders behaviour | `patrol_finders` |
+   | `patrol test` / `patrol build` / `patrol develop`, bundle generation, CLI flags, device handling | `patrol_cli_plus` |
+   | `PatrolTester`/`$`/finders behaviour | `patrol_finders_plus` |
    | Native automation (permissions, notifications), `PatrolBinding`, platform channels | `patrol` (+ its `android/` Kotlin & `darwin/` Swift) |
-   | DevTools extension | `patrol_devtools_extension` |
-   | Test run logs / reporting | `patrol_log` |
+   | DevTools extension | `patrol_devtools_extension_plus` |
+   | Test run logs / reporting | `patrol_log_plus` |
    | MCP server | `patrol_mcp` |
    | Native method contracts (generated) | edit `schema.dart`, run `./gen_from_schema` — see CONTRIBUTING |
 
@@ -46,19 +46,19 @@ Only scaffold a separate minimal project when the bug needs a layout the
 fixtures don't have (e.g. a pub workspace, a custom `test_directory`, paths
 containing unusual characters). Keep it minimal and delete it afterwards.
 
-### Running your local patrol_cli (the important gotcha)
+### Running your local patrol_cli_plus (the important gotcha)
 
 Per CONTRIBUTING, two ways to run a local build:
 
 ```bash
 # A) activate from the working tree as the global `patrol`
-dart pub global activate --source path packages/patrol_cli
+dart pub global activate --source path packages/patrol_cli_plus
 # B) run directly without activating
-dart run packages/patrol_cli <command...>
+dart run packages/patrol_cli_plus <command...>
 ```
 
 ⚠️ **`dart pub global activate --source path` snapshots the code at activation
-time.** After every change to `patrol_cli`, re-run it or your `patrol` binary
+time.** After every change to `patrol_cli_plus`, re-run it or your `patrol` binary
 still runs the old code. `dart run` (B) always uses current sources — prefer it
 while iterating.
 
@@ -66,7 +66,7 @@ To let a teammate test a branch without checking it out:
 
 ```bash
 dart pub global activate --source git https://github.com/leancodepl/patrol.git \
-  --git-ref <branch> --git-path packages/patrol_cli
+  --git-ref <branch> --git-path packages/patrol_cli_plus
 ```
 
 ## 3. Fix without regressions
@@ -75,7 +75,7 @@ dart pub global activate --source git https://github.com/leancodepl/patrol.git \
    tests encode behaviour you must not break (e.g. `test_bundler_test.dart`
    pins relative-path, absolute-path, and web-bundle output).
 2. Make the smallest change that fixes the root cause. Match surrounding style.
-3. Follow existing conventions in the file/package — e.g. `patrol_cli` resolves
+3. Follow existing conventions in the file/package — e.g. `patrol_cli_plus` resolves
    relative paths against the **project root**, not the process CWD
    (see `TestFinder`).
 4. Branch name: `fix/<short-description>` (created off `master`).

@@ -9,10 +9,10 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "85.0.0"
-  adb:
+  adb_plus:
     dependency: transitive
     description:
-      name: adb
+      name: adb_plus
       sha256: ff7324138e3df9dcd8fab54050f9f74a224928321ae50161256109414a87f1d4
       url: "https://pub.dev"
     source: hosted
@@ -864,32 +864,32 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
-  patrol:
+  patrol_plus:
     dependency: "direct dev"
     description:
-      path: "../../packages/patrol"
+      path: "../../packages/patrol_plus"
       relative: true
     source: path
     version: "4.9.0"
-  patrol_cli:
+  patrol_cli_plus:
     dependency: "direct dev"
     description:
-      path: "../../packages/patrol_cli"
+      path: "../../packages/patrol_cli_plus"
       relative: true
     source: path
     version: "4.7.0"
-  patrol_finders:
+  patrol_finders_plus:
     dependency: transitive
     description:
-      name: patrol_finders
+      name: patrol_finders_plus
       sha256: "8608cdacaab90a3b00ecd7b09df11f13a62b01dea13c211b9f13fd86854e103a"
       url: "https://pub.dev"
     source: hosted
     version: "3.6.0"
-  patrol_log:
+  patrol_log_plus:
     dependency: transitive
     description:
-      name: patrol_log
+      name: patrol_log_plus
       sha256: "3d91c93e8d0ed19cb12d4b27aa24eca7294e0a48d9d8445505c9775feb5fde2d"
       url: "https://pub.dev"
     source: hosted

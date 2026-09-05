@@ -1,8 +1,8 @@
 # Patrol
 
 [![patrol on pub.dev][patrol_badge]][patrol_link]
-[![patrol_cli on pub.dev][patrol_cli_badge]][patrol_cli_link]
-[![patrol_finders on pub.dev][patrol_finders_badge]][patrol_finders_link]
+[![patrol_cli_plus on pub.dev][patrol_cli_badge]][patrol_cli_link]
+[![patrol_finders_plus on pub.dev][patrol_finders_badge]][patrol_finders_link]
 [![patrol_mcp on pub.dev][patrol_mcp_badge]][patrol_mcp_link]
 [![patrol_discord]][patrol_discord_link]
 [![code style][leancode_lint_badge]][leancode_lint_link]
@@ -94,7 +94,7 @@ patrolTest('signs up', (PatrolIntegrationTester $) async {
 
 [Learn more about custom finders in the docs][docs_finders]!
 
-Patrol's custom finders are also available standalone in [the patrol_finders
+Patrol's custom finders are also available standalone in [the patrol_finders_plus
 package][patrol_finders_link].
 
 ## Patrol native automation
@@ -135,7 +135,7 @@ void main() {
 
 ## CLI
 
-See [packages/patrol_cli][github_patrol_cli].
+See [packages/patrol_cli_plus][github_patrol_cli].
 
 The CLI is needed to enable Patrol's native automation feature in integration
 tests. It also makes development of integration tests much faster thanks to [Hot
@@ -145,7 +145,7 @@ To run widget tests, you can continue to use `flutter test`.
 
 ## Package
 
-See [packages/patrol][github_patrol].
+See [packages/patrol_plus][github_patrol].
 
 ## CI/CD Workflows
 
@@ -173,18 +173,18 @@ abstract class NativeAutomator<IOSServer, AndroidServer, DartClient> {
 
 3. Run `gen_from_schema` script, few files will be updated
 
-## Develop patrol_cli
+## Develop patrol_cli_plus
 
-If you have previously activated patrol_cli run:
+If you have previously activated patrol_cli_plus run:
 
 ```bash
-dart pub global deactivate patrol_cli
+dart pub global deactivate patrol_cli_plus
 ```
 
 then
 
 ```bash
-cd packages/patrol_cli
+cd packages/patrol_cli_plus
 flutter pub global activate -s path .
 ```
 
@@ -217,24 +217,24 @@ We are **top-tier experts** focused on Flutter Enterprise solutions.
 
 </div>
 
-[patrol_badge]: https://img.shields.io/pub/v/patrol?label=patrol
-[patrol_finders_badge]: https://img.shields.io/pub/v/patrol_finders?label=patrol_finders
+[patrol_badge]: https://img.shields.io/pub/v/patrol_plus?label=patrol_plus
+[patrol_finders_badge]: https://img.shields.io/pub/v/patrol_finders_plus?label=patrol_finders_plus
 [patrol_mcp_badge]: https://img.shields.io/pub/v/patrol_mcp?label=patrol_mcp
-[patrol_cli_badge]: https://img.shields.io/pub/v/patrol_cli?label=patrol_cli
+[patrol_cli_badge]: https://img.shields.io/pub/v/patrol_cli_plus?label=patrol_cli_plus
 [leancode_lint_badge]: https://img.shields.io/badge/code%20style-leancode__lint-black
 [patrol_github_stars]: https://img.shields.io/github/stars/leancodepl/patrol
 [patrol_x]: https://img.shields.io/twitter/follow/patrol_leancode
 [patrol_discord]: https://img.shields.io/discord/1167030497612922931?color=blue&logo=discord
-[patrol_link]: https://pub.dev/packages/patrol
-[patrol_finders_link]: https://pub.dev/packages/patrol_finders
+[patrol_link]: https://pub.dev/packages/patrol_plus
+[patrol_finders_link]: https://pub.dev/packages/patrol_finders_plus
 [patrol_mcp_link]: https://pub.dev/packages/patrol_mcp
-[patrol_cli_link]: https://pub.dev/packages/patrol_cli
+[patrol_cli_link]: https://pub.dev/packages/patrol_cli_plus
 [leancode_lint_link]: https://pub.dev/packages/leancode_lint
 [patrol_x_link]: https://x.com/patrol_leancode
 [patrol_github_link]: https://github.com/leancodepl/patrol
 [patrol_discord_link]: https://discord.gg/ukBK5t4EZg
-[github_patrol]: https://github.com/leancodepl/patrol/tree/master/packages/patrol
-[github_patrol_cli]: https://github.com/leancodepl/patrol/tree/master/packages/patrol_cli
+[github_patrol]: https://github.com/leancodepl/patrol/tree/master/packages/patrol_plus
+[github_patrol_cli]: https://github.com/leancodepl/patrol/tree/master/packages/patrol_cli_plus
 [github_workflows]: https://github.com/leancodepl/patrol/blob/master/.github/WORKFLOWS.md
 [docs]: https://patrol.leancode.co/?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme
 [docs_finders]: https://patrol.leancode.co/finders/overview
