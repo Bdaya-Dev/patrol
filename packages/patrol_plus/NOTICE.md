@@ -12,6 +12,7 @@ Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-2
 
 - CHANGELOG.md (notice in file)
 - README.md (notice in file)
+- android/build.gradle (notice in file)
 - android/src/main/kotlin/pl/leancode/patrol/Automator.kt (notice in file)
 - android/src/main/kotlin/pl/leancode/patrol/AutomatorServer.kt (notice in file)
 - android/src/main/kotlin/pl/leancode/patrol/contracts/MobileAutomatorServer.kt (notice in file)
