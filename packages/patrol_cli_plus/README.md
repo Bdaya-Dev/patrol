@@ -44,10 +44,12 @@ directories to PATH:
 - on Unix-like systems, add `$HOME/.pub-cache/bin`
 - on Windows, add `%USERPROFILE%\AppData\Local\Pub\Cache\bin`
 
-### Disabling analytics
+### Analytics
 
-To disable analytics, set the `PATROL_ANALYTICS_ENABLED` environment variable to
-`false`.
+This fork sends **no** usage analytics: the upstream CLI reports command usage to
+LeanCode's Google Analytics property, and `patrol_cli_plus` ships without any
+measurement ID, so nothing is ever posted. The `PATROL_ANALYTICS_ENABLED`
+environment variable is still accepted for compatibility but has no effect.
 
 ### Shell completion
 

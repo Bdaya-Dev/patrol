@@ -59,8 +59,10 @@ Future<int> patrolCommandRunner(List<String> args) async {
     fs: fs,
     logger: logger,
     analytics: Analytics(
-      measurementId: _gaTrackingId,
-      apiSecret: _gaApiSecret,
+      // This fork ships no analytics destination: upstream reports to
+      // LeanCode's Google Analytics property, which is not ours to use.
+      measurementId: '',
+      apiSecret: '',
       fs: fs,
       platform: platform,
       isCI: isCI,
@@ -90,8 +92,6 @@ Future<int> patrolCommandRunner(List<String> args) async {
   return exitCode;
 }
 
-const _gaTrackingId = 'G-W8XN8GS5BC';
-const _gaApiSecret = 'CUIwI1nCQWGJQAK8E0AIfg';
 const _patrolAnalyticsEnvName = 'PATROL_ANALYTICS_ENABLED';
 const _helloPatrol = '''
 +---------------------------------------------------+
@@ -420,6 +420,12 @@ To install a specific version of Patrol CLI, run:
   }
 
   void _handleAnalytics() {
+    if (!_analytics.telemetryConfigured) {
+      // Nothing to opt into; just record the first run so the prompt and
+      // doctor do not repeat.
+      _analytics.enabled = false;
+      return;
+    }
     _logger.info(_helloPatrol);
 
     /// If the environment variable `PATROL_ANALYTICS_ENABLED` is set,

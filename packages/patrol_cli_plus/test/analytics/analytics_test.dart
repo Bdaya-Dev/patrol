@@ -231,6 +231,74 @@ void main() {
     // then
     expect(sent, false);
   });
+  group('Analytics without telemetry configured (fork default)', () {
+    late Analytics analytics;
+    late MockHttpClient httpClient;
+    late FileSystem fs;
+
+    setUp(() {
+      setUpFakes();
+      fs = MemoryFileSystem.test();
+      httpClient = MockHttpClient();
+      when(
+        () => httpClient.post(
+          any(),
+          body: any(named: 'body'),
+          headers: any(named: 'headers'),
+        ),
+      ).thenAnswer((_) async => http.Response('', 200));
+
+      analytics = Analytics(
+        measurementId: '',
+        apiSecret: '',
+        fs: fs,
+        platform: fakePlatform('/Users/john'),
+        httpClient: httpClient,
+        isCI: false,
+        envAnalyticsEnabled: null,
+        logger: MockLogger(),
+      );
+    });
+
+    test('reports telemetry as not configured', () {
+      expect(analytics.telemetryConfigured, isFalse);
+    });
+
+    test('never posts, even when the user opted in', () async {
+      analytics.enabled = true;
+      final sent = await analytics.sendCommand(FlutterVersion.test(), 'test');
+      expect(sent, isFalse);
+      verifyNever(
+        () => httpClient.post(
+          any(),
+          body: any(named: 'body'),
+          headers: any(named: 'headers'),
+        ),
+      );
+    });
+
+    test('never posts when PATROL_ANALYTICS_ENABLED=true either', () async {
+      final forced = Analytics(
+        measurementId: '',
+        apiSecret: '',
+        fs: fs,
+        platform: fakePlatform('/Users/john'),
+        httpClient: httpClient,
+        isCI: false,
+        envAnalyticsEnabled: true,
+        logger: MockLogger(),
+      );
+      forced.enabled = true;
+      expect(await forced.sendCommand(FlutterVersion.test(), 'test'), isFalse);
+      verifyNever(
+        () => httpClient.post(
+          any(),
+          body: any(named: 'body'),
+          headers: any(named: 'headers'),
+        ),
+      );
+    });
+  });
 }
 
 void _createFakeFileSystem(FileSystem fs, {required bool analyticsEnabled}) {

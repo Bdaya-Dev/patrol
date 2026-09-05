@@ -34,9 +34,12 @@ const String _ignoredUpstreamPackage = 'patrol_mcp';
 /// substitutes the package directory, leaving the rest of the path,
 /// filename included, unchanged).
 ///
-/// Every entry here was confirmed against
-/// `git diff -M50% --name-status --diff-filter=R <fork point> HEAD` --see
-/// the tool's README for how to re-derive this list after a rename. Do NOT
+/// The podspec entry was confirmed against
+/// `git diff -M50% --name-status --diff-filter=R <fork point> HEAD` (R075).
+/// The e2e-test entry is a deliberate over-attribution: git only pairs the
+/// two files at `-M20%` (R028), but the fork's file started life as a copy
+/// of upstream's macOS test, so it carries the notice anyway -- see the
+/// tool's README for how to re-derive this list after a rename. Do NOT
 /// add an entry for a file whose rename the generic rule already resolves
 /// correctly (same filename, only the package directory changed) -- doing
 /// so would redirect the comparison away from the real counterpart and
