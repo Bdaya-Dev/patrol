@@ -1,6 +1,7 @@
 name: adb_plus
 description: Simple Dart wrapper around Android Debug Bridge.
 version: 5.0.0
+homepage: https://github.com/Bdaya-Dev/patrol
 repository: https://github.com/Bdaya-Dev/patrol/tree/master/packages/adb_plus
 issue_tracker: https://github.com/Bdaya-Dev/patrol/issues?q=is%3Aopen+is%3Aissue+label%3A%22package%3A+adb_plus%22
 

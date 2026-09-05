@@ -48,7 +48,7 @@ $additionalInfo
 To resolve this issue:
 $resolveSteps
 
-Check the compatibility table at: https://patrol.leancode.co/documentation/compatibility-table
+Check the compatibility table at: https://github.com/Bdaya-Dev/patrol/blob/master/docs/documentation/compatibility-table.mdx
 ''';
   }
 

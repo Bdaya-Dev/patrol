@@ -1,33 +1,13 @@
+> **⚠️ Independent fork** — `Bdaya-Dev/patrol` is an independent fork of [Patrol](https://github.com/leancodepl/patrol), originally created by LeanCode. It is maintained by [Bdaya-Dev](https://github.com/Bdaya-Dev/patrol) and is **not maintained, supported, or endorsed by LeanCode**. Please report issues at <https://github.com/Bdaya-Dev/patrol/issues>, not to LeanCode.
+
 # Patrol
 
 [![codecov](https://codecov.io/gh/Bdaya-Dev/patrol/branch/master/graph/badge.svg)](https://codecov.io/gh/Bdaya-Dev/patrol)
 [![patrol_plus on pub.dev][patrol_badge]][patrol_link]
 [![patrol_cli_plus on pub.dev][patrol_cli_badge]][patrol_cli_link]
 [![patrol_finders_plus on pub.dev][patrol_finders_badge]][patrol_finders_link]
-[![patrol_discord]][patrol_discord_link]
-[![code style][leancode_lint_badge]][leancode_lint_link]
 
-A powerful, multiplatform E2E UI testing framework for Flutter apps that overcomes the limitations of integration_test by handling native interactions. Developed by LeanCode since 2022, battle-tested and shaped by production-grade experience.
-
-[![Patrol promotional graphics][promo_graphics]][docs]
-
-## Learn more about Patrol:
-
-- [Our extensive documentation][docs]
-- [How Patrol 4.0 Makes Cross-Platform Flutter Testing Possible][article_4x]
-- [Simplifying Flutter Web Testing: Patrol Web][article_web]
-- [Patrol VS Code Extension - A Better Way to Run and Debug Flutter UI Tests][article_vscode]
-
-## How can we help you:
-
-Patrol is an open-source framework created and maintained by LeanCode.
-However, if your company wants to scale fast and accelerate Patrol’s
-adoption, we offer a set of value-added services on top of the core framework.
-
-You can find out more below:
-
-- 🚀  [Automate Flutter app testing with Patrol][automate_flutter_app_testing_with_patrol]
-- 🚀  [Patrol Setup & Patrol Training][patrol_setup_and_training]
+A powerful, multiplatform E2E UI testing framework for Flutter apps that overcomes the limitations of integration_test by handling native interactions, battle-tested and shaped by production-grade experience.
 
 ## Patrol custom finders
 
@@ -86,7 +66,7 @@ patrolTest('signs up', (PatrolIntegrationTester $) async {
 });
 ```
 
-[Learn more about custom finders in the docs][docs_finders]!
+Learn more about custom finders in [packages/patrol_finders_plus][github_patrol_finders]!
 
 Patrol's custom finders are also available standalone in [the patrol_finders
 package][patrol_finders_link].
@@ -100,7 +80,7 @@ business features, such as:
 - granting runtime permissions
 - signing into the app which through WebView or Google Services
 - tapping on notifications
-- [much more!](https://patrol.leancode.co/native/feature-parity)
+- much more!
 
 Patrol's native automation feature solves these problems:
 
@@ -129,7 +109,7 @@ void main() {
 
 ## CLI
 
-See [packages/patrol_cli][github_patrol_cli].
+See [packages/patrol_cli_plus][github_patrol_cli].
 
 The CLI is needed to enable Patrol's native automation feature in integration
 tests. It also makes development of integration tests much faster thanks to [Hot
@@ -139,7 +119,7 @@ To run widget tests, you can continue to use `flutter test`.
 
 ## Package
 
-See [packages/patrol][github_patrol].
+See [packages/patrol_plus][github_patrol].
 
 ## CI/CD Workflows
 
@@ -167,69 +147,30 @@ abstract class NativeAutomator<IOSServer, AndroidServer, DartClient> {
 
 3. Run `gen_from_schema` script, few files will be updated
 
-## Develop patrol_cli
+## Develop patrol_cli_plus
 
-If you have previously activated patrol_cli run:
+If you have previously activated patrol_cli_plus run:
 
 ```bash
-dart pub global deactivate patrol_cli
+dart pub global deactivate patrol_cli_plus
 ```
 
 then
 
 ```bash
-cd packages/patrol_cli
+cd packages/patrol_cli_plus
 flutter pub global activate -s path .
 ```
-
-## 🛠️ Maintained by LeanCode
-
-<div align="center">
-  <a href="https://leancode.co/?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme">
-    <img src="https://leancodepublic.blob.core.windows.net/public/wide.png" alt="LeanCode Logo" height="100" />
-  </a>
-</div>
-
-This package is built with 💙 by **[LeanCode](https://leancode.co?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme)**.
-We are **top-tier experts** focused on Flutter Enterprise solutions.
-
-### Why LeanCode?
-
-- **Creators of [Patrol](https://patrol.leancode.co/?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme)** – the next-gen testing framework for Flutter.
-
-- **Production-Ready** – We use this package in apps with millions of users.
-- **Full-Cycle Product Development** – We take your product from scratch to long-term maintenance.
-
-<div align="center">
-  <br />
-
-  **Need help with your Flutter project?**
-
-  [**👉 Hire our team**](https://leancode.co/get-estimate?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme)
-  &nbsp;&nbsp;•&nbsp;&nbsp;
-  [Check our other packages](https://pub.dev/packages?q=publisher%3Aleancode.co&sort=downloads)
-
-</div>
 
 [patrol_badge]: https://img.shields.io/pub/v/patrol_plus?label=patrol_plus
 [patrol_finders_badge]: https://img.shields.io/pub/v/patrol_finders_plus?label=patrol_finders_plus
 [patrol_cli_badge]: https://img.shields.io/pub/v/patrol_cli_plus?label=patrol_cli_plus
-[leancode_lint_badge]: https://img.shields.io/badge/code%20style-leancode__lint-black
-[patrol_discord]: https://img.shields.io/discord/1167030497612922931?color=blue&logo=discord
 [patrol_link]: https://pub.dev/packages/patrol_plus
 [patrol_finders_link]: https://pub.dev/packages/patrol_finders_plus
 [patrol_cli_link]: https://pub.dev/packages/patrol_cli_plus
-[leancode_lint_link]: https://pub.dev/packages/leancode_lint
-[patrol_discord_link]: https://discord.gg/ukBK5t4EZg
 [github_patrol]: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_plus
 [github_patrol_cli]: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_cli_plus
+[github_patrol_finders]: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_finders_plus
 [github_workflows]: https://github.com/Bdaya-Dev/patrol/blob/master/.github/WORKFLOWS.md
-[docs]: https://patrol.leancode.co/?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme
-[docs_finders]: https://patrol.leancode.co/finders/overview
-[promo_graphics]: assets/promo_banner.png
-[article_web]: https://leancode.co/blog/patrol-web-support?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme
-[article_4x]: https://leancode.co/blog/patrol-4-0-release?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme
-[article_vscode]: https://leancode.co/blog/patrol-vs-code-extension?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme
 [integration_test]: https://github.com/flutter/flutter/tree/master/packages/integration_test
-[automate_flutter_app_testing_with_patrol]: https://leancode.co/products/automated-ui-testing-in-flutter?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme
-[patrol_setup_and_training]: https://leancode.co/products/patrol-setup-training?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme
+[Hot Restart]: https://docs.flutter.dev/tools/hot-reload

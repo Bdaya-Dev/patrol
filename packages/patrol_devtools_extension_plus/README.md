@@ -1,4 +1,6 @@
-# patrol_devtools_extension
+> **⚠️ Independent fork** — `patrol_devtools_extension_plus` is an independent fork of [Patrol](https://github.com/leancodepl/patrol), originally created by LeanCode. It is maintained by [Bdaya-Dev](https://github.com/Bdaya-Dev/patrol) and is **not maintained, supported, or endorsed by LeanCode**. Please report issues at <https://github.com/Bdaya-Dev/patrol/issues>, not to LeanCode.
+
+# patrol_devtools_extension_plus
 
 A DevTools extension for Patrol - Flutter integration testing framework.
 
@@ -18,33 +20,4 @@ This script will:
 
 ## Getting Started
 
-This project is a DevTools extension for Patrol. For more information about Patrol and integration testing, visit the main Patrol documentation.
-
-## 🛠️ Maintained by LeanCode
-
-<div align="center">
-  <a href="https://leancode.co/?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme">
-    <img src="https://leancodepublic.blob.core.windows.net/public/wide.png" alt="LeanCode Logo" height="100" />
-  </a>
-</div>
-
-This package is built with 💙 by **[LeanCode](https://leancode.co?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme)**.
-We are **top-tier experts** focused on Flutter Enterprise solutions.
-
-### Why LeanCode?
-
-- **Creators of [Patrol](https://patrol.leancode.co/?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme)** – the next-gen testing framework for Flutter.
-
-- **Production-Ready** – We use this package in apps with millions of users.
-- **Full-Cycle Product Development** – We take your product from scratch to long-term maintenance.
-
-<div align="center">
-  <br />
-
-  **Need help with your Flutter project?**
-
-  [**👉 Hire our team**](https://leancode.co/get-estimate?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme)
-  &nbsp;&nbsp;•&nbsp;&nbsp;
-  [Check our other packages](https://pub.dev/packages?q=publisher%3Aleancode.co&sort=downloads)
-
-</div>
+This project is a DevTools extension for Patrol. For more information about Patrol and integration testing, see the [Bdaya-Dev/patrol repository](https://github.com/Bdaya-Dev/patrol).

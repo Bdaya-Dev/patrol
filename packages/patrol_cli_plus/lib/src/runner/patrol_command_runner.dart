@@ -32,7 +32,8 @@ import 'package:patrol_cli_plus/src/devices.dart';
 import 'package:patrol_cli_plus/src/ios/ios_test_backend.dart';
 import 'package:patrol_cli_plus/src/macos/macos_test_backend.dart';
 import 'package:patrol_cli_plus/src/pubspec_reader.dart';
-import 'package:patrol_cli_plus/src/runner/patrol_command.dart' show addGlobalFlags;
+import 'package:patrol_cli_plus/src/runner/patrol_command.dart'
+    show addGlobalFlags;
 import 'package:patrol_cli_plus/src/test_bundler.dart';
 import 'package:patrol_cli_plus/src/test_finder.dart';
 import 'package:patrol_cli_plus/src/web/web_test_backend.dart';
@@ -310,8 +311,8 @@ class PatrolCommandRunner extends CompletionCommandRunner<int> {
 
   @override
   String? get usageFooter => '''
-Read documentation at https://patrol.leancode.co
-Report bugs, request features at https://github.com/leancodepl/patrol/issues
+Read more at https://github.com/Bdaya-Dev/patrol
+Report bugs, request features at https://github.com/Bdaya-Dev/patrol/issues
 Ask questions, get support at Discord server: https://discord.gg/ukBK5t4EZg
 
 To deactivate Patrol CLI, run:
@@ -385,7 +386,9 @@ To install a specific version of Patrol CLI, run:
     final commandName = topLevelResults.command?.name;
 
     if (_wantsUpdateCheck(commandName)) {
-      final latestVersion = await _pubUpdater.getLatestVersion('patrol_cli_plus');
+      final latestVersion = await _pubUpdater.getLatestVersion(
+        'patrol_cli_plus',
+      );
       const currentVersion = constants.version;
 
       await _checkForUpdates(
@@ -591,7 +594,7 @@ To install a specific version of Patrol CLI, run:
     }
 
     buffer.writeln(
-      'Check the compatibility table at: ${lightCyan.wrap('https://patrol.leancode.co/documentation/compatibility-table')}',
+      'Check the compatibility table at: ${lightCyan.wrap('https://github.com/Bdaya-Dev/patrol/blob/master/docs/documentation/compatibility-table.mdx')}',
     );
 
     _logger
