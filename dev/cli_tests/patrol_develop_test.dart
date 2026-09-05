@@ -42,16 +42,31 @@ void main(List<String> args) async {
   const afterBuildCompletedTimeout = Duration(minutes: 5, seconds: 30);
   const inactivityTimeout = Duration(minutes: 15);
 
+  final stopwatch = Stopwatch()..start();
+  String elapsed() => '${stopwatch.elapsed.inSeconds}s';
+
   var isFirstTestPassed = false;
   var isReloaded = false;
   Timer? inactivityTimer;
   final output = StringBuffer();
+
+  // What the harness is currently waiting for. Every failure path prints it,
+  // so a red run names the stalled step instead of a bare timeout.
+  var waitingFor =
+      'the first test run to finish ("All tests were executed") '
+      'and Hot Restart to attach ("Hot Restart: attached to the app")';
 
   final exampleAppDirectory = io.Directory(join('..', 'e2e_app'));
   final exampleTestFile = io.File(
     join(exampleAppDirectory.path, 'patrol_test', 'example_test.dart'),
   );
 
+  await _printDeviceState();
+
+  print(
+    '[harness] ${elapsed()} starting `patrol_plus develop` '
+    'in ${exampleAppDirectory.absolute.path}',
+  );
   final process = await io.Process.start(
     'patrol_plus',
     [
@@ -63,6 +78,32 @@ void main(List<String> args) async {
     ],
     runInShell: true,
     workingDirectory: exampleAppDirectory.path,
+  );
+
+  Never fail(String reason, {int exitCode = 1}) {
+    print('[harness] ${elapsed()} FAILED while waiting for $waitingFor');
+    print('[harness] $reason');
+    print('[harness] isFirstTestPassed: $isFirstTestPassed');
+    print('[harness] isReloaded: $isReloaded');
+    print('[harness] Running file:');
+    print(exampleTestFile.readAsStringSync());
+    print('[harness] End of the running file');
+    print('[harness] Exiting with exit code $exitCode');
+    io.exit(exitCode);
+  }
+
+  // On the happy path `patrol develop` never exits on its own: the harness
+  // exits first, below, as soon as the restarted test fails as expected. So an
+  // exit before that point means the build or the test run failed. Fail right
+  // away instead of sitting out the inactivity timer with the real error
+  // buried in the scrollback.
+  unawaited(
+    process.exitCode.then((code) {
+      fail(
+        '`patrol develop` exited with code $code',
+        exitCode: code == 0 ? 1 : code,
+      );
+    }),
   );
 
   process.stderr
@@ -82,6 +123,7 @@ void main(List<String> args) async {
           'All tests were executed. Press "r" to start again or "q" to quit',
         )) {
       isFirstTestPassed = true;
+      print('[harness] ${elapsed()} first test run finished');
     }
 
     final isReadyToRestart =
@@ -93,6 +135,13 @@ void main(List<String> args) async {
       exampleTestFile.writeAsStringSync(exampleTestWithFailingContents);
       process.stdin.add('R'.codeUnits);
       isReloaded = true;
+      waitingFor =
+          'the restarted test to fail as expected '
+          '("When the exception was thrown")';
+      print(
+        '[harness] ${elapsed()} Hot Restart attached, '
+        'rewrote example_test.dart and sent "R"',
+      );
     }
 
     final isRestartedTestFailed =
@@ -102,9 +151,10 @@ void main(List<String> args) async {
 
     if (isRestartedTestFailed) {
       print(
-        'exampleTestWithFailingContents was successfully restarted as example_test and it has failed as expected',
+        '[harness] ${elapsed()} exampleTestWithFailingContents was '
+        'successfully restarted as example_test and it has failed as expected',
       );
-      print('Exiting with exit code 0');
+      print('[harness] Exiting with exit code 0');
       // TODO: kill `patrol develop` process and its children
       io.exit(0);
     }
@@ -113,22 +163,17 @@ void main(List<String> args) async {
 
     if (stringOutput.contains('Completed building')) {
       inactivityTimer = Timer(afterBuildCompletedTimeout, () {
-        print(
-          '${afterBuildCompletedTimeout.inSeconds} seconds of inactivity, something went wrong...',
+        fail(
+          '${afterBuildCompletedTimeout.inSeconds} seconds of inactivity '
+          'after the build completed, something went wrong...',
         );
-        print('isFirstTestPassed: $isFirstTestPassed');
-        print('isReloaded: $isReloaded');
-        print('Running file:');
-        print(exampleTestFile.readAsStringSync());
-        print('End of the running file');
-        print('Exiting with exit code 1');
-        io.exit(1);
       });
     } else {
       inactivityTimer = Timer(inactivityTimeout, () {
-        print('Fifteen minutes of inactivity, something went wrong...');
-        print('Exiting with exit code 1');
-        io.exit(1);
+        fail(
+          '${inactivityTimeout.inMinutes} minutes of inactivity before the '
+          'build completed, something went wrong...',
+        );
       });
     }
   });
@@ -138,5 +183,29 @@ void _verifyWorkingDirectory() {
   if (!io.Directory.current.path.endsWith('cli_tests')) {
     print('This test must be run from dev/cli_tests directory');
     io.exit(1);
+  }
+}
+
+/// Prints what adb sees before `patrol develop` starts, so a run that never
+/// gets past device discovery shows whether the emulator was actually up.
+Future<void> _printDeviceState() async {
+  for (final command in [
+    ['adb', 'devices', '-l'],
+    ['adb', 'shell', 'getprop', 'sys.boot_completed'],
+  ]) {
+    try {
+      final result = await io.Process.run(
+        command.first,
+        command.skip(1).toList(),
+        runInShell: true,
+      );
+      print(
+        '[harness] \$ ${command.join(' ')} (exit ${result.exitCode})\n'
+                '${result.stdout}${result.stderr}'
+            .trimRight(),
+      );
+    } on Exception catch (err) {
+      print('[harness] \$ ${command.join(' ')} failed: $err');
+    }
   }
 }

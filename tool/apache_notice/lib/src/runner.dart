@@ -9,6 +9,7 @@ import 'header.dart';
 import 'modified_set.dart';
 import 'notice.dart';
 import 'package_mapping.dart';
+import 'rename_check.dart';
 
 /// One §4(b) compliance problem found by [runApacheNotice].
 class Violation {
@@ -102,9 +103,11 @@ RunResult runApacheNotice(RunOptions options, {required StringSink out}) {
   // removed+added instead of modified. Not auto-fixable: there's no safe
   // way to guess the right mapping, so this is reported even under --fix.
   for (final rename in repo.renamesBetween(options.forkPoint, 'HEAD')) {
-    if (rename.similarity == 100) continue; // identical content -- fine.
-    final mapped = mapUpstreamPathToWorkingPath(rename.oldPath);
-    if (mapped == rename.newPath) continue; // explained.
+    final unexplained = isUnexplainedRename(
+      rename,
+      existsInTree: (path) => File(p.join(repo.root, path)).existsSync(),
+    );
+    if (!unexplained) continue;
     violations.add(
       Violation('${rename.oldPath} -> ${rename.newPath}', 'unmapped rename'),
     );
