@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 //
 //  Generated code. Do not modify.
 //  source: schema.dart
@@ -1223,6 +1224,89 @@ class GetOsVersionResponse with EquatableMixin {
 
   @override
   List<Object?> get props => [osVersion];
+}
+
+@JsonSerializable()
+class AndroidTakeScreenshotRequest with EquatableMixin {
+  AndroidTakeScreenshotRequest({required this.path});
+
+  factory AndroidTakeScreenshotRequest.fromJson(Map<String, dynamic> json) =>
+      _$AndroidTakeScreenshotRequestFromJson(json);
+
+  final String path;
+
+  Map<String, dynamic> toJson() => _$AndroidTakeScreenshotRequestToJson(this);
+
+  @override
+  List<Object?> get props => [path];
+}
+
+@JsonSerializable()
+class AndroidTakeScreenshotResponse with EquatableMixin {
+  AndroidTakeScreenshotResponse({required this.path, required this.sizeBytes});
+
+  factory AndroidTakeScreenshotResponse.fromJson(Map<String, dynamic> json) =>
+      _$AndroidTakeScreenshotResponseFromJson(json);
+
+  final String path;
+  final int sizeBytes;
+
+  Map<String, dynamic> toJson() => _$AndroidTakeScreenshotResponseToJson(this);
+
+  @override
+  List<Object?> get props => [path, sizeBytes];
+}
+
+@JsonSerializable()
+class AndroidStartScreenRecordingRequest with EquatableMixin {
+  AndroidStartScreenRecordingRequest({
+    required this.path,
+    this.timeLimitSeconds,
+    this.bitRate,
+    this.width,
+    this.height,
+  });
+
+  factory AndroidStartScreenRecordingRequest.fromJson(
+    Map<String, dynamic> json,
+  ) => _$AndroidStartScreenRecordingRequestFromJson(json);
+
+  final String path;
+  final int? timeLimitSeconds;
+  final int? bitRate;
+  final int? width;
+  final int? height;
+
+  Map<String, dynamic> toJson() =>
+      _$AndroidStartScreenRecordingRequestToJson(this);
+
+  @override
+  List<Object?> get props => [path, timeLimitSeconds, bitRate, width, height];
+}
+
+@JsonSerializable()
+class AndroidStopScreenRecordingResponse with EquatableMixin {
+  AndroidStopScreenRecordingResponse({
+    required this.path,
+    required this.sizeBytes,
+    required this.durationMillis,
+    this.frameCount,
+  });
+
+  factory AndroidStopScreenRecordingResponse.fromJson(
+    Map<String, dynamic> json,
+  ) => _$AndroidStopScreenRecordingResponseFromJson(json);
+
+  final String path;
+  final int sizeBytes;
+  final int durationMillis;
+  final int? frameCount;
+
+  Map<String, dynamic> toJson() =>
+      _$AndroidStopScreenRecordingResponseToJson(this);
+
+  @override
+  List<Object?> get props => [path, sizeBytes, durationMillis, frameCount];
 }
 
 @JsonSerializable()

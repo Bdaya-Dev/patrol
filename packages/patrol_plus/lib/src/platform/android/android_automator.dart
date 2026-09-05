@@ -1,8 +1,14 @@
 // Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meta/meta.dart';
 import 'package:patrol_plus/src/platform/android/android_automator_config.dart';
 import 'package:patrol_plus/src/platform/contracts/contracts.dart'
-    show AndroidGetNativeViewsResponse, GoogleApp, KeyboardBehavior;
+    show
+        AndroidGetNativeViewsResponse,
+        AndroidStopScreenRecordingResponse,
+        AndroidTakeScreenshotResponse,
+        GoogleApp,
+        KeyboardBehavior;
 import 'package:patrol_plus/src/platform/mobile/mobile_automator.dart';
 import 'package:patrol_plus/src/platform/selector.dart'
     show AndroidSelector, IOSSelector;
@@ -267,6 +273,70 @@ abstract interface class AndroidAutomator implements MobileAutomator {
     AndroidSelector? doneButtonSelector,
     Duration? timeout,
   });
+
+  /// Saves a PNG screenshot of the whole device screen and returns where it was
+  /// written and how large it is.
+  ///
+  /// [path] must be inside the app's external files directory on the device
+  /// (`/storage/emulated/0/Android/data/<package>/files`), which the app can
+  /// write to and `adb pull` can read without root. A relative [path] resolves
+  /// against that directory; an absolute one must already point into it, and
+  /// anything else — `/sdcard/shot.png`, say — is refused.
+  ///
+  /// Any previous file at [path] is removed first, and this throws rather than
+  /// return if no PNG data was written. A stale or empty capture must never be
+  /// mistakable for a fresh one.
+  Future<AndroidTakeScreenshotResponse> takeScreenshot({required String path});
+
+  /// Starts recording the device screen to an MP4 file at [path], resolved the
+  /// same way as in [takeScreenshot].
+  ///
+  /// Returns only once the recorder is running, and throws if it never started
+  /// — a recording that silently never began would otherwise be discovered
+  /// only after the whole flow had run.
+  ///
+  /// A recording that is still running from an earlier call (for example one a
+  /// failed test never stopped) is stopped and logged first, so it cannot make
+  /// every later recording fail. The one this test wants is the one it starts.
+  ///
+  /// Without a [timeLimit] the platform default of 3 minutes applies; pass
+  /// [Duration.zero] to record without a limit. [bitRate] is in bits per second.
+  /// [width] and [height] are only applied together.
+  ///
+  /// Call [stopScreenRecording] to finish the recording. A recording still
+  /// running when the test body finishes — whether it returned or threw — is
+  /// stopped by `patrolTest` automatically.
+  Future<void> startScreenRecording({
+    required String path,
+    Duration? timeLimit,
+    int? bitRate,
+    int? width,
+    int? height,
+  });
+
+  /// Stops the recording started by [startScreenRecording] and returns where it
+  /// was written, its size, and — read back from the file itself, not from a
+  /// clock — its duration and frame count (the count is null on Android
+  /// versions below 9, which cannot report it).
+  ///
+  /// Throws unless the file is something a player could open: the recorder must
+  /// have exited cleanly, the MP4 must carry its `moov` index (written only
+  /// during a clean shutdown; a killed recorder leaves a file of the very same
+  /// size without it), and it must contain a video track with frames. Note that
+  /// `screenrecord` only encodes frames when the screen changes, so a recording
+  /// of a perfectly still screen fails here rather than pass off an empty file
+  /// as evidence.
+  Future<AndroidStopScreenRecordingResponse> stopScreenRecording();
+
+  /// Stops a recording that [startScreenRecording] began and the test never
+  /// stopped, logging that it was abandoned. Does nothing when no recording is
+  /// running, and never throws — not for a native refusal, a dropped
+  /// connection, or a client timeout — because it runs on cleanup paths, where
+  /// an exception would mask the failure that caused them.
+  ///
+  /// Called by `patrolTest` after every test body; tests do not need to.
+  @internal
+  Future<void> stopAbandonedScreenRecording();
 
   /// Pick an image from the gallery
   ///

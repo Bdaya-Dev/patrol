@@ -1,5 +1,8 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
+
+
 part of 'contracts.dart';
 
 // **************************************************************************
@@ -819,6 +822,63 @@ GetOsVersionResponse _$GetOsVersionResponseFromJson(
 Map<String, dynamic> _$GetOsVersionResponseToJson(
   GetOsVersionResponse instance,
 ) => <String, dynamic>{'osVersion': instance.osVersion};
+
+AndroidTakeScreenshotRequest _$AndroidTakeScreenshotRequestFromJson(
+  Map<String, dynamic> json,
+) => AndroidTakeScreenshotRequest(path: json['path'] as String);
+
+Map<String, dynamic> _$AndroidTakeScreenshotRequestToJson(
+  AndroidTakeScreenshotRequest instance,
+) => <String, dynamic>{'path': instance.path};
+
+AndroidTakeScreenshotResponse _$AndroidTakeScreenshotResponseFromJson(
+  Map<String, dynamic> json,
+) => AndroidTakeScreenshotResponse(
+  path: json['path'] as String,
+  sizeBytes: (json['sizeBytes'] as num).toInt(),
+);
+
+Map<String, dynamic> _$AndroidTakeScreenshotResponseToJson(
+  AndroidTakeScreenshotResponse instance,
+) => <String, dynamic>{'path': instance.path, 'sizeBytes': instance.sizeBytes};
+
+AndroidStartScreenRecordingRequest _$AndroidStartScreenRecordingRequestFromJson(
+  Map<String, dynamic> json,
+) => AndroidStartScreenRecordingRequest(
+  path: json['path'] as String,
+  timeLimitSeconds: (json['timeLimitSeconds'] as num?)?.toInt(),
+  bitRate: (json['bitRate'] as num?)?.toInt(),
+  width: (json['width'] as num?)?.toInt(),
+  height: (json['height'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$AndroidStartScreenRecordingRequestToJson(
+  AndroidStartScreenRecordingRequest instance,
+) => <String, dynamic>{
+  'path': instance.path,
+  'timeLimitSeconds': instance.timeLimitSeconds,
+  'bitRate': instance.bitRate,
+  'width': instance.width,
+  'height': instance.height,
+};
+
+AndroidStopScreenRecordingResponse _$AndroidStopScreenRecordingResponseFromJson(
+  Map<String, dynamic> json,
+) => AndroidStopScreenRecordingResponse(
+  path: json['path'] as String,
+  sizeBytes: (json['sizeBytes'] as num).toInt(),
+  durationMillis: (json['durationMillis'] as num).toInt(),
+  frameCount: (json['frameCount'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$AndroidStopScreenRecordingResponseToJson(
+  AndroidStopScreenRecordingResponse instance,
+) => <String, dynamic>{
+  'path': instance.path,
+  'sizeBytes': instance.sizeBytes,
+  'durationMillis': instance.durationMillis,
+  'frameCount': instance.frameCount,
+};
 
 AndroidTakeCameraPhotoRequest _$AndroidTakeCameraPhotoRequestFromJson(
   Map<String, dynamic> json,

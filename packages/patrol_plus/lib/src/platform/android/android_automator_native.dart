@@ -3,6 +3,7 @@ import 'dart:io' as io;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:meta/meta.dart';
 import 'package:patrol_log_plus/patrol_log.dart';
 import 'package:patrol_plus/patrol.dart' show PatrolActionException;
 import 'package:patrol_plus/src/platform/android/android_automator.dart'
@@ -31,19 +32,24 @@ extension on KeyboardBehavior {
 class AndroidAutomator extends NativeMobileAutomator
     implements android_automator.AndroidAutomator {
   /// Creates a new [AndroidAutomator].
-  AndroidAutomator({required AndroidAutomatorConfig config})
-    : assert(
-        config.connectionTimeout > config.findTimeout,
-        'find timeout is longer than connection timeout',
-      ),
-      _config = config,
-      super(config: config) {
+  ///
+  /// [httpClient] is the client used to talk to the native automation server;
+  /// it exists so tests can substitute a fake server.
+  AndroidAutomator({
+    required AndroidAutomatorConfig config,
+    @visibleForTesting http.Client? httpClient,
+  }) : assert(
+         config.connectionTimeout > config.findTimeout,
+         'find timeout is longer than connection timeout',
+       ),
+       _config = config,
+       super(config: config) {
     if (_config.packageName.isEmpty && io.Platform.isAndroid) {
       _config.logger("packageName is not set. It's recommended to set it.");
     }
 
     _client = AndroidAutomatorClient(
-      http.Client(),
+      httpClient ?? http.Client(),
       Uri.http('${_config.host}:${_config.port}'),
       timeout: _config.connectionTimeout,
     );
@@ -56,6 +62,10 @@ class AndroidAutomator extends NativeMobileAutomator
   final AndroidAutomatorConfig _config;
 
   late final AndroidAutomatorClient _client;
+
+  /// Path of the recording [startScreenRecording] began and nothing has stopped
+  /// yet, so [stopAbandonedScreenRecording] knows whether there is one.
+  String? _activeScreenRecordingPath;
 
   /// Opens a platform-specific app.
   ///
@@ -539,6 +549,94 @@ class AndroidAutomator extends NativeMobileAutomator
         ),
       );
     });
+  }
+
+  /// Saves a PNG screenshot of the whole device screen and returns where it was
+  /// written and how large it is.
+  ///
+  /// See [android_automator.AndroidAutomator.takeScreenshot].
+  @override
+  Future<AndroidTakeScreenshotResponse> takeScreenshot({
+    required String path,
+  }) async {
+    late AndroidTakeScreenshotResponse response;
+    await wrapRequest('takeScreenshot', () async {
+      response = await _client.takeScreenshot(
+        AndroidTakeScreenshotRequest(path: path),
+      );
+    });
+    return response;
+  }
+
+  /// Starts recording the device screen to an MP4 file at [path].
+  ///
+  /// See [android_automator.AndroidAutomator.startScreenRecording].
+  @override
+  Future<void> startScreenRecording({
+    required String path,
+    Duration? timeLimit,
+    int? bitRate,
+    int? width,
+    int? height,
+  }) async {
+    await wrapRequest('startScreenRecording', () async {
+      await _client.startScreenRecording(
+        AndroidStartScreenRecordingRequest(
+          path: path,
+          timeLimitSeconds: timeLimit?.inSeconds,
+          bitRate: bitRate,
+          width: width,
+          height: height,
+        ),
+      );
+    });
+    _activeScreenRecordingPath = path;
+  }
+
+  /// Stops the recording started by [startScreenRecording].
+  ///
+  /// See [android_automator.AndroidAutomator.stopScreenRecording].
+  @override
+  Future<AndroidStopScreenRecordingResponse> stopScreenRecording() async {
+    // Whether stopping succeeds or fails, nothing is recording afterwards: the
+    // native side resets its state on every stop() outcome.
+    _activeScreenRecordingPath = null;
+    late AndroidStopScreenRecordingResponse response;
+    await wrapRequest('stopScreenRecording', () async {
+      response = await _client.stopScreenRecording();
+    });
+    return response;
+  }
+
+  /// Stops a recording the test started and never stopped.
+  ///
+  /// See [android_automator.AndroidAutomator.stopAbandonedScreenRecording].
+  @override
+  Future<void> stopAbandonedScreenRecording() async {
+    final path = _activeScreenRecordingPath;
+    if (path == null) {
+      return;
+    }
+    const message =
+        'The test ended with a screen recording still running; stopping it. '
+        'Call stopScreenRecording() before the test body returns to collect '
+        'the result.';
+    _config.logger('stopAbandonedScreenRecording(): $message ($path)');
+    _patrolLog.log(LogEntry(message: '$message ($path)'));
+    try {
+      await stopScreenRecording();
+    } on Object catch (err, stackTrace) {
+      // Logged, never rethrown -- whatever it is. This runs in patrolTest's
+      // `finally`, so anything escaping here would replace the failure that
+      // actually ended the test. A native-side refusal arrives as
+      // PatrolActionException, but the app crashing mid-recording (the very
+      // case this cleanup exists for) shows up as a dropped connection or a
+      // client timeout, which wrapRequest does not convert.
+      _config.logger(
+        'stopAbandonedScreenRecording(): stopping $path failed: $err\n'
+        '$stackTrace',
+      );
+    }
   }
 
   /// Pick an image from the gallery

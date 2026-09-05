@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 //
 //  Generated code. Do not modify.
 //  source: schema.dart
@@ -96,6 +97,24 @@ class AndroidAutomatorClient {
 
   Future<void> tapOnNotification(AndroidTapOnNotificationRequest request) {
     return _sendRequest('tapOnNotification', request.toJson());
+  }
+
+  Future<AndroidTakeScreenshotResponse> takeScreenshot(
+    AndroidTakeScreenshotRequest request,
+  ) async {
+    final json = await _sendRequest('takeScreenshot', request.toJson());
+    return AndroidTakeScreenshotResponse.fromJson(json);
+  }
+
+  Future<void> startScreenRecording(
+    AndroidStartScreenRecordingRequest request,
+  ) {
+    return _sendRequest('startScreenRecording', request.toJson());
+  }
+
+  Future<AndroidStopScreenRecordingResponse> stopScreenRecording() async {
+    final json = await _sendRequest('stopScreenRecording');
+    return AndroidStopScreenRecordingResponse.fromJson(json);
   }
 
   Future<void> takeCameraPhoto(AndroidTakeCameraPhotoRequest request) {

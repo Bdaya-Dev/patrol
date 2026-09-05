@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 ///
 //  Generated code. Do not modify.
 //  source: schema.dart
@@ -723,6 +724,47 @@ class Contracts {
   data class GetOsVersionResponse (
     val osVersion: Long
   )
+
+  data class AndroidTakeScreenshotRequest (
+    val path: String
+  )
+
+  data class AndroidTakeScreenshotResponse (
+    val path: String,
+    val sizeBytes: Long
+  )
+
+  data class AndroidStartScreenRecordingRequest (
+    val path: String,
+    val timeLimitSeconds: Long? = null,
+    val bitRate: Long? = null,
+    val width: Long? = null,
+    val height: Long? = null
+  ){
+    fun hasTimeLimitSeconds(): Boolean {
+      return timeLimitSeconds != null
+    }
+    fun hasBitRate(): Boolean {
+      return bitRate != null
+    }
+    fun hasWidth(): Boolean {
+      return width != null
+    }
+    fun hasHeight(): Boolean {
+      return height != null
+    }
+  }
+
+  data class AndroidStopScreenRecordingResponse (
+    val path: String,
+    val sizeBytes: Long,
+    val durationMillis: Long,
+    val frameCount: Long? = null
+  ){
+    fun hasFrameCount(): Boolean {
+      return frameCount != null
+    }
+  }
 
   data class AndroidTakeCameraPhotoRequest (
     val shutterButtonSelector: AndroidSelector? = null,

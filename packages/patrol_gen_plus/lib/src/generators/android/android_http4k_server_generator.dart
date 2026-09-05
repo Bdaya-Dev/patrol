@@ -1,5 +1,6 @@
 // Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:patrol_gen_plus/src/generators/android/android_config.dart';
+import 'package:patrol_gen_plus/src/generators/fork_notice.dart';
 import 'package:patrol_gen_plus/src/generators/output_file.dart';
 import 'package:patrol_gen_plus/src/schema.dart';
 
@@ -17,6 +18,7 @@ class AndroidHttp4kServerGenerator {
 
   String _contentPrefix(AndroidConfig config) {
     return '''
+$forkNoticeLine
 ///
 //  Generated code. Do not modify.
 //  source: schema.dart
