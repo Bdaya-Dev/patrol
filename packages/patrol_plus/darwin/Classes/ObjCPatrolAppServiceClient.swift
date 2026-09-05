@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 /// Simplified objective-c RunDartTestResponse model that we use in PatrolIntegrationTestRunner.h
 @objc public class ObjCRunDartTestResponse: NSObject {
   @objc public dynamic let passed: Bool

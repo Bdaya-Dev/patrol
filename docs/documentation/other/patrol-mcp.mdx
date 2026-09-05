@@ -2,6 +2,7 @@
 title: Patrol MCP
 description: AI-powered test automation with Patrol MCP server
 ---
+{/* Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. */}
 
 ## Overview
 
@@ -9,15 +10,18 @@ Patrol MCP is an MCP (Model Context Protocol) server that lets AI assistants
 run and manage Patrol tests in Flutter projects. It wraps `patrol develop`
 and exposes it as a set of MCP tools.
 
+`patrol_mcp` is not one of this fork's renamed packages — it works the same
+against `patrol_cli_plus` projects as it does upstream, so it's used here
+under its original pub.dev name.
+
 - [patrol_mcp on pub.dev](https://pub.dev/packages/patrol_mcp)
-- [Setup guide & IDE configuration (README)](https://github.com/leancodepl/patrol/blob/master/packages/patrol_mcp/README.md)
 
 
 ## Version Compatibility
 
 <Info>
-**Most users can ignore this table.** If you use `patrol_cli` installed
-globally (via `dart pub global activate patrol_cli`), the version pinning
+**Most users can ignore this table.** If you use `patrol_cli_plus` installed
+globally (via `dart pub global activate patrol_cli_plus`), the version pinning
 does not affect you — the global CLI is a separate binary and `patrol_mcp`
 uses its own bundled copy of the CLI library.
 </Info>
@@ -42,6 +46,81 @@ table above to find compatible versions.
 
 ## Getting Started
 
-See the [full setup guide on GitHub](https://github.com/leancodepl/patrol/blob/master/packages/patrol_mcp/README.md)
-for installation steps, IDE-specific MCP configuration (Claude Code, Cursor,
-Copilot, Gemini CLI), environment variables, and troubleshooting.
+### Installation
+
+Add `patrol_mcp` as a dev dependency in your Flutter project:
+
+```sh
+dart pub add --dev patrol_mcp
+```
+
+By default this assumes your Flutter project's `pubspec.yaml` is in the
+repository root. If your app lives in a subdirectory, set `PROJECT_ROOT`
+accordingly (for example `./app`).
+
+### IDE configuration
+
+The server is launched directly with `dart run patrol_mcp` — no wrapper
+script or `chmod` needed. Most editors use the same config block; only the
+config file location differs:
+
+```json
+{
+  "mcpServers": {
+    "patrol": {
+      "command": "dart",
+      "args": ["run", "patrol_mcp"],
+      "env": {
+        "PROJECT_ROOT": ".",
+        "PATROL_FLAGS": "",
+        "SHOW_TERMINAL": "false"
+      }
+    }
+  }
+}
+```
+
+| Editor | Config file |
+| --- | --- |
+| Claude Code | `.mcp.json` (project root) |
+| Cursor | `.cursor/mcp.json` |
+| Gemini CLI | `.gemini/settings.json` |
+| GitHub Copilot (CLI) | `.mcp.json` (project root), or `~/.copilot/mcp-config.json` (global) |
+
+The VS Code Copilot extension instead uses `.vscode/mcp.json`, with a
+`servers` key (not `mcpServers`) and an explicit `"type": "stdio"`.
+
+### Environment variables
+
+- `PROJECT_ROOT` (recommended): the Flutter project directory containing
+  `pubspec.yaml`. Defaults to the current working directory if omitted.
+- `PATROL_FLAGS`: extra `patrol develop` flags, for example
+  `--flavor dev --verbose`. Also used for ports:
+  `--test-server-port 8081 --app-server-port 8082`.
+- `SHOW_TERMINAL`: open a terminal window for live logs (`"true"` / `"false"`).
+
+`patrol_mcp` also respects environment variables supported by `patrol_cli`
+(for example `PATROL_FLUTTER_COMMAND`, which overrides FVM auto-detection).
+
+### Tools
+
+- `run`: runs a test file and waits for completion. Auto-selects a device
+  (Android device > Android emulator > iOS device > iOS simulator), or pass
+  `device` to target one.
+- `devices`: lists attached Android/iOS devices to pass as `run`'s `device`.
+- `quit`: gracefully stops the active session.
+- `status`: returns session state and recent output.
+- `screenshot`: captures a screenshot from the active session device.
+- `native-tree`: fetches the native UI tree from the active session device.
+
+### Troubleshooting
+
+- Make sure your IDE is opened at the mobile project root.
+- Run `dart pub get` in the Flutter project root.
+- Confirm the MCP server is enabled in your IDE settings.
+- If the wrong Flutter/SDK is used, check your IDE's MCP logs — the chosen
+  Flutter command is logged to the server's stderr when a develop session
+  starts.
+
+Questions about using `patrol_mcp` in this fork? Open an issue at
+[github.com/Bdaya-Dev/patrol/issues](https://github.com/Bdaya-Dev/patrol/issues).

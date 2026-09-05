@@ -1,4 +1,5 @@
-import 'package:example/ui/images.dart';
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
+import 'package:example/ui/style/test_style.dart';
 import 'package:flutter/widgets.dart';
 
 class LogoHero extends StatelessWidget {
@@ -8,10 +9,7 @@ class LogoHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Hero(
       tag: 'logoHero',
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [PTImages.patrolLogo, PTImages.leancodeLogo],
-      ),
+      child: Center(child: Text('patrol_plus example', style: PTTextStyles.h4)),
     );
   }
 }

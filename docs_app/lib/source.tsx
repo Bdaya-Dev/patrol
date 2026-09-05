@@ -1,5 +1,6 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import { docs } from "@/.source"
-import { fab, faDiscord, faXTwitter } from "@fortawesome/free-brands-svg-icons"
+import { fab } from "@fortawesome/free-brands-svg-icons"
 import { faCode, fas } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { type InferPageType, loader, LoaderPlugin, PageTreeTransformer } from "fumadocs-core/source"
@@ -7,29 +8,15 @@ import { type InferPageType, loader, LoaderPlugin, PageTreeTransformer } from "f
 const commonLinks = [
   {
     type: "page" as const,
-    name: "Follow us on X!",
-    url: "https://x.com/patrol_leancode",
-    external: true,
-    icon: <FontAwesomeIcon icon={faXTwitter} />,
-  },
-  {
-    type: "page" as const,
-    name: "Discord",
-    url: "https://discord.gg/ukBK5t4EZg",
-    external: true,
-    icon: <FontAwesomeIcon icon={faDiscord} />,
-  },
-  {
-    type: "page" as const,
-    name: "patrol API reference",
-    url: "https://pub.dev/documentation/patrol/latest/index.html",
+    name: "patrol_plus API reference",
+    url: "https://pub.dev/documentation/patrol_plus/latest/",
     external: true,
     icon: <FontAwesomeIcon icon={faCode} />,
   },
   {
     type: "page" as const,
-    name: "patrol_finders API reference",
-    url: "https://pub.dev/documentation/patrol_finders/latest/index.html",
+    name: "patrol_finders_plus API reference",
+    url: "https://pub.dev/documentation/patrol_finders_plus/latest/",
     external: true,
     icon: <FontAwesomeIcon icon={faCode} />,
   },

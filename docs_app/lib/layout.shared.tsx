@@ -1,17 +1,11 @@
-import patrolIcon from "assets/patrol_icon.svg"
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import { DocsLayoutProps } from "fumadocs-ui/layouts/notebook"
-import Image from "next/image"
 import { GithubInfo } from "../components/GithubInfo"
 
 export function baseOptions(): Partial<DocsLayoutProps> {
   return {
     nav: {
-      title: (
-        <div className="flex items-center gap-3">
-          <Image src={patrolIcon} alt="Patrol Icon" height={28} />
-          <span className="text-l font-bold">Patrol</span>
-        </div>
-      ),
+      title: <span className="text-l font-bold">patrol_plus</span>,
       mode: "top",
     },
     tabMode: "navbar",
@@ -30,27 +24,19 @@ export function baseOptions(): Partial<DocsLayoutProps> {
           url: "/cli-commands",
         },
         {
-          title: "Patrol Feature Guide",
+          title: "Feature Guide",
           url: "/feature-guide",
         },
         {
           title: "Articles & Resources",
           url: "/articles",
         },
-        {
-          title: "Pricing",
-          url: "/pricing",
-        },
-        {
-          title: "Contact us",
-          url: "/contact",
-        },
       ],
     },
     links: [
       {
         type: "custom",
-        children: <GithubInfo owner="leancodepl" repo="patrol" className="lg:-mx-2" />,
+        children: <GithubInfo owner="Bdaya-Dev" repo="patrol" className="lg:-mx-2" />,
       },
     ],
   }

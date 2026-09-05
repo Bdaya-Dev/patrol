@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import { acceptNextDialog } from "./actions/acceptNextDialog"
 import { addCookie } from "./actions/addCookie"
 import { clearCookies } from "./actions/clearCookies"
