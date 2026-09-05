@@ -11,6 +11,7 @@ Fork point: 4e19760bdbb498aac2c01d1a771543451e785e33 (upstream master, 2026-08-3
 ## Modified files
 
 - README.md (notice in file)
+- analysis_options.yaml (notice in file)
 - lib/api/native_views.dart (notice in file)
 - lib/api/patrol_service_extension_api.dart (notice in file)
 - lib/main.dart (notice in file)

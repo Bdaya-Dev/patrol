@@ -15,6 +15,13 @@ class AndroidAutomator implements android_automator.AndroidAutomator {
   // ignore: avoid_unused_constructor_parameters
   AndroidAutomator({required AndroidAutomatorConfig config});
 
+  /// Nothing can be recording where there is no native automator, so there is
+  /// nothing to stop. Implemented explicitly rather than through [noSuchMethod]
+  /// because `patrolTest` calls this on every cleanup path, where throwing
+  /// [UnimplementedError] would mask the real failure.
+  @override
+  Future<void> stopAbandonedScreenRecording() async {}
+
   /// Throws [UnimplementedError] for any method invocation.
   ///
   /// This override ensures that using any member will result in a clear error indicating

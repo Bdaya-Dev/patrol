@@ -1,3 +1,7 @@
+## 5.5.2
+
+ - **DOCS**: independent-fork notice, LeanCode de-branding, Apache-2.0 §4(b) notices ([#50](https://github.com/Bdaya-Dev/patrol/issues/50)). ([17cee4d8](https://github.com/Bdaya-Dev/patrol/commit/17cee4d8aa1a5938bddfef408340017fea7a1001))
+
 <!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 ## 5.5.1
 

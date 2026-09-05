@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.location.Location
 import android.location.LocationManager
 import android.location.provider.ProviderProperties
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -39,6 +40,8 @@ import pl.leancode.patrol.contracts.Contracts.Rectangle
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.RandomAccessFile
+import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -78,6 +81,31 @@ private fun fromUiObject2(obj: UiObject2): AndroidNativeView {
         children = obj.children?.map { fromUiObject2(it) } ?: listOf()
     )
 }
+
+/** How long [Automator.startScreenRecording] waits for `screenrecord` to report its pid. */
+private const val SCREEN_RECORDING_START_TIMEOUT_MILLIS = 5_000L
+
+/** How long [Automator.startScreenRecording] watches a freshly started `screenrecord` for an immediate exit. */
+private const val SCREEN_RECORDING_START_GRACE_MILLIS = 500L
+
+/** How long [Automator.stopScreenRecording] waits for `screenrecord` to exit and finalize the container. */
+private const val SCREEN_RECORDING_STOP_TIMEOUT_MILLIS = 10_000L
+
+private const val SCREEN_RECORDING_POLL_INTERVAL_MILLIS = 100L
+
+/** Prefix of the line the recorder wrapper prints with `screenrecord`'s exit status. */
+private const val SCREEN_RECORDING_EXIT_MARKER = "__PATROL_EXIT__"
+
+/** A still capture written to the device. */
+data class ScreenshotResult(val path: String, val sizeBytes: Long)
+
+/**
+ * A screen recording written to the device.
+ *
+ * [durationMillis] and [frameCount] are read back from the MP4 itself, not from a
+ * clock; [frameCount] is null on Android versions below 9, which cannot report it.
+ */
+data class ScreenRecordingResult(val path: String, val sizeBytes: Long, val durationMillis: Long, val frameCount: Long?)
 
 class Automator private constructor() {
     private var timeoutMillis: Long = 10_000
@@ -214,6 +242,451 @@ class Automator private constructor() {
         } catch (e: Throwable) {
             Logger.e("Failed to take native screenshot (tag=$tag)", e)
         }
+    }
+
+    // capture
+
+    /**
+     * Everything belonging to one `screenrecord` run.
+     *
+     * The recorder runs as the shell user through two small scripts in [scratchDir].
+     * [innerScript] writes its own pid to [pidFile] and then `exec`s `screenrecord`,
+     * so the pid on record is the recorder's and not a wrapper's. [outerScript] runs
+     * the inner one with stderr redirected to [stderrFile] and echoes the exit status
+     * behind [SCREEN_RECORDING_EXIT_MARKER] -- `UiDevice.executeShellCommand` returns
+     * only stdout and discards both.
+     */
+    private class ScreenRecordingSession(val output: File, val scratchDir: File) {
+        val pidFile = File(scratchDir, "screenrecord.pid")
+        val stderrFile = File(scratchDir, "screenrecord.stderr")
+        val innerScript = File(scratchDir, "screenrecord.sh")
+        val outerScript = File(scratchDir, "wrapper.sh")
+
+        lateinit var thread: Thread
+
+        /** stdout of the wrapper once it has exited. Carries the exit-status marker. */
+        @Volatile var stdout: String? = null
+
+        /** Set when `executeShellCommand` itself threw, i.e. the wrapper could not be run at all. */
+        @Volatile var failure: Throwable? = null
+
+        val exitCode: Int?
+            get() = stdout
+                ?.lineSequence()
+                ?.lastOrNull { it.startsWith(SCREEN_RECORDING_EXIT_MARKER) }
+                ?.removePrefix(SCREEN_RECORDING_EXIT_MARKER)
+                ?.trim()
+                ?.toIntOrNull()
+
+        fun pid(): Int? = runCatching { pidFile.readText().trim().toInt() }.getOrNull()
+
+        fun stderr(): String = runCatching { stderrFile.readText().trim() }.getOrDefault("")
+
+        fun deleteScratch() {
+            scratchDir.deleteRecursively()
+        }
+    }
+
+    private data class RecordingInfo(val durationMillis: Long, val frameCount: Long?)
+
+    /** Guards [screenRecording]. The http4k server dispatches requests on a thread pool. */
+    private val screenRecordingLock = Any()
+    private var screenRecording: ScreenRecordingSession? = null
+
+    private fun shellQuote(value: String) = "'" + value.replace("'", "'\\''") + "'"
+
+    /**
+     * Runs [script] as the shell user via `sh <file>` and returns its stdout.
+     *
+     * `UiDevice.executeShellCommand` hands its argument to `Runtime.exec(String)`,
+     * which splits on whitespace and knows nothing about quoting, so a command line
+     * carrying a quoted path cannot be passed to it directly. The script goes into a
+     * file both this process and the shell user can reach, and `sh` does the parsing.
+     */
+    private fun runShellScript(name: String, script: String): String {
+        val file = File(captureScratchRoot(), "$name-${System.nanoTime()}.sh")
+        file.writeText(script)
+        try {
+            return uiDevice.executeShellCommand("sh ${file.absolutePath}")
+        } finally {
+            file.delete()
+        }
+    }
+
+    /**
+     * The only directory captures may be written to.
+     *
+     * The app's external files directory is writable both by this process (which
+     * writes screenshots) and by the shell user (which `screenrecord` runs as), and
+     * `adb pull` can read it without root. `/sdcard/foo.png`, by contrast, is not
+     * writable by this process on current Android versions.
+     */
+    private fun captureRoot(): File =
+        targetContext.getExternalFilesDir(null)
+            ?: throw PatrolException("capture: the app's external files directory is unavailable (is shared storage mounted?)")
+
+    private fun captureScratchRoot(): File = File(captureRoot(), ".patrol_capture").also { it.mkdirs() }
+
+    private fun canonicalOrNormalized(file: File): File =
+        runCatching { file.canonicalFile }.getOrElse { file.absoluteFile.normalize() }
+
+    /**
+     * Resolves [path] to a file inside [captureRoot], creating parent directories.
+     *
+     * A relative path is resolved against that directory. An absolute path must
+     * already point inside it; anything else is refused rather than written to (or
+     * deleted from), because the shell user this runs as can reach far more of the
+     * device than a test should.
+     */
+    private fun resolveCapturePath(path: String, action: String): File {
+        val root = canonicalOrNormalized(captureRoot())
+        val candidate = if (File(path).isAbsolute) File(path) else File(root, path)
+        val resolved = canonicalOrNormalized(candidate)
+        if (!resolved.path.startsWith(root.path + File.separator)) {
+            throw PatrolException(
+                "$action(): $path resolves to ${resolved.path}, which is outside the app's external files " +
+                    "directory ${root.path}. Pass a path relative to that directory, or an absolute path inside it."
+            )
+        }
+        resolved.parentFile?.mkdirs()
+        return resolved
+    }
+
+    /** Removes a previous capture at [file]. Silently reusing one would look exactly like fresh evidence. */
+    private fun removeStaleCapture(file: File, action: String) {
+        if (!file.exists()) {
+            return
+        }
+        // A recording is written by the shell user; this process may not be allowed to unlink it.
+        if (!file.delete() || file.exists()) {
+            runShellScript("rm", "rm -f ${shellQuote(file.absolutePath)}\n")
+        }
+        if (file.exists()) {
+            throw PatrolException("$action(): failed to remove the existing file at ${file.absolutePath}")
+        }
+    }
+
+    fun takeScreenshot(path: String): ScreenshotResult {
+        val file = resolveCapturePath(path, "takeScreenshot")
+        removeStaleCapture(file, "takeScreenshot")
+
+        if (!uiDevice.takeScreenshot(file)) {
+            throw PatrolException("takeScreenshot(): the device failed to capture the screen to ${file.absolutePath}")
+        }
+
+        val sizeBytes = file.length()
+        if (sizeBytes <= 0L) {
+            throw PatrolException("takeScreenshot(): no image data was written to ${file.absolutePath} (size=$sizeBytes)")
+        }
+        if (!startsWithPngSignature(file)) {
+            throw PatrolException("takeScreenshot(): ${file.absolutePath} is not a PNG file")
+        }
+
+        return ScreenshotResult(path = file.absolutePath, sizeBytes = sizeBytes)
+    }
+
+    private fun startsWithPngSignature(file: File): Boolean {
+        val signature = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
+        val head = ByteArray(signature.size)
+        val read = file.inputStream().use { it.read(head) }
+        return read == signature.size && head.contentEquals(signature)
+    }
+
+    /**
+     * Starts `screenrecord` and returns once it is running. Returns the absolute output path.
+     *
+     * A recording that is still running from an earlier call -- typically a test that
+     * failed between start and stop -- is stopped and logged first, so one leaked
+     * recorder cannot make every later recording fail with "already running".
+     */
+    fun startScreenRecording(
+        path: String,
+        timeLimitSeconds: Long?,
+        bitRate: Long?,
+        width: Long?,
+        height: Long?
+    ): String = synchronized(screenRecordingLock) {
+        abandonScreenRecordingLocked("startScreenRecording() was called again before it was stopped")
+
+        val output = resolveCapturePath(path, "startScreenRecording")
+        removeStaleCapture(output, "startScreenRecording")
+
+        val scratch = File(captureScratchRoot(), "rec-${System.currentTimeMillis()}")
+        if (!scratch.mkdirs() && !scratch.isDirectory) {
+            throw PatrolException("startScreenRecording(): cannot create ${scratch.absolutePath}")
+        }
+        val session = ScreenRecordingSession(output = output, scratchDir = scratch)
+
+        val cmd = StringBuilder("exec screenrecord")
+        if (timeLimitSeconds != null) {
+            cmd.append(" --time-limit ").append(timeLimitSeconds)
+        }
+        if (bitRate != null) {
+            cmd.append(" --bit-rate ").append(bitRate)
+        }
+        if (width != null && height != null) {
+            cmd.append(" --size ").append(width).append('x').append(height)
+        }
+        cmd.append(' ').append(shellQuote(output.absolutePath))
+
+        session.innerScript.writeText("echo \$\$ > ${shellQuote(session.pidFile.absolutePath)}\n$cmd\n")
+        session.outerScript.writeText(
+            "sh ${shellQuote(session.innerScript.absolutePath)} 2>${shellQuote(session.stderrFile.absolutePath)}\n" +
+                "echo \"$SCREEN_RECORDING_EXIT_MARKER\$?\"\n"
+        )
+
+        // `screenrecord` runs until interrupted, so it cannot be awaited here.
+        val thread = Thread {
+            try {
+                session.stdout = uiDevice.executeShellCommand("sh ${session.outerScript.absolutePath}")
+            } catch (e: Throwable) {
+                session.failure = e
+            }
+        }
+        thread.name = "patrol-screenrecord"
+        thread.isDaemon = true
+        session.thread = thread
+        thread.start()
+
+        // Fail fast rather than discover at stop(), after the whole flow has been
+        // performed into nothing, that the recorder never ran. Note that the output
+        // file is no signal here: screenrecord creates it lazily, on the first encoded
+        // frame, which on a still screen can be never.
+        val deadline = SystemClock.elapsedRealtime() + SCREEN_RECORDING_START_TIMEOUT_MILLIS
+        var pid = session.pid()
+        while (pid == null) {
+            if (!thread.isAlive) {
+                val why = describeRecorderExit(session)
+                session.deleteScratch()
+                throw PatrolException("startScreenRecording(): screenrecord exited before it started recording; $why")
+            }
+            if (SystemClock.elapsedRealtime() >= deadline) {
+                signalScreenRecordProcess(session, "KILL")
+                thread.join(1_000)
+                val why = describeRecorderExit(session)
+                session.deleteScratch()
+                throw PatrolException(
+                    "startScreenRecording(): screenrecord did not start within $SCREEN_RECORDING_START_TIMEOUT_MILLIS ms; $why"
+                )
+            }
+            SystemClock.sleep(SCREEN_RECORDING_POLL_INTERVAL_MILLIS)
+            pid = session.pid()
+        }
+
+        // A screenrecord that rejects its arguments or cannot open its output exits
+        // within milliseconds of starting. Wait that long so such a failure surfaces
+        // here, with its stderr, instead of as a mysterious empty file later.
+        thread.join(SCREEN_RECORDING_START_GRACE_MILLIS)
+        if (!thread.isAlive) {
+            val why = describeRecorderExit(session)
+            session.deleteScratch()
+            throw PatrolException("startScreenRecording(): screenrecord exited immediately; $why")
+        }
+
+        screenRecording = session
+        Logger.i("startScreenRecording(): screenrecord (pid $pid) is recording to ${output.absolutePath}")
+        output.absolutePath
+    }
+
+    fun stopScreenRecording(): ScreenRecordingResult = synchronized(screenRecordingLock) {
+        val session = screenRecording ?: throw PatrolException("stopScreenRecording(): no recording is running")
+        screenRecording = null
+        finishScreenRecording(session)
+    }
+
+    /**
+     * Stops a recording that is still running at a test boundary, logging why.
+     *
+     * [Automator] is a process-wide singleton that outlives every Dart test, so a
+     * recorder leaked by a test that failed between start and stop would otherwise keep
+     * recording, and fail every later start. Never throws: cleanup must not mask the
+     * failure that caused it.
+     */
+    fun abandonStaleScreenRecording(reason: String) = synchronized(screenRecordingLock) {
+        abandonScreenRecordingLocked(reason)
+    }
+
+    private fun abandonScreenRecordingLocked(reason: String) {
+        val session = screenRecording ?: return
+        screenRecording = null
+        Logger.w("Abandoning the screen recording of ${session.output.absolutePath}: $reason")
+        try {
+            val result = finishScreenRecording(session)
+            Logger.w(
+                "The abandoned recording ${result.path} was finalized anyway " +
+                    "(${result.sizeBytes} bytes, ${result.durationMillis} ms)"
+            )
+        } catch (e: Exception) {
+            Logger.w("The abandoned recording could not be finalized: ${e.message}")
+        }
+    }
+
+    /**
+     * Interrupts the recorder, waits for it to exit, and validates what it left behind.
+     *
+     * Every failure throws. A recording that quietly produced nothing is worse than no
+     * recording, because the artifact is the evidence: a broken recorder does not look
+     * broken, it looks like proof.
+     */
+    private fun finishScreenRecording(session: ScreenRecordingSession): ScreenRecordingResult {
+        val path = session.output.absolutePath
+        try {
+            // SIGINT, never SIGKILL: screenrecord writes the MP4 `moov` index as it shuts
+            // down. A killed process leaves a file of the very same byte size that no
+            // player can open.
+            signalScreenRecordProcess(session, "INT")
+            session.thread.join(SCREEN_RECORDING_STOP_TIMEOUT_MILLIS)
+            if (session.thread.isAlive) {
+                signalScreenRecordProcess(session, "KILL")
+                session.thread.join(2_000)
+                throw PatrolException(
+                    "stopScreenRecording(): screenrecord did not exit within $SCREEN_RECORDING_STOP_TIMEOUT_MILLIS ms " +
+                        "of SIGINT and was killed, so $path is not playable"
+                )
+            }
+
+            session.failure?.let {
+                throw PatrolException("stopScreenRecording(): screenrecord could not be run: ${it.message}")
+            }
+            val exitCode = session.exitCode
+                ?: throw PatrolException(
+                    "stopScreenRecording(): screenrecord did not report an exit status " +
+                        "(wrapper output: ${session.stdout?.trim()})"
+                )
+            val sizeBytes = session.output.length()
+            if (exitCode != 0) {
+                throw PatrolException(
+                    "stopScreenRecording(): screenrecord exited with status $exitCode " +
+                        "(${describeNonZeroExit(exitCode, session.stderr(), sizeBytes)}), so $path is not a valid recording"
+                )
+            }
+            if (sizeBytes <= 0L) {
+                throw PatrolException("stopScreenRecording(): no video was written to $path (size=$sizeBytes)")
+            }
+
+            // screenrecord creates its output owner-only (0600) as the shell user. This
+            // process reaches the app's external files directory through the ext_data_rw
+            // group, so the file is stat-able but not readable until the shell opens the
+            // group bits -- measured on API 35: the wrapper's 0660 pid file reads fine, the
+            // 0600 MP4 fails with EACCES. Do it here, so both the validation below and the
+            // test that asked for the recording can read it.
+            runShellScript("chmod", "chmod 0660 ${shellQuote(path)}\n")
+            if (!session.output.canRead()) {
+                throw PatrolException(
+                    "stopScreenRecording(): $path was written by the shell user but is not readable by the app " +
+                        "process, so it cannot be validated (ls -l: ${runShellScript("ls", "ls -l ${shellQuote(path)}\n").trim()})"
+                )
+            }
+
+            val info = inspectRecording(session.output)
+            return ScreenRecordingResult(
+                path = path,
+                sizeBytes = sizeBytes,
+                durationMillis = info.durationMillis,
+                frameCount = info.frameCount
+            )
+        } finally {
+            session.deleteScratch()
+        }
+    }
+
+    private fun describeRecorderExit(session: ScreenRecordingSession): String {
+        session.failure?.let { return "the shell command could not be run: ${it.message}" }
+        val exitCode = session.exitCode ?: return "no exit status was reported (wrapper output: ${session.stdout?.trim()})"
+        return "exit status $exitCode (${describeNonZeroExit(exitCode, session.stderr(), session.output.length())})"
+    }
+
+    private fun describeNonZeroExit(exitCode: Int, stderr: String, sizeBytes: Long): String = when {
+        stderr.isNotEmpty() -> stderr
+        exitCode > 128 -> "killed by signal ${exitCode - 128}"
+        sizeBytes <= 0L -> "no frames were captured; nothing on screen changed between start and stop"
+        else -> "no diagnostic output"
+    }
+
+    /**
+     * Sends [signal] to the recorder this session started -- and only to it.
+     *
+     * The pid comes from the pid file the inner script wrote, and is signalled only
+     * while `/proc/<pid>/cmdline` still names `screenrecord`, so a recycled pid is
+     * never hit. `pkill screenrecord` would be device-wide and take down recorders
+     * this test did not start.
+     */
+    private fun signalScreenRecordProcess(session: ScreenRecordingSession, signal: String) {
+        val pidFile = shellQuote(session.pidFile.absolutePath)
+        val script = """
+            pid=$(cat $pidFile 2>/dev/null)
+            if [ -z "${'$'}pid" ]; then echo "no pid recorded"; exit 0; fi
+            case "$(cat /proc/${'$'}pid/cmdline 2>/dev/null)" in
+              *screenrecord*) kill -$signal "${'$'}pid" && echo "sent SIG$signal to ${'$'}pid" ;;
+              *) echo "pid ${'$'}pid is no longer screenrecord" ;;
+            esac
+        """.trimIndent() + "\n"
+        val out = runShellScript("signal", script).trim()
+        Logger.i("screenrecord SIG$signal: $out")
+    }
+
+    /** Reads the finished MP4 and throws unless it is something a player could open. */
+    private fun inspectRecording(file: File): RecordingInfo {
+        val path = file.absolutePath
+
+        val boxes = topLevelMp4Boxes(file)
+        if ("moov" !in boxes) {
+            throw PatrolException(
+                "stopScreenRecording(): $path is not a playable MP4: it has no moov box (top-level boxes: $boxes). " +
+                    "screenrecord writes that index only when it exits cleanly."
+            )
+        }
+
+        val retriever = MediaMetadataRetriever()
+        try {
+            try {
+                retriever.setDataSource(path)
+            } catch (e: Exception) {
+                throw PatrolException("stopScreenRecording(): the media framework cannot open $path: ${e.message}")
+            }
+            if (retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO) != "yes") {
+                throw PatrolException("stopScreenRecording(): $path has no video track")
+            }
+            val durationMillis = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+            val frameCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_FRAME_COUNT)?.toLongOrNull()
+            } else {
+                null
+            }
+            if (frameCount == 0L) {
+                throw PatrolException("stopScreenRecording(): $path contains no video frames")
+            }
+            return RecordingInfo(durationMillis = durationMillis, frameCount = frameCount)
+        } finally {
+            retriever.release()
+        }
+    }
+
+    /** Types of the top-level boxes of an ISO base media (MP4) file, in file order. */
+    private fun topLevelMp4Boxes(file: File): List<String> {
+        val boxes = mutableListOf<String>()
+        RandomAccessFile(file, "r").use { raf ->
+            val length = raf.length()
+            val header = ByteArray(8)
+            var offset = 0L
+            while (offset + header.size <= length && boxes.size < 64) {
+                raf.seek(offset)
+                raf.readFully(header)
+                var size = ByteBuffer.wrap(header, 0, 4).int.toLong() and 0xFFFFFFFFL
+                val type = String(header, 4, 4, Charsets.ISO_8859_1)
+                if (size == 1L) {
+                    size = raf.readLong() // 64-bit "largesize" follows the header
+                } else if (size == 0L) {
+                    size = length - offset // box extends to the end of the file
+                }
+                if (size < header.size) {
+                    break
+                }
+                boxes.add(type)
+                offset += size
+            }
+        }
+        return boxes
     }
 
     fun openApp(packageName: String) {

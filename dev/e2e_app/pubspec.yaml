@@ -31,6 +31,20 @@ dependencies:
 # Due to: https://github.com/Baseflow/flutter-permission-handler/issues/1450#issuecomment-2673836556
 dependency_overrides:
   permission_handler_apple: 9.4.5
+  # Workspace packages must always resolve from this checkout, never from
+  # pub.dev: a release PR bumps sibling constraints (patrol_log_plus ^x.y.z,
+  # adb_plus ^x.y.z) before those versions are published, and without these
+  # overrides every e2e job fails at flutter pub get until publish completes.
+  patrol_plus:
+    path: ../../packages/patrol_plus
+  patrol_cli_plus:
+    path: ../../packages/patrol_cli_plus
+  patrol_finders_plus:
+    path: ../../packages/patrol_finders_plus
+  patrol_log_plus:
+    path: ../../packages/patrol_log_plus
+  adb_plus:
+    path: ../../packages/adb_plus
 
 dev_dependencies:
   flutter_test:

@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 ///
 //  swift-format-ignore-file
 //
@@ -480,6 +481,30 @@ public struct IsVirtualDeviceResponse: Codable {
 
 public struct GetOsVersionResponse: Codable {
   public var osVersion: Int
+}
+
+public struct AndroidTakeScreenshotRequest: Codable {
+  public var path: String
+}
+
+public struct AndroidTakeScreenshotResponse: Codable {
+  public var path: String
+  public var sizeBytes: Int
+}
+
+public struct AndroidStartScreenRecordingRequest: Codable {
+  public var path: String
+  public var timeLimitSeconds: Int?
+  public var bitRate: Int?
+  public var width: Int?
+  public var height: Int?
+}
+
+public struct AndroidStopScreenRecordingResponse: Codable {
+  public var path: String
+  public var sizeBytes: Int
+  public var durationMillis: Int
+  public var frameCount: Int?
 }
 
 public struct AndroidTakeCameraPhotoRequest: Codable {

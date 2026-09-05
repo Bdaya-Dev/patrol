@@ -3,7 +3,7 @@ name: patrol_plus
 description: >
   A powerful, multiplatform E2E UI testing framework for Flutter apps that
   overcomes the limitations of integration_test by handling native interactions.
-version: 5.6.3
+version: 5.6.4
 homepage: https://github.com/Bdaya-Dev/patrol
 repository: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_plus
 issue_tracker: https://github.com/Bdaya-Dev/patrol/issues
@@ -29,8 +29,8 @@ dependencies:
   http_multi_server: ^3.2.2
   json_annotation: ^4.9.0
   meta: ^1.10.0
-  patrol_finders_plus: ^5.0.1
-  patrol_log_plus: ^5.0.1
+  patrol_finders_plus: ^5.0.2
+  patrol_log_plus: ^5.0.2
   shelf: ^1.4.1
   test_api: '^0.7.0'
   web: ^1.0.0

@@ -10,12 +10,11 @@ packages:
     source: hosted
     version: "85.0.0"
   adb_plus:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: adb_plus
-      sha256: "99e3b73767ce656eb0961e56a94990de74481e8a083ef718f39795aca95ffbdd"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../../packages/adb_plus"
+      relative: true
+    source: path
     version: "5.0.0"
   analyzer:
     dependency: transitive
@@ -848,7 +847,7 @@ packages:
     source: path
     version: "5.5.1"
   patrol_finders_plus:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: patrol_finders_plus
       sha256: "3797be38c52840e2d2aae87e95f3d68e8a227fff5fcfa75e2a3283af6456d450"
@@ -856,7 +855,7 @@ packages:
     source: hosted
     version: "5.0.1"
   patrol_log_plus:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: patrol_log_plus
       sha256: ac367c9745f7bf441ef5a1f87738ead4e557088834640ee1c186af6dbb22d1f8

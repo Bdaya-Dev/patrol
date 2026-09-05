@@ -12,7 +12,9 @@ Fork point: 4e19760bdbb498aac2c01d1a771543451e785e33 (upstream master, 2026-08-3
 
 - CHANGELOG.md (notice in file)
 - README.md (notice in file)
+- analysis_options.yaml (notice in file)
 - example/README.md (notice in file)
+- example/analysis_options.yaml (notice in file)
 - example/lib/main.dart (notice in file)
 - example/lib/scrolling_screen.dart (notice in file)
 - example/pubspec.yaml (notice in file)

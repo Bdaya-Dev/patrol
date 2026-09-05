@@ -67,7 +67,17 @@ await $.platform.android.tap(
 
 // Open a specific Android app
 await $.platform.android.openPlatformApp(androidAppId: 'com.android.settings');
+
+// Capture the device screen: a PNG, or an MP4 of everything between start and stop.
+// Paths resolve against the app's external files directory (`adb pull`-able without root).
+final screenshot = await $.platform.android.takeScreenshot(path: 'captures/home.png');
+await $.platform.android.startScreenRecording(path: 'captures/checkout.mp4');
+// ... drive the flow ...
+final recording = await $.platform.android.stopScreenRecording();
 ```
+
+See [Screenshots and screen recording](/feature-guide/screenshots-and-screen-recording)
+for where the files go and why an empty capture throws instead of returning.
 
 ### iOS-specific actions
 

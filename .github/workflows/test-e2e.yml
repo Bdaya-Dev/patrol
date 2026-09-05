@@ -115,6 +115,20 @@ jobs:
 
       - uses: dart-lang/setup-dart@v1
 
+      # This job runs a plain dart pub get (no melos bootstrap, no Flutter), so
+      # point the workspace siblings at this checkout: a release PR bumps their
+      # constraints before the new versions exist on pub.dev.
+      - name: Point workspace dependencies at this checkout
+        working-directory: packages/patrol_cli_plus
+        run: |
+          cat > pubspec_overrides.yaml <<EOF
+          dependency_overrides:
+            adb_plus:
+              path: ../adb_plus
+            patrol_log_plus:
+              path: ../patrol_log_plus
+          EOF
+
       - name: Install dependencies
         working-directory: packages/patrol_cli_plus
         run: dart pub get

@@ -40,6 +40,10 @@ class AutomatorServer(private val automation: Automator) : MobileAutomatorServer
     }
 
     override fun configure(request: ConfigureRequest) {
+        // Every Dart test calls configure() first. A recording still running here was
+        // leaked by the previous test (it failed between start and stop, or the app
+        // died), and the Automator singleton would otherwise carry it into this one.
+        automation.abandonStaleScreenRecording("a new test is starting and it was still running")
         automation.configure(
             waitForSelectorTimeout = request.findTimeoutMillis,
             dontSuppressAccessibilityServices = request.androidDontSuppressAccessibilityServices ?: true
@@ -267,6 +271,34 @@ class AutomatorServer(private val automation: Automator) : MobileAutomatorServer
 
     override fun takeNativeScreenshot(request: Contracts.AndroidTakeNativeScreenshotRequest) {
         automation.takeNativeScreenshot(request.tag)
+    }
+
+    override fun takeScreenshot(request: Contracts.AndroidTakeScreenshotRequest): Contracts.AndroidTakeScreenshotResponse {
+        val result = automation.takeScreenshot(request.path)
+        return Contracts.AndroidTakeScreenshotResponse(
+            path = result.path,
+            sizeBytes = result.sizeBytes
+        )
+    }
+
+    override fun startScreenRecording(request: Contracts.AndroidStartScreenRecordingRequest) {
+        automation.startScreenRecording(
+            path = request.path,
+            timeLimitSeconds = request.timeLimitSeconds,
+            bitRate = request.bitRate,
+            width = request.width,
+            height = request.height
+        )
+    }
+
+    override fun stopScreenRecording(): Contracts.AndroidStopScreenRecordingResponse {
+        val result = automation.stopScreenRecording()
+        return Contracts.AndroidStopScreenRecordingResponse(
+            path = result.path,
+            sizeBytes = result.sizeBytes,
+            durationMillis = result.durationMillis,
+            frameCount = result.frameCount
+        )
     }
 
     override fun takeCameraPhoto(request: Contracts.AndroidTakeCameraPhotoRequest) {

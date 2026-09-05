@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 ///
 //  Generated code. Do not modify.
 //  source: schema.dart
@@ -29,6 +30,9 @@ interface AndroidAutomatorServer {
     fun enableLocation()
     fun disableLocation()
     fun tapOnNotification(request: Contracts.AndroidTapOnNotificationRequest)
+    fun takeScreenshot(request: Contracts.AndroidTakeScreenshotRequest): Contracts.AndroidTakeScreenshotResponse
+    fun startScreenRecording(request: Contracts.AndroidStartScreenRecordingRequest)
+    fun stopScreenRecording(): Contracts.AndroidStopScreenRecordingResponse
     fun takeCameraPhoto(request: Contracts.AndroidTakeCameraPhotoRequest)
     fun pickImageFromGallery(request: Contracts.AndroidPickImageFromGalleryRequest)
     fun pickMultipleImagesFromGallery(request: Contracts.AndroidPickMultipleImagesFromGalleryRequest)
@@ -107,6 +111,20 @@ fun getAndroidAutomatorRoutes(server: AndroidAutomatorServer): RoutingHttpHandle
       val body = json.fromJson(it.bodyString(), Contracts.AndroidTapOnNotificationRequest::class.java)
       server.tapOnNotification(body)
       Response(OK)
+    },
+    "takeScreenshot" bind POST to {
+      val body = json.fromJson(it.bodyString(), Contracts.AndroidTakeScreenshotRequest::class.java)
+      val response = server.takeScreenshot(body)
+      Response(OK).body(json.toJson(response))
+    },
+    "startScreenRecording" bind POST to {
+      val body = json.fromJson(it.bodyString(), Contracts.AndroidStartScreenRecordingRequest::class.java)
+      server.startScreenRecording(body)
+      Response(OK)
+    },
+    "stopScreenRecording" bind POST to {
+      val response = server.stopScreenRecording()
+      Response(OK).body(json.toJson(response))
     },
     "takeCameraPhoto" bind POST to {
       val body = json.fromJson(it.bodyString(), Contracts.AndroidTakeCameraPhotoRequest::class.java)
