@@ -40,6 +40,10 @@ class AutomatorServer(private val automation: Automator) : MobileAutomatorServer
     }
 
     override fun configure(request: ConfigureRequest) {
+        // Every Dart test calls configure() first. A recording still running here was
+        // leaked by the previous test (it failed between start and stop, or the app
+        // died), and the Automator singleton would otherwise carry it into this one.
+        automation.abandonStaleScreenRecording("a new test is starting and it was still running")
         automation.configure(waitForSelectorTimeout = request.findTimeoutMillis)
     }
 
@@ -285,7 +289,8 @@ class AutomatorServer(private val automation: Automator) : MobileAutomatorServer
         return Contracts.AndroidStopScreenRecordingResponse(
             path = result.path,
             sizeBytes = result.sizeBytes,
-            durationMillis = result.durationMillis
+            durationMillis = result.durationMillis,
+            frameCount = result.frameCount
         )
     }
 

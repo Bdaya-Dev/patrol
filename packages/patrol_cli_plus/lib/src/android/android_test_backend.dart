@@ -254,6 +254,10 @@ class AndroidTestBackend {
             }
           })
           .disposedBy(scope);
+      // stderr must be drained too. Flutter's Gradle plugin prints several KB
+      // of version warnings there, which is more than a Windows pipe buffers;
+      // left unread, Gradle blocks on the write and this step never returns.
+      process.listenStdErr((l) => _logger.detail('\t$l')).disposedBy(scope);
 
       await process.exitCode;
     });

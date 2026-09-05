@@ -172,6 +172,16 @@ void patrolTest(
           );
         }
         rethrow;
+      } finally {
+        // A screen recording the test started and never stopped -- because it
+        // threw before reaching stopScreenRecording(), or simply forgot -- would
+        // keep `screenrecord` running on the device after the test, and the
+        // native automator outlives every test. Stop it here so the next test
+        // starts clean. This never throws, so it cannot mask the test's own
+        // failure.
+        await platformAutomator.action.maybe(
+          android: platformAutomator.android.stopAbandonedScreenRecording,
+        );
       }
 
       if (debugDefaultTargetPlatformOverride !=

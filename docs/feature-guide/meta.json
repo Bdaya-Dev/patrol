@@ -9,6 +9,7 @@
     "granting-camera-permission",
     "take-a-photo",
     "pick-images-from-gallery",
-    "pull-to-refresh"
+    "pull-to-refresh",
+    "screenshots-and-screen-recording"
   ]
 }

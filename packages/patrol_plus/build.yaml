@@ -4,3 +4,16 @@ targets:
       json_serializable:
         options:
           explicit_to_json: true
+      # Apache-2.0 §4(b): every file this fork changed from upstream must carry the
+      # "Modified by Bdaya-Dev ..." notice near its top, and tool/apache_notice
+      # checks for it in CI (it looks for the marker text "from the original
+      # LeanCode Patrol source" within the first five lines; keep it verbatim).
+      # build_runner rewrites the *.g.dart files from scratch, so the notice has
+      # to come from the builder or regeneration would strip it. `preamble` lands
+      # it right after build_runner's own "GENERATED CODE" header; the `header`
+      # option that would make it line 1 only exists in source_gen >= 4.2, and
+      # the resolvable version here is 4.0.0.
+      source_gen:combining_builder:
+        options:
+          preamble: |
+            // Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.

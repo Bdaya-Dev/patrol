@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 ///
 //  Generated code. Do not modify.
 //  source: schema.dart
@@ -757,8 +758,13 @@ class Contracts {
   data class AndroidStopScreenRecordingResponse (
     val path: String,
     val sizeBytes: Long,
-    val durationMillis: Long
-  )
+    val durationMillis: Long,
+    val frameCount: Long? = null
+  ){
+    fun hasFrameCount(): Boolean {
+      return frameCount != null
+    }
+  }
 
   data class AndroidTakeCameraPhotoRequest (
     val shutterButtonSelector: AndroidSelector? = null,

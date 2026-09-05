@@ -1,0 +1,102 @@
+---
+title: Screenshots and screen recording
+---
+
+Patrol can capture what a native test drove: a PNG screenshot of the whole
+device screen, or an MP4 recording of everything that happened between two
+points in the test. Both are written on the device and returned as a path you
+can pull afterwards.
+
+<Info>
+This is currently implemented for Android only, so it lives on
+`$.platform.android`. iOS and desktop do not have it yet.
+</Info>
+
+## Screenshot
+
+```dart
+final screenshot = await $.platform.android.takeScreenshot(
+  path: 'captures/after-login.png',
+);
+print('${screenshot.path}: ${screenshot.sizeBytes} bytes');
+```
+
+## Screen recording
+
+```dart
+await $.platform.android.startScreenRecording(
+  path: 'captures/checkout.mp4',
+  timeLimit: const Duration(minutes: 2), // default 3 minutes; Duration.zero = no limit
+  bitRate: 4000000,                       // bits per second; default 20 Mbps
+);
+
+// ... drive the flow ...
+
+final recording = await $.platform.android.stopScreenRecording();
+print(
+  '${recording.path}: ${recording.sizeBytes} bytes, '
+  '${recording.durationMillis} ms, ${recording.frameCount} frames',
+);
+```
+
+`width` and `height` can be passed together to scale the video down (for
+example `1280` x `720`); by default the device resolution is used.
+
+## Where the files go
+
+Paths resolve against the app's external files directory,
+`/storage/emulated/0/Android/data/<package>/files`. That directory is the one
+place both the app (which writes screenshots) and the shell user (which
+`screenrecord` runs as) can write to, and `adb pull` can read it without root:
+
+```sh
+adb pull /storage/emulated/0/Android/data/com.example.app/files/captures ./captures
+```
+
+A relative `path` is placed inside that directory, and parent directories are
+created as needed. An absolute `path` must already point into it; anything
+else — `/sdcard/shot.png`, say — is refused with an error rather than written.
+
+A recording is written by the shell user, which creates it owner-only; Patrol
+makes it group-readable (`0660`) when the recorder stops, so the app under test
+can read it as well.
+
+## What "success" means
+
+A capture that quietly produces nothing is worse than no capture, because the
+artifact is the evidence: a broken recorder does not look broken, it looks
+like proof. So each of these throws instead of returning something plausible:
+
+- Any previous file at `path` is removed before capturing; a stale capture is
+  never handed back as a fresh one.
+- `takeScreenshot` throws if no PNG data was written.
+- `startScreenRecording` returns only once `screenrecord` is running, and
+  throws if it never started (with the recorder's own error output).
+- `stopScreenRecording` throws unless the recorder exited cleanly and the MP4
+  is something a player could open: it must carry its `moov` index (a killed
+  recorder leaves a file of the very same size without it) and a video track
+  with frames. The returned `durationMillis` and `frameCount` are read back
+  from the file, not measured on a clock. `frameCount` is null on Android
+  versions below 9, which cannot report it.
+
+<Warning>
+`screenrecord` encodes a frame only when the screen changes. A recording of a
+perfectly still screen contains no frames and `stopScreenRecording` fails,
+rather than pass off an empty file as evidence. Record flows that actually move.
+</Warning>
+
+## Recordings a test never stopped
+
+The native automator outlives every Dart test, so a recorder left running by a
+test that failed between `start` and `stop` used to survive into the next test.
+This is handled in three places, so it cannot happen anymore:
+
+- `patrolTest` stops any recording still running when the test body finishes,
+  whether it returned normally or threw, and logs that it was abandoned.
+- The native side reclaims a stale recorder when the next test starts.
+- `startScreenRecording` itself stops and logs an earlier recording that is
+  still running, rather than refusing with "already running". The recording a
+  test asks for is the one it gets.
+
+You still want to call `stopScreenRecording()` yourself: it is the only way to
+get the result, and to learn that the recording was not valid.

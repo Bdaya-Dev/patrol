@@ -1,4 +1,5 @@
 import 'package:patrol_gen_plus/src/generators/android/android_config.dart';
+import 'package:patrol_gen_plus/src/generators/fork_notice.dart';
 import 'package:patrol_gen_plus/src/generators/output_file.dart';
 import 'package:patrol_gen_plus/src/schema.dart';
 import 'package:patrol_gen_plus/src/utils.dart';
@@ -26,6 +27,7 @@ class AndroidContractsGenerator {
 
   String _contentPrefix(AndroidConfig config) {
     return '''
+$forkNoticeLine
 ///
 //  Generated code. Do not modify.
 //  source: schema.dart

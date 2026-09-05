@@ -1,4 +1,5 @@
 import 'package:patrol_gen_plus/src/generators/darwin/darwin_config.dart';
+import 'package:patrol_gen_plus/src/generators/fork_notice.dart';
 import 'package:patrol_gen_plus/src/generators/output_file.dart';
 import 'package:patrol_gen_plus/src/schema.dart';
 
@@ -16,6 +17,7 @@ class IOSURLSessionClientGenerator {
 
   String _contentPrefix(DarwinConfig config) {
     return '''
+$forkNoticeLine
 ///
 //  swift-format-ignore-file
 //

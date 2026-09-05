@@ -1,5 +1,8 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
+
+
 part of 'contracts.dart';
 
 // **************************************************************************
@@ -865,6 +868,7 @@ AndroidStopScreenRecordingResponse _$AndroidStopScreenRecordingResponseFromJson(
   path: json['path'] as String,
   sizeBytes: (json['sizeBytes'] as num).toInt(),
   durationMillis: (json['durationMillis'] as num).toInt(),
+  frameCount: (json['frameCount'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$AndroidStopScreenRecordingResponseToJson(
@@ -873,6 +877,7 @@ Map<String, dynamic> _$AndroidStopScreenRecordingResponseToJson(
   'path': instance.path,
   'sizeBytes': instance.sizeBytes,
   'durationMillis': instance.durationMillis,
+  'frameCount': instance.frameCount,
 };
 
 AndroidTakeCameraPhotoRequest _$AndroidTakeCameraPhotoRequestFromJson(

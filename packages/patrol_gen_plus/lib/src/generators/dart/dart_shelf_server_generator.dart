@@ -1,6 +1,7 @@
 import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as path;
 import 'package:patrol_gen_plus/src/generators/dart/dart_config.dart';
+import 'package:patrol_gen_plus/src/generators/fork_notice.dart';
 import 'package:patrol_gen_plus/src/generators/output_file.dart';
 import 'package:patrol_gen_plus/src/schema.dart';
 
@@ -23,6 +24,7 @@ class DartShelfServerGenerator {
 
   String _contentPrefix(DartConfig config) {
     return '''
+$forkNoticeLine
 //
 //  Generated code. Do not modify.
 //  source: schema.dart

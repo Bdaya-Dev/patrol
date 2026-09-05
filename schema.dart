@@ -333,6 +333,7 @@ class AndroidStopScreenRecordingResponse {
   late String path;
   late int sizeBytes;
   late int durationMillis;
+  late int? frameCount;
 }
 
 class AndroidTakeCameraPhotoRequest {
