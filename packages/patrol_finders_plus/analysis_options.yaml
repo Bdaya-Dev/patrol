@@ -1,5 +1,7 @@
 include: package:leancode_lint/analysis_options_package.yaml
 
 analyzer:
+  exclude:
+    - build/**
   plugins:
     - custom_lint

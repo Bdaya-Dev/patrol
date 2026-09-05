@@ -6,5 +6,9 @@ linter:
     avoid_print: false
 
 analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
   plugins:
     - custom_lint

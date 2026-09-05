@@ -5,3 +5,5 @@ analyzer:
     - custom_lint
   exclude:
     - lib/**/*.g.dart
+    - build/**
+    - web/**
