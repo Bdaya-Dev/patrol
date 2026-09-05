@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import { config } from "@fortawesome/fontawesome-svg-core"
 import { GoogleTagManager } from "@next/third-parties/google"
 import { RootProvider } from "fumadocs-ui/provider/next"

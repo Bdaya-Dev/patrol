@@ -1,3 +1,4 @@
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 ## 5.0.1
 
  - Update a dependency to the latest release.

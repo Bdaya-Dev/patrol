@@ -2,6 +2,7 @@
 name: patrol-tests-architecture
 description: Rules for writing Patrol E2E tests with the recommended Patrol test architecture (modules, system, api clients)
 ---
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 
 # Order of actions when writing new tests
 

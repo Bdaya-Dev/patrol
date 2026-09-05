@@ -1,3 +1,4 @@
+# Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 name: patrol_finders_plus
 description: Streamlined, high-level API on top of flutter_test.
 version: 5.0.1

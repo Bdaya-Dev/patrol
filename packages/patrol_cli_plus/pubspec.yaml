@@ -1,3 +1,4 @@
+# Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 name: patrol_cli_plus
 description: >
   Command-line tool for patrol_plus, a fork of the Patrol Flutter UI testing framework.

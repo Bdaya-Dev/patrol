@@ -1,0 +1,97 @@
+import 'comment_style.dart';
+import 'package_mapping.dart';
+
+/// The upstream repository this fork tracks.
+const String upstreamRepoUrl = 'https://github.com/leancodepl/patrol';
+
+/// The date the fork point commit was made on upstream `master`, spelled
+/// out in every generated NOTICE so a reader doesn't have to look it up.
+const String forkPointDate = '2026-05-29';
+
+const String _regenerateCommand =
+    'dart run tool/apache_notice/bin/apache_notice.dart --fix';
+
+String _bulletFor(String path) {
+  final style = commentStyleFor(path);
+  final tag = style is NonCommentableStyle
+      ? '(cannot carry a comment — listed here)'
+      : '(notice in file)';
+  return '- $path $tag';
+}
+
+/// Renders the deterministic content of a NOTICE.md file.
+///
+/// [modifiedPaths] and [removedPaths] should already be scoped to whatever
+/// this NOTICE covers (the whole repo for the root NOTICE, or one package's
+/// subtree, paths relative to that package, for a per-package NOTICE) and
+/// need not be pre-sorted -- this function sorts them.
+String generateNotice({
+  required String attribution,
+  required String forkPointSha,
+  required List<String> modifiedPaths,
+  required List<String> removedPaths,
+}) {
+  final modified = [...modifiedPaths]..sort();
+  final removed = [...removedPaths]..sort();
+
+  final buffer = StringBuffer()
+    ..writeln('# NOTICE')
+    ..writeln()
+    ..writeln(
+      'This product includes software developed by LeanCode — Patrol '
+      '($upstreamRepoUrl), licensed under the Apache License 2.0 '
+      '(see LICENSE).',
+    )
+    ..writeln()
+    ..writeln(
+      'This is an independent fork maintained by $attribution and is not '
+      'maintained, supported, or endorsed by LeanCode.',
+    )
+    ..writeln()
+    ..writeln('Fork point: $forkPointSha (upstream master, $forkPointDate).')
+    ..writeln()
+    ..writeln('## Modified files')
+    ..writeln();
+  if (modified.isEmpty) {
+    buffer.writeln('(none)');
+  } else {
+    for (final path in modified) {
+      buffer.writeln(_bulletFor(path));
+    }
+  }
+  buffer
+    ..writeln()
+    ..writeln('## Removed files')
+    ..writeln();
+  if (removed.isEmpty) {
+    buffer.writeln('(none)');
+  } else {
+    for (final path in removed) {
+      buffer.writeln('- $path');
+    }
+  }
+  buffer
+    ..writeln()
+    ..writeln('---')
+    ..writeln()
+    ..writeln('To regenerate this file, run:')
+    ..writeln()
+    ..writeln('    $_regenerateCommand');
+
+  return buffer.toString();
+}
+
+/// The repo-relative (posix-style) paths of every NOTICE.md this tool
+/// manages: the root one plus one per fork package.
+List<String> noticeFilePaths() => [
+  'NOTICE.md',
+  for (final pkg in forkPackageNames) 'packages/$pkg/NOTICE.md',
+];
+
+/// Strips a `packages/<pkg>/` prefix from [path] if present, returning the
+/// path relative to that package; otherwise returns null.
+String? relativeToPackage(String path, String pkg) {
+  final prefix = 'packages/$pkg/';
+  if (!path.startsWith(prefix)) return null;
+  return path.substring(prefix.length);
+}

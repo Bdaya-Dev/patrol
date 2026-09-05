@@ -3,6 +3,7 @@ description: Rules for assigning test keys to widgets with the recommended Patro
 globs: **/keys.dart,**/integration_test/**,**/patrol_test/**
 alwaysApply: false
 ---
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 
 # Test Keys
 

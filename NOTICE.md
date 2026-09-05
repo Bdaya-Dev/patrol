@@ -1,0 +1,321 @@
+# NOTICE
+
+This product includes software developed by LeanCode — Patrol (https://github.com/leancodepl/patrol), licensed under the Apache License 2.0 (see LICENSE).
+
+This is an independent fork maintained by Bdaya-Dev and is not maintained, supported, or endorsed by LeanCode.
+
+Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-29).
+
+## Modified files
+
+- .claude/skills/patrol-tests-architecture/SKILL.md (notice in file)
+- .claude/skills/patrol-tests/SKILL.md (notice in file)
+- .cursor/rules/patrol-test-with-architecture/patrol-test-keys.mdc (notice in file)
+- .cursor/rules/patrol-test-with-architecture/patrol-tests.mdc (notice in file)
+- .cursor/rules/patrol-test/patrol-tests.mdc (notice in file)
+- .github/ISSUE_TEMPLATE/bug_report.yaml (notice in file)
+- .github/ISSUE_TEMPLATE/feature_request.yaml (notice in file)
+- .gitignore (notice in file)
+- README.md (notice in file)
+- dev/cli_tests/patrol_develop_test.dart (notice in file)
+- dev/cli_tests/pubspec.yaml (notice in file)
+- dev/e2e_app/ios/RunnerTests/RunnerTests.swift (notice in file)
+- dev/e2e_app/ios/RunnerUITests/RunnerUITests.m (notice in file)
+- dev/e2e_app/lib/keys.dart (notice in file)
+- dev/e2e_app/lib/main.dart (notice in file)
+- dev/e2e_app/macos/Flutter/GeneratedPluginRegistrant.swift (notice in file)
+- dev/e2e_app/macos/RunnerUITests/RunnerUITests.m (notice in file)
+- dev/e2e_app/patrol_test/camera_features/camera_helpers.dart (notice in file)
+- dev/e2e_app/patrol_test/common.dart (notice in file)
+- dev/e2e_app/patrol_test/define_test.dart (notice in file)
+- dev/e2e_app/patrol_test/internal/group_test.dart (notice in file)
+- dev/e2e_app/patrol_test/native_tests/camera_features/camera_helpers.dart (notice in file)
+- dev/e2e_app/patrol_test/native_tests/common.dart (notice in file)
+- dev/e2e_app/patrol_test/native_tests/internal/group_test.dart (notice in file)
+- dev/e2e_app/pubspec.lock (cannot carry a comment — listed here)
+- dev/e2e_app/pubspec.yaml (notice in file)
+- docs/articles/index.mdx (notice in file)
+- docs/cli-commands/build.mdx (notice in file)
+- docs/cli-commands/test.mdx (notice in file)
+- docs/documentation/index.mdx (notice in file)
+- docs/documentation/integrations/browserstack.mdx (notice in file)
+- docs/documentation/integrations/firebase-test-lab.mdx (notice in file)
+- docs/documentation/native/advanced.mdx (notice in file)
+- docs/documentation/native/feature-parity.mdx (notice in file)
+- docs/documentation/native/usage.mdx (notice in file)
+- docs/documentation/other/patrol-mcp.mdx (notice in file)
+- docs/documentation/other/patrol-vs-code-extension.mdx (notice in file)
+- docs/documentation/write-your-first-test.mdx (notice in file)
+- docs/feature-guide/index.mdx (notice in file)
+- docs/feature-guide/pick-images-from-gallery.mdx (notice in file)
+- docs/feature-guide/take-a-photo.mdx (notice in file)
+- docs/index.mdx (notice in file)
+- docs/meta.json (cannot carry a comment — listed here)
+- docs/patrol-mcp-announcement.mdx (notice in file)
+- docs/v3.mdx (notice in file)
+- docs/v4.mdx (notice in file)
+- docs_app/app/(docs)/[[...slug]]/page.tsx (notice in file)
+- docs_app/app/layout.tsx (notice in file)
+- docs_app/lib/layout.shared.tsx (notice in file)
+- docs_app/lib/source.tsx (notice in file)
+- melos.yaml (notice in file)
+- packages/adb_plus/CHANGELOG.md (notice in file)
+- packages/adb_plus/README.md (notice in file)
+- packages/adb_plus/bin/example.dart (notice in file)
+- packages/adb_plus/lib/src/adb.dart (notice in file)
+- packages/adb_plus/lib/src/internals.dart (notice in file)
+- packages/adb_plus/pubspec.yaml (notice in file)
+- packages/adb_plus/test/adb_forward_list_test.dart (notice in file)
+- packages/adb_plus/test/adb_test.dart (notice in file)
+- packages/patrol_cli_plus/CHANGELOG.md (notice in file)
+- packages/patrol_cli_plus/README.md (notice in file)
+- packages/patrol_cli_plus/bin/main.dart (notice in file)
+- packages/patrol_cli_plus/lib/patrol_cli.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/analytics/analytics.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/android/android_test_backend.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/base/constants.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/base/interactive_prompts.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/base/process.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/build.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/build_android.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/build_ios.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/build_macos.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/dart_define_utils.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/develop.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/develop_arg_parser.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/develop_options.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/develop_service.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/develop_session_factory.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/devices.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/doctor.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/test.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/commands/update.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/compatibility_checker/compatibility_checker.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/compatibility_checker/generate_compatibility_table.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/coverage/coverage_tool.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/coverage/device_to_host_port_transformer.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/coverage/vm_connection_details.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/crossplatform/app_options.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/crossplatform/flutter_tool.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/dart_defines_reader.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/devices.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/ios/ios_test_backend.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/macos/macos_test_backend.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/pubspec_reader.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/runner/patrol_command.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/runner/patrol_command_runner.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/test_bundler.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/test_finder.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/test_runner.dart (notice in file)
+- packages/patrol_cli_plus/lib/src/web/web_test_backend.dart (notice in file)
+- packages/patrol_cli_plus/pubspec.yaml (notice in file)
+- packages/patrol_cli_plus/test/analytics/analytics_test.dart (notice in file)
+- packages/patrol_cli_plus/test/android/android_test_backend_report_path_test.dart (notice in file)
+- packages/patrol_cli_plus/test/android/android_test_backend_test.dart (notice in file)
+- packages/patrol_cli_plus/test/commands/build_android_command_test.dart (notice in file)
+- packages/patrol_cli_plus/test/commands/build_ios_command_test.dart (notice in file)
+- packages/patrol_cli_plus/test/commands/build_macos_command_test.dart (notice in file)
+- packages/patrol_cli_plus/test/commands/patrol_build_android_print_paths_test.dart (notice in file)
+- packages/patrol_cli_plus/test/commands/patrol_build_ios_print_path_test.dart (notice in file)
+- packages/patrol_cli_plus/test/commands/patrol_command_runner_test.dart (notice in file)
+- packages/patrol_cli_plus/test/compatibility_checker/version_compatibility_test.dart (notice in file)
+- packages/patrol_cli_plus/test/crossplatform/app_options_test.dart (notice in file)
+- packages/patrol_cli_plus/test/crossplatform/flutter_tool_test.dart (notice in file)
+- packages/patrol_cli_plus/test/general/coverage_tool_test.dart (notice in file)
+- packages/patrol_cli_plus/test/general/dart_defines_reader_test.dart (notice in file)
+- packages/patrol_cli_plus/test/general/devices_test.dart (notice in file)
+- packages/patrol_cli_plus/test/general/pubspec_reader_test.dart (notice in file)
+- packages/patrol_cli_plus/test/general/test_finder_test.dart (notice in file)
+- packages/patrol_cli_plus/test/general/version_comparator_test.dart (notice in file)
+- packages/patrol_cli_plus/test/general/vm_connection_details_test.dart (notice in file)
+- packages/patrol_cli_plus/test/ios/ios_test_backend_test.dart (notice in file)
+- packages/patrol_cli_plus/test/pubspec_reader_test.dart (notice in file)
+- packages/patrol_cli_plus/test/src/common.dart (notice in file)
+- packages/patrol_cli_plus/test/src/fixtures.dart (notice in file)
+- packages/patrol_cli_plus/test/src/mocks.dart (notice in file)
+- packages/patrol_cli_plus/test/test_bundler_test.dart (notice in file)
+- packages/patrol_devtools_extension_plus/README.md (notice in file)
+- packages/patrol_devtools_extension_plus/lib/api/native_views.dart (notice in file)
+- packages/patrol_devtools_extension_plus/lib/api/patrol_service_extension_api.dart (notice in file)
+- packages/patrol_devtools_extension_plus/lib/main.dart (notice in file)
+- packages/patrol_devtools_extension_plus/lib/native_inspector/native_inspector.dart (notice in file)
+- packages/patrol_devtools_extension_plus/lib/native_inspector/native_view_details.dart (notice in file)
+- packages/patrol_devtools_extension_plus/lib/native_inspector/native_view_hierarchy.dart (notice in file)
+- packages/patrol_devtools_extension_plus/lib/native_inspector/nodes/node.dart (notice in file)
+- packages/patrol_devtools_extension_plus/lib/patrol_devtools_extension.dart (notice in file)
+- packages/patrol_devtools_extension_plus/pubspec.lock (cannot carry a comment — listed here)
+- packages/patrol_devtools_extension_plus/pubspec.yaml (notice in file)
+- packages/patrol_finders_plus/CHANGELOG.md (notice in file)
+- packages/patrol_finders_plus/README.md (notice in file)
+- packages/patrol_finders_plus/example/lib/main.dart (notice in file)
+- packages/patrol_finders_plus/example/lib/scrolling_screen.dart (notice in file)
+- packages/patrol_finders_plus/example/pubspec.yaml (notice in file)
+- packages/patrol_finders_plus/example/test/loading_screen_test.dart (notice in file)
+- packages/patrol_finders_plus/example/test/overlay_screen_test.dart (notice in file)
+- packages/patrol_finders_plus/example/test/scrolling_screen_test.dart (notice in file)
+- packages/patrol_finders_plus/example/test/selector_test.dart (notice in file)
+- packages/patrol_finders_plus/lib/src/common.dart (notice in file)
+- packages/patrol_finders_plus/lib/src/custom_finders/exceptions.dart (notice in file)
+- packages/patrol_finders_plus/lib/src/custom_finders/patrol_finder.dart (notice in file)
+- packages/patrol_finders_plus/lib/src/custom_finders/patrol_tester.dart (notice in file)
+- packages/patrol_finders_plus/pubspec.yaml (notice in file)
+- packages/patrol_finders_plus/test/patrol_finder_test.dart (notice in file)
+- packages/patrol_finders_plus/test/patrol_tester_test.dart (notice in file)
+- packages/patrol_finders_plus/test/smoke_test.dart (notice in file)
+- packages/patrol_gen_plus/bin/main.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/android/android_contracts_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/android/android_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/android/android_http4k_client_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/android/android_http4k_server_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/dart/dart_contracts_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/dart/dart_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/dart/dart_http_client_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/dart/dart_shelf_server_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/darwin/darwin_contracts_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/darwin/darwin_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/darwin/darwin_telegraph_server_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/generators/darwin/darwin_url_session_client_generator.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/patrol_gen.dart (notice in file)
+- packages/patrol_gen_plus/lib/src/resolve_schema.dart (notice in file)
+- packages/patrol_gen_plus/pubspec.yaml (notice in file)
+- packages/patrol_log_plus/CHANGELOG.md (notice in file)
+- packages/patrol_log_plus/README.md (notice in file)
+- packages/patrol_log_plus/lib/src/entries/config_entry.dart (notice in file)
+- packages/patrol_log_plus/lib/src/entries/entry.dart (notice in file)
+- packages/patrol_log_plus/lib/src/entries/error_entry.dart (notice in file)
+- packages/patrol_log_plus/lib/src/entries/log_entry.dart (notice in file)
+- packages/patrol_log_plus/lib/src/entries/test_entry.dart (notice in file)
+- packages/patrol_log_plus/lib/src/entries/warning_entry.dart (notice in file)
+- packages/patrol_log_plus/lib/src/patrol_log_reader.dart (notice in file)
+- packages/patrol_log_plus/lib/src/patrol_log_writer.dart (notice in file)
+- packages/patrol_log_plus/lib/src/patrol_single_test_entry.dart (notice in file)
+- packages/patrol_log_plus/pubspec.yaml (notice in file)
+- packages/patrol_log_plus/test/patrol_log_reader_test.dart (notice in file)
+- packages/patrol_log_plus/test/patrol_log_test.dart (notice in file)
+- packages/patrol_plus/CHANGELOG.md (notice in file)
+- packages/patrol_plus/README.md (notice in file)
+- packages/patrol_plus/android/src/main/kotlin/pl/leancode/patrol/Automator.kt (notice in file)
+- packages/patrol_plus/android/src/main/kotlin/pl/leancode/patrol/AutomatorServer.kt (notice in file)
+- packages/patrol_plus/android/src/main/kotlin/pl/leancode/patrol/contracts/MobileAutomatorServer.kt (notice in file)
+- packages/patrol_plus/darwin/Classes/AutomatorServer/Automator/Automator.swift (notice in file)
+- packages/patrol_plus/darwin/Classes/AutomatorServer/Automator/IOSAutomator.swift (notice in file)
+- packages/patrol_plus/darwin/Classes/AutomatorServer/Automator/MacOSAutomator.swift (notice in file)
+- packages/patrol_plus/darwin/Classes/AutomatorServer/AutomatorServer.swift (notice in file)
+- packages/patrol_plus/darwin/Classes/AutomatorServer/MobileAutomatorServer.swift (notice in file)
+- packages/patrol_plus/darwin/Classes/ObjCPatrolAppServiceClient.swift (notice in file)
+- packages/patrol_plus/darwin/Classes/PatrolIntegrationTestIosRunner.h (notice in file)
+- packages/patrol_plus/darwin/Classes/PatrolIntegrationTestMacosRunner.h (notice in file)
+- packages/patrol_plus/darwin/Classes/PatrolPlugin.m (notice in file)
+- packages/patrol_plus/example/ios/RunnerUITests/RunnerUITests.m (notice in file)
+- packages/patrol_plus/example/macos/RunnerUITests/RunnerUITests.m (notice in file)
+- packages/patrol_plus/example/patrol_test/example_test.dart (notice in file)
+- packages/patrol_plus/example/patrol_test/main_test.dart (notice in file)
+- packages/patrol_plus/example/pubspec.yaml (notice in file)
+- packages/patrol_plus/extension/devtools/config.yaml (notice in file)
+- packages/patrol_plus/lib/patrol.dart (notice in file)
+- packages/patrol_plus/lib/src/binding.dart (notice in file)
+- packages/patrol_plus/lib/src/common.dart (notice in file)
+- packages/patrol_plus/lib/src/custom_finders/patrol_integration_tester.dart (notice in file)
+- packages/patrol_plus/lib/src/devtools_service_extensions/devtools_service_extensions.dart (notice in file)
+- packages/patrol_plus/lib/src/native/native_automator.dart (notice in file)
+- packages/patrol_plus/lib/src/native/native_automator2.dart (notice in file)
+- packages/patrol_plus/lib/src/native/native_automator_config.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/android/android_automator.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/android/android_automator_config.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/android/android_automator_empty.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/android/android_automator_native.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/contracts/mobile_automator_client.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/current_io.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/current_web.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/ios/ios_automator.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/ios/ios_automator_config.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/ios/ios_automator_empty.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/ios/ios_automator_native.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/mobile/mobile_automator.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/mobile/mobile_automator_config.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/mobile/mobile_automator_native.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/mobile/patrol_app_service_io.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/platform_automator.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/selector.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/web/patrol_app_service_web.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/web/web_automator.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/web/web_automator_empty.dart (notice in file)
+- packages/patrol_plus/lib/src/platform/web/web_automator_native.dart (notice in file)
+- packages/patrol_plus/pubspec.yaml (notice in file)
+- packages/patrol_plus/test/internals_test.dart (notice in file)
+- packages/patrol_plus/web_runner/.gitignore (notice in file)
+- packages/patrol_plus/web_runner/eslint.config.js (notice in file)
+- packages/patrol_plus/web_runner/package-lock.json (cannot carry a comment — listed here)
+- packages/patrol_plus/web_runner/package.json (cannot carry a comment — listed here)
+- packages/patrol_plus/web_runner/playwright.config.ts (notice in file)
+- packages/patrol_plus/web_runner/tests/actions.ts (notice in file)
+- packages/patrol_plus/web_runner/tests/actions/resizeWindow.ts (notice in file)
+- packages/patrol_plus/web_runner/tests/contracts.ts (notice in file)
+- packages/patrol_plus/web_runner/tests/initialise.ts (notice in file)
+- packages/patrol_plus/web_runner/tests/setup.ts (notice in file)
+- packages/patrol_plus/web_runner/tests/test.spec.ts (notice in file)
+- packages/patrol_plus/web_runner/tests/types.ts (notice in file)
+- schema.dart (notice in file)
+
+## Removed files
+
+- .github/workflows/adb-prepare.yaml
+- .github/workflows/adb-publish.yaml
+- .github/workflows/add-to-project.yaml
+- .github/workflows/close-inactive-issues.yaml
+- .github/workflows/docs-preview.yaml
+- .github/workflows/docs-production.yaml
+- .github/workflows/label_pull_request.yaml
+- .github/workflows/lock-closed-issues.yaml
+- .github/workflows/patrol-check-semver.yaml
+- .github/workflows/patrol-prepare.yaml
+- .github/workflows/patrol-publish.yaml
+- .github/workflows/patrol_cli-prepare.yaml
+- .github/workflows/patrol_cli-publish.yaml
+- .github/workflows/patrol_devtools_extension-prepare.yaml
+- .github/workflows/patrol_finders-check-semver.yaml
+- .github/workflows/patrol_finders-prepare.yaml
+- .github/workflows/patrol_finders-publish.yaml
+- .github/workflows/patrol_gen-prepare.yaml
+- .github/workflows/patrol_log-check-semver.yaml
+- .github/workflows/patrol_log-prepare.yaml
+- .github/workflows/patrol_log-publish.yaml
+- .github/workflows/patrol_mcp-publish.yaml
+- .github/workflows/potential-duplicates.yaml
+- .github/workflows/prepare-e2e_app.yaml
+- .github/workflows/send-slack-message.yaml
+- .github/workflows/test-android-device.yaml
+- .github/workflows/test-android-emulator-webview.yaml
+- .github/workflows/test-android-emulator.yaml
+- .github/workflows/test-android-locales.yaml
+- .github/workflows/test-flutter-beta.yaml
+- .github/workflows/test-flutter-main.yaml
+- .github/workflows/test-ios-device.yaml
+- .github/workflows/test-ios-locales.yaml
+- .github/workflows/test-ios-simulator-webview.yaml
+- .github/workflows/test-ios-simulator.yaml
+- .github/workflows/test-macos.yaml
+- .github/workflows/test-patrol-develop.yaml
+- .github/workflows/test-web.yaml
+- .github/workflows/verify_compatibility.yml
+- assets/promo_banner.png
+- dev/e2e_app/ios/Podfile.lock
+- dev/e2e_app/macos/Podfile.lock
+- dev/e2e_app/patrol_test/macos/macos_app_test.dart
+- docs/contact/index.mdx
+- docs/contact/meta.json
+- docs/pricing/index.mdx
+- docs/pricing/meta.json
+- docs_app/public/assets/patrol_lncd.png
+- packages/patrol_cli_plus/screenshots/logo.png
+- packages/patrol_finders_plus/screenshots/logo.png
+- packages/patrol_plus/darwin/patrol.podspec
+- packages/patrol_plus/example/ios/Podfile.lock
+- packages/patrol_plus/example/macos/Podfile.lock
+- packages/patrol_plus/screenshots/logo.png
+
+---
+
+To regenerate this file, run:
+
+    dart run tool/apache_notice/bin/apache_notice.dart --fix

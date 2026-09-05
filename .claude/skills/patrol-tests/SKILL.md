@@ -2,6 +2,7 @@
 name: patrol-tests
 description: Rules for writing Patrol E2E tests in Flutter apps
 ---
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 
 # Order of actions when writing new tests
 

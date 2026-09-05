@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:collection/collection.dart';
 import 'package:file/file.dart';
 import 'package:patrol_cli_plus/src/base/exceptions.dart';

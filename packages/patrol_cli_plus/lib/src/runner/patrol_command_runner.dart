@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'dart:io' as p show Platform;
 import 'dart:io' show ProcessSignal, stdin;
 

@@ -1,3 +1,4 @@
+# Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 name: adb_plus
 description: Simple Dart wrapper around Android Debug Bridge.
 version: 5.0.0

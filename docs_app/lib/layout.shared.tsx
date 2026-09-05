@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import patrolIcon from "assets/patrol_icon.svg"
 import { DocsLayoutProps } from "fumadocs-ui/layouts/notebook"
 import Image from "next/image"

@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 /// This file contains web-specific bindings and interop for Patrol's app service,
 /// including Playwright native bridge integration and JS interop for Dart test execution.
 ///
