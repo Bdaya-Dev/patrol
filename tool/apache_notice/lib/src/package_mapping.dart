@@ -35,7 +35,8 @@ const String _ignoredUpstreamPackage = 'patrol_mcp';
 /// filename included, unchanged).
 ///
 /// The podspec entry was confirmed against
-/// `git diff -M50% --name-status --diff-filter=R <fork point> HEAD` (R075).
+/// `git diff -M50% --name-status --diff-filter=R <fork point> HEAD` (R070 once
+/// the notice header is in place).
 /// The e2e-test entry is a deliberate over-attribution: git only pairs the
 /// two files at `-M20%` (R028), but the fork's file started life as a copy
 /// of upstream's macOS test, so it carries the notice anyway -- see the

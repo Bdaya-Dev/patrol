@@ -287,8 +287,7 @@ void main() {
         isCI: false,
         envAnalyticsEnabled: true,
         logger: MockLogger(),
-      );
-      forced.enabled = true;
+      )..enabled = true;
       expect(await forced.sendCommand(FlutterVersion.test(), 'test'), isFalse);
       verifyNever(
         () => httpClient.post(

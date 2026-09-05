@@ -93,19 +93,6 @@ Future<int> patrolCommandRunner(List<String> args) async {
 }
 
 const _patrolAnalyticsEnvName = 'PATROL_ANALYTICS_ENABLED';
-const _helloPatrol = '''
-+---------------------------------------------------+
-|             Patrol - Ready for action!            |
-+---------------------------------------------------+
-| We would like to collect anonymous usage data     |
-| to improve Patrol CLI. No sensitive or private    |
-| information will ever leave your machine.         |
-|                                                   |
-| By default, analytics is enabled. If you want to  |
-| disable it, please set the environment variable:  |
-| `PATROL_ANALYTICS_ENABLED=false`                  |
-+---------------------------------------------------+
-''';
 
 class PatrolCommandRunner extends CompletionCommandRunner<int> {
   PatrolCommandRunner({
@@ -420,26 +407,10 @@ To install a specific version of Patrol CLI, run:
   }
 
   void _handleAnalytics() {
-    if (!_analytics.telemetryConfigured) {
-      // Nothing to opt into; just record the first run so the prompt and
-      // doctor do not repeat.
-      _analytics.enabled = false;
-      return;
-    }
-    _logger.info(_helloPatrol);
-
-    /// If the environment variable `PATROL_ANALYTICS_ENABLED` is set,
-    /// use it to determine if the command should be sent.
-    /// If not, analytics will be enabled by default.
-    final patrolAnalyticsEnabled =
-        p.Platform.environment[_patrolAnalyticsEnvName];
-    _analytics.enabled =
-        bool.tryParse(patrolAnalyticsEnabled ?? 'true') ?? true;
-    if (_analytics.enabled) {
-      _logger.info('Analytics enabled. Thank you!');
-    } else {
-      _logger.info('Analytics disabled.');
-    }
+    // This fork ships no analytics destination (see [Analytics]), so there
+    // is nothing to opt into: just record the first run so the doctor does
+    // not repeat on every invocation.
+    _analytics.enabled = false;
   }
 
   void _runDoctor() {
