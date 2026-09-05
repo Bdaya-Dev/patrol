@@ -277,7 +277,6 @@ Fork point: 4e19760bdbb498aac2c01d1a771543451e785e33 (upstream master, 2026-08-3
 
 ## Removed files
 
-- .claude/skills
 - .github/workflows/adb-prepare.yaml
 - .github/workflows/adb-publish.yaml
 - .github/workflows/add-to-project.yaml
