@@ -336,12 +336,6 @@
       }
     }
 
-    func sendKeyboardEnter() throws {
-      try runAction("sendKeyboardEnter") {
-        throw PatrolError.methodNotImplemented("sendKeyboardEnter")
-      }
-    }
-
     func debug() throws {
       try runAction("debug") {
         throw PatrolError.methodNotImplemented("debug")
