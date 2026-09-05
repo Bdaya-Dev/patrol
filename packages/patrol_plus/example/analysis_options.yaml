@@ -9,5 +9,3 @@ analyzer:
     - macos/**
   plugins:
     - custom_lint
-  exclude:
-    - build/**

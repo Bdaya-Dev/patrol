@@ -15,7 +15,7 @@ packages:
       path: "../../packages/adb_plus"
       relative: true
     source: path
-    version: "5.0.0"
+    version: "5.0.1"
   analyzer:
     dependency: transitive
     description:
@@ -845,30 +845,28 @@ packages:
       path: "../../packages/patrol_cli_plus"
       relative: true
     source: path
-    version: "5.5.1"
+    version: "5.5.2"
   patrol_finders_plus:
     dependency: "direct overridden"
     description:
-      name: patrol_finders_plus
-      sha256: "3797be38c52840e2d2aae87e95f3d68e8a227fff5fcfa75e2a3283af6456d450"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.1"
+      path: "../../packages/patrol_finders_plus"
+      relative: true
+    source: path
+    version: "5.0.2"
   patrol_log_plus:
     dependency: "direct overridden"
     description:
-      name: patrol_log_plus
-      sha256: ac367c9745f7bf441ef5a1f87738ead4e557088834640ee1c186af6dbb22d1f8
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.1"
+      path: "../../packages/patrol_log_plus"
+      relative: true
+    source: path
+    version: "5.0.2"
   patrol_plus:
     dependency: "direct dev"
     description:
       path: "../../packages/patrol_plus"
       relative: true
     source: path
-    version: "5.6.3"
+    version: "5.6.4"
   permission_handler:
     dependency: "direct main"
     description:

@@ -69,6 +69,7 @@ class AndroidAutomator extends NativeMobileAutomator
     androidDontSuppressAccessibilityServices:
         _config.dontSuppressAccessibilityServices,
   );
+
   /// Path of the recording [startScreenRecording] began and nothing has stopped
   /// yet, so [stopAbandonedScreenRecording] knows whether there is one.
   String? _activeScreenRecordingPath;
