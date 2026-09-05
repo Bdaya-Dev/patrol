@@ -31,10 +31,15 @@ List<String> _splitLines(String text) {
   return lines;
 }
 
-/// Where the header goes: line 1, except right after a shebang first line
-/// or after a leading YAML frontmatter block (`---` ... `---`).
+/// Where the header goes: line 1, except right after a shebang first line,
+/// right after a SwiftPM `// swift-tools-version:` first line (SwiftPM
+/// refuses a manifest whose tools-version comment is not on line 1), or
+/// after a leading YAML frontmatter block (`---` ... `---`).
 int _insertPositionFor(List<String> lines) {
   if (lines.isNotEmpty && lines[0].startsWith('#!')) return 1;
+  if (lines.isNotEmpty && lines[0].startsWith('// swift-tools-version')) {
+    return 1;
+  }
   if (lines.isNotEmpty && lines[0] == '---') {
     final closingIndex = lines.indexWhere((line) => line == '---', 1);
     if (closingIndex != -1) return closingIndex + 1;

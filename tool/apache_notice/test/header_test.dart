@@ -27,6 +27,26 @@ void main() {
       expect(result, '#!/usr/bin/env bash\n# $headerText\necho hi\n');
     });
 
+    test('SwiftPM manifest keeps swift-tools-version on line 1', () {
+      // SwiftPM rejects a Package.swift whose tools-version comment is not
+      // the first line ("the manifest is backward-incompatible with Swift
+      // < 6.0 because the tools-version was specified in a subsequent line").
+      const input =
+          '// swift-tools-version: 5.9\n\nimport PackageDescription\n';
+      final result = insertHeader(
+        input,
+        const LineCommentStyle('//'),
+        headerText,
+      );
+      expect(
+        result,
+        '// swift-tools-version: 5.9\n// $headerText\n\n'
+        'import PackageDescription\n',
+      );
+      expect(hasHeader(result), isTrue);
+      expect(removeHeader(result), input);
+    });
+
     test('markdown with frontmatter gets header after closing ---', () {
       const input = '---\ntitle: x\n---\n\ncontent\n';
       final result = insertHeader(
