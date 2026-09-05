@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 group "pl.leancode.patrol"
 version "1.0-SNAPSHOT"
 
@@ -70,6 +71,7 @@ android {
         api "androidx.test.uiautomator:uiautomator:2.3.0"
 
         implementation platform("org.http4k:http4k-bom:5.47.0.0")
+        implementation platform("io.ktor:ktor-bom:3.2.2")
         implementation "org.http4k:http4k-core"
         implementation "com.squareup.okhttp:okhttp:2.7.5" // See https://github.com/square/okhttp/issues/8031
         implementation "org.http4k:http4k-server-ktorcio"
