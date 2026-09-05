@@ -43,7 +43,7 @@ Full flags:
 --fix                   Insert missing headers and (re)write NOTICE.md files.
 --repo <path>           Path into the repo to operate on (default: cwd).
 --fork-point <sha>      Commit the fork diverged from upstream at.
-                        (default: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189)
+                        (default: 4e19760bdbb498aac2c01d1a771543451e785e33)
 --attribution <name>    Attribution name for headers/NOTICE text.
                         (default: Bdaya-Dev)
 ```
@@ -71,6 +71,15 @@ has no fork counterpart and is ignored entirely. A file the fork *added*
 but has since been deleted is "removed" — listed in NOTICE.md under its own
 heading, never given a header (it doesn't exist to put one in).
 
+### Stale headers
+
+The inverse case is checked too: a file that carries the notice but is
+byte-identical to its upstream counterpart once that one line is ignored
+(upstream adopted the fork's change, or the fork point moved past it) is
+reported as `<path>: stale header` — a notice that falsely claims a
+modification. `--fix` removes the line (the file is then left out of
+`NOTICE.md`, like any other unmodified file).
+
 ### Renames outside the packages/<x> rule
 
 The generic package-rename rule above only substitutes the package
@@ -95,6 +104,14 @@ Don't add an entry for a rename the generic rule already resolves
 correctly (same filename, only the package directory changed) — redirecting
 the comparison there would compare the wrong two files and could wrongly
 tag an unrelated new file as "modified from upstream".
+
+Upstream's SwiftPM layout (since 4.7.0) carries the package name a second
+time below the package directory — `darwin/patrol/Package.swift`, the Clang
+target `darwin/patrol/Sources/patrol/` and its umbrella header
+`include/patrol.h` — and the fork renames all of those to `patrol_plus`
+too (Flutter resolves a plugin's package at `darwin/<package_name>/` and the
+registrants `import <package_name>`). That whole-subtree rename is a second
+generic rule in `mapUpstreamPathToWorkingPath`, not a list of entries.
 
 ### Catching the next one: `unmapped rename`
 

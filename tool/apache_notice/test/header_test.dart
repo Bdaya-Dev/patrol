@@ -185,4 +185,49 @@ void main() {
       expect(hasHeader(input), isFalse);
     });
   });
+
+  group('removeHeader', () {
+    test('is the inverse of insertHeader for a plain file', () {
+      const original = 'void main() {}\n';
+      final withHeader = insertHeader(
+        original,
+        const LineCommentStyle('//'),
+        headerText,
+      );
+      expect(removeHeader(withHeader), original);
+    });
+
+    test('removes a header that follows a shebang', () {
+      expect(
+        removeHeader('#!/usr/bin/env bash\n# $headerText\necho hi\n'),
+        '#!/usr/bin/env bash\necho hi\n',
+      );
+    });
+
+    test('removes a header that follows frontmatter', () {
+      expect(
+        removeHeader('---\ntitle: x\n---\n<!-- $headerText -->\n\ncontent\n'),
+        '---\ntitle: x\n---\n\ncontent\n',
+      );
+    });
+
+    test('preserves CRLF line endings and a BOM', () {
+      expect(
+        removeHeader('\u{FEFF}// $headerText\r\nvoid main() {}\r\n'),
+        '\u{FEFF}void main() {}\r\n',
+      );
+    });
+
+    test('preserves a missing trailing newline', () {
+      expect(removeHeader('// $headerText\nvoid main() {}'), 'void main() {}');
+    });
+
+    test('is a no-op without a header, or with the marker deep in the '
+        'body', () {
+      const plain = 'void main() {}\n';
+      expect(removeHeader(plain), plain);
+      final deep = '---\ntitle: x\n---\n\n# T\n\n\n\n\n\n\ntext $headerText\n';
+      expect(removeHeader(deep), deep);
+    });
+  });
 }

@@ -144,6 +144,28 @@ class GitRepo {
     return entries;
   }
 
+  /// Computes the git blob SHA-1 that `git add` would produce for [bytes]
+  /// if they were the contents of the file at [relativePath] -- the same
+  /// clean filters (line-ending normalization, etc.) that apply to that path
+  /// are applied, so the result is comparable with [hashObjectForPaths] and
+  /// with the blob hashes from [lsTreeBlobs].
+  String hashObjectForContent(String relativePath, List<int> bytes) {
+    final tempDir = Directory.systemTemp.createTempSync('apache_notice_');
+    try {
+      final tempFile = File(p.join(tempDir.path, 'content'))
+        ..writeAsBytesSync(bytes);
+      final result = _run([
+        'hash-object',
+        '--path=$relativePath',
+        '--',
+        tempFile.path,
+      ]);
+      return (result.stdout as String).trim();
+    } finally {
+      tempDir.deleteSync(recursive: true);
+    }
+  }
+
   /// Computes the git blob SHA-1 that `git add` would produce for each of
   /// [relativePaths] (paths relative to [root]), as they currently sit on
   /// disk -- i.e. this is what a `git diff` would compare against, filters

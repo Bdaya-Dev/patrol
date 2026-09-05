@@ -47,6 +47,65 @@ void main() {
       );
     });
 
+    group('darwin SwiftPM subtree', () {
+      test('the SwiftPM package dir follows the package rename', () {
+        expect(
+          mapUpstreamPathToWorkingPath(
+            'packages/patrol/darwin/patrol/Package.swift',
+          ),
+          'packages/patrol_plus/darwin/patrol_plus/Package.swift',
+        );
+        expect(
+          mapUpstreamPathToWorkingPath(
+            'packages/patrol/darwin/patrol/Sources/PatrolImpl/'
+            'AutomatorServer/AutomatorServer.swift',
+          ),
+          'packages/patrol_plus/darwin/patrol_plus/Sources/PatrolImpl/'
+          'AutomatorServer/AutomatorServer.swift',
+        );
+      });
+
+      test('the public Clang target dir and its umbrella header follow the '
+          'package rename too', () {
+        expect(
+          mapUpstreamPathToWorkingPath(
+            'packages/patrol/darwin/patrol/Sources/patrol/include/'
+            'PatrolIntegrationTestIosRunner.h',
+          ),
+          'packages/patrol_plus/darwin/patrol_plus/Sources/patrol_plus/'
+          'include/PatrolIntegrationTestIosRunner.h',
+        );
+        expect(
+          mapUpstreamPathToWorkingPath(
+            'packages/patrol/darwin/patrol/Sources/patrol/include/patrol.h',
+          ),
+          'packages/patrol_plus/darwin/patrol_plus/Sources/patrol_plus/'
+          'include/patrol_plus.h',
+        );
+        expect(
+          mapUpstreamPathToWorkingPath(
+            'packages/patrol/darwin/patrol/Sources/patrol/patrol.m',
+          ),
+          'packages/patrol_plus/darwin/patrol_plus/Sources/patrol_plus/'
+          'patrol.m',
+        );
+      });
+
+      test('other darwin files and other packages are untouched by the '
+          'SwiftPM rule', () {
+        expect(
+          mapUpstreamPathToWorkingPath('packages/patrol/darwin/.clang-format'),
+          'packages/patrol_plus/darwin/.clang-format',
+        );
+        expect(
+          mapUpstreamPathToWorkingPath(
+            'packages/patrol_finders/darwin/patrol/x.swift',
+          ),
+          'packages/patrol_finders_plus/darwin/patrol/x.swift',
+        );
+      });
+    });
+
     test('patrol_mcp is still dropped entirely, not shadowed by the '
         'explicit map', () {
       expect(

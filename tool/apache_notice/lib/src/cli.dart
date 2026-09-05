@@ -7,7 +7,7 @@ import 'runner.dart';
 
 /// The commit the fork diverged from upstream `master` at. Move this (and
 /// only this) after merging an upstream update -- see README.md.
-const String defaultForkPoint = '41fe088e6e9c98b536d330ba6c12d4af0bfb1189';
+const String defaultForkPoint = '4e19760bdbb498aac2c01d1a771543451e785e33';
 
 const String defaultAttribution = 'Bdaya-Dev';
 

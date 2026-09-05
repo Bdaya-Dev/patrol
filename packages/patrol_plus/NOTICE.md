@@ -6,25 +6,16 @@ Copyright 2021 LeanCode Sp. z o.o.
 
 This is an independent fork maintained by Bdaya-Dev and is not maintained, supported, or endorsed by LeanCode.
 
-Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-29).
+Fork point: 4e19760bdbb498aac2c01d1a771543451e785e33 (upstream master, 2026-08-31).
 
 ## Modified files
 
 - CHANGELOG.md (notice in file)
 - README.md (notice in file)
-- android/src/main/kotlin/pl/leancode/patrol/Automator.kt (notice in file)
-- android/src/main/kotlin/pl/leancode/patrol/AutomatorServer.kt (notice in file)
-- android/src/main/kotlin/pl/leancode/patrol/contracts/MobileAutomatorServer.kt (notice in file)
-- darwin/Classes/AutomatorServer/Automator/Automator.swift (notice in file)
-- darwin/Classes/AutomatorServer/Automator/IOSAutomator.swift (notice in file)
-- darwin/Classes/AutomatorServer/Automator/MacOSAutomator.swift (notice in file)
-- darwin/Classes/AutomatorServer/AutomatorServer.swift (notice in file)
-- darwin/Classes/AutomatorServer/MobileAutomatorServer.swift (notice in file)
-- darwin/Classes/ObjCPatrolAppServiceClient.swift (notice in file)
-- darwin/Classes/PatrolIntegrationTestIosRunner.h (notice in file)
-- darwin/Classes/PatrolIntegrationTestMacosRunner.h (notice in file)
-- darwin/Classes/PatrolPlugin.m (notice in file)
 - darwin/patrol_plus.podspec (notice in file)
+- darwin/patrol_plus/Package.swift (notice in file)
+- darwin/patrol_plus/Sources/patrol_plus/include/PatrolIntegrationTestIosRunner.h (notice in file)
+- darwin/patrol_plus/Sources/patrol_plus/include/module.modulemap (cannot carry a comment — listed here)
 - example/README.md (notice in file)
 - example/ios/RunnerUITests/RunnerUITests.m (notice in file)
 - example/lib/ui/images.dart (notice in file)
@@ -46,7 +37,6 @@ Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-2
 - lib/src/platform/android/android_automator_config.dart (notice in file)
 - lib/src/platform/android/android_automator_empty.dart (notice in file)
 - lib/src/platform/android/android_automator_native.dart (notice in file)
-- lib/src/platform/contracts/mobile_automator_client.dart (notice in file)
 - lib/src/platform/current_io.dart (notice in file)
 - lib/src/platform/current_web.dart (notice in file)
 - lib/src/platform/ios/ios_automator.dart (notice in file)
@@ -64,6 +54,7 @@ Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-2
 - lib/src/platform/web/web_automator_empty.dart (notice in file)
 - lib/src/platform/web/web_automator_native.dart (notice in file)
 - pubspec.yaml (notice in file)
+- test/android_automator_config_test.dart (notice in file)
 - test/internals_test.dart (notice in file)
 - web_runner/.gitignore (notice in file)
 - web_runner/eslint.config.js (notice in file)
@@ -74,6 +65,8 @@ Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-2
 - web_runner/tests/actions/resizeWindow.ts (notice in file)
 - web_runner/tests/contracts.ts (notice in file)
 - web_runner/tests/initialise.ts (notice in file)
+- web_runner/tests/pageManager.ts (notice in file)
+- web_runner/tests/patrolPlatformHandler.ts (notice in file)
 - web_runner/tests/setup.ts (notice in file)
 - web_runner/tests/test.spec.ts (notice in file)
 - web_runner/tests/types.ts (notice in file)
@@ -85,6 +78,7 @@ Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-2
 - example/ios/Podfile.lock
 - example/macos/Podfile.lock
 - screenshots/logo.png
+- web_runner/tests/coverage.ts
 
 <!--
 To regenerate this file, run:

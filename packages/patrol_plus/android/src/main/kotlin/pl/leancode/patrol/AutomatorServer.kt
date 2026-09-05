@@ -1,4 +1,3 @@
-// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 package pl.leancode.patrol
 
 import android.os.Build

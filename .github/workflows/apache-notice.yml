@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  UPSTREAM_FORK_POINT: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189
+  UPSTREAM_FORK_POINT: 4e19760bdbb498aac2c01d1a771543451e785e33
 
 jobs:
   apache-notice:

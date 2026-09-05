@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 set -euo pipefail
 
 # Run Patrol iOS integration tests via local Marathon on simulators.

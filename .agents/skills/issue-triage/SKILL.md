@@ -2,6 +2,7 @@
 name: issue-triage
 description: Triage an incoming GitHub issue on leancodepl/patrol and produce a short, evidence-based recommendation — Patrol bug / User issue / Information needed / Feature / Docs / Duplicate / Out-of-scope — for a human to act on. Use during the weekly triage rotation, or when asked "triage issue #NNNN", "is this a Patrol bug or user error?", "what's wrong with this report?". Read-only: it recommends, a human decides.
 ---
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 
 # Triaging a Patrol issue
 

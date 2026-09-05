@@ -1,4 +1,3 @@
-// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:app_links/app_links.dart';
 import 'package:e2e_app/applink_screen.dart';
 import 'package:e2e_app/at_finder_screen.dart';

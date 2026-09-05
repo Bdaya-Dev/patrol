@@ -2,6 +2,7 @@
 name: fix-issue
 description: Workflow for fixing a reported bug in the Patrol monorepo — reproduce, locate the right package, fix without regressions, verify, and open a PR. Use when asked to fix a GitHub issue (e.g. "fix issue #3101"), investigate a reported Patrol bug, or turn a bug report into a tested PR.
 ---
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 
 # Fixing a Patrol issue
 

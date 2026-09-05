@@ -1,3 +1,4 @@
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 # Patrol issue catalog — recurring problems and how to triage them
 
 A shortlist of the issues that **actually recur**, mined from a year+ of resolved reports.

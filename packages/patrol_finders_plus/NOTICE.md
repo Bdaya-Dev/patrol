@@ -6,7 +6,7 @@ Copyright 2021 LeanCode Sp. z o.o.
 
 This is an independent fork maintained by Bdaya-Dev and is not maintained, supported, or endorsed by LeanCode.
 
-Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-29).
+Fork point: 4e19760bdbb498aac2c01d1a771543451e785e33 (upstream master, 2026-08-31).
 
 ## Modified files
 

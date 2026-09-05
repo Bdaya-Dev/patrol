@@ -55,6 +55,38 @@ bool hasHeader(String text) {
   return window.any((line) => line.contains(headerMarker));
 }
 
+/// Returns [text] with its "changed file" comment line removed, or [text]
+/// unchanged when [hasHeader] is false.
+///
+/// Removes exactly the first line within the [hasHeader] window that carries
+/// [headerMarker], preserving the file's line-ending style (CRLF vs LF), a
+/// leading UTF-8 BOM, and whether the file ends with a newline. This is the
+/// inverse of [insertHeader] for a file that has since become identical to
+/// its upstream counterpart again (a stale notice would falsely claim a
+/// modification).
+String removeHeader(String text) {
+  final hasBom = text.startsWith(_bom);
+  final body = hasBom ? text.substring(_bom.length) : text;
+  if (!hasHeader(body)) return text;
+
+  final newline = body.contains('\r\n') ? '\r\n' : '\n';
+  final endsWithNewline = body.endsWith('\n');
+  final lines = _splitLines(body);
+  final start = _insertPositionFor(lines);
+  final candidates = <int>{
+    for (var i = 0; i < lines.length && i < 5; i++) i,
+    for (var i = start; i < lines.length && i < start + 5; i++) i,
+  }.toList()..sort();
+  final index = candidates.firstWhere((i) => lines[i].contains(headerMarker));
+  final newLines = [...lines.take(index), ...lines.skip(index + 1)];
+
+  var result = newLines.join(newline);
+  if (endsWithNewline && newLines.isNotEmpty) {
+    result += newline;
+  }
+  return hasBom ? '$_bom$result' : result;
+}
+
 /// Returns [text] with a "changed file" comment inserted, formatted for
 /// [style], using [headerText] as the notice body.
 ///
