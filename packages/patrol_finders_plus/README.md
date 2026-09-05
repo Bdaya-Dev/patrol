@@ -1,8 +1,8 @@
 # Patrol
 
 [![patrol on pub.dev][patrol_badge]][patrol_link]
-[![patrol_cli on pub.dev][patrol_cli_badge]][patrol_cli_link]
-[![patrol_finders on pub.dev][patrol_finders_badge]][patrol_finders_link]
+[![patrol_cli_plus on pub.dev][patrol_cli_badge]][patrol_cli_link]
+[![patrol_finders_plus on pub.dev][patrol_finders_badge]][patrol_finders_link]
 [![patrol_discord]][patrol_discord_link]
 [![code style][leancode_lint_badge]][leancode_lint_link]
 [![patrol_github_stars]][patrol_github_link]
@@ -111,16 +111,16 @@ We are **top-tier experts** focused on Flutter Enterprise solutions.
 </div>
 
 [custom finders]: https://patrol.leancode.co/finders/overview
-[patrol_badge]: https://img.shields.io/pub/v/patrol?label=patrol
-[patrol_finders_badge]: https://img.shields.io/pub/v/patrol_finders?label=patrol_finders
-[patrol_cli_badge]: https://img.shields.io/pub/v/patrol_cli?label=patrol_cli
+[patrol_badge]: https://img.shields.io/pub/v/patrol_plus?label=patrol_plus
+[patrol_finders_badge]: https://img.shields.io/pub/v/patrol_finders_plus?label=patrol_finders_plus
+[patrol_cli_badge]: https://img.shields.io/pub/v/patrol_cli_plus?label=patrol_cli_plus
 [leancode_lint_badge]: https://img.shields.io/badge/code%20style-leancode__lint-blue
 [patrol_github_stars]: https://img.shields.io/github/stars/leancodepl/patrol
 [patrol_x]: https://img.shields.io/twitter/follow/patrol_leancode
 [patrol_discord]: https://img.shields.io/discord/1167030497612922931?color=blue&logo=discord
-[patrol_link]: https://pub.dev/packages/patrol
-[patrol_finders_link]: https://pub.dev/packages/patrol_finders
-[patrol_cli_link]: https://pub.dev/packages/patrol_cli
+[patrol_link]: https://pub.dev/packages/patrol_plus
+[patrol_finders_link]: https://pub.dev/packages/patrol_finders_plus
+[patrol_cli_link]: https://pub.dev/packages/patrol_cli_plus
 [leancode_lint_link]: https://pub.dev/packages/leancode_lint
 [patrol_x_link]: https://x.com/patrol_leancode
 [patrol_github_link]: https://github.com/leancodepl/patrol

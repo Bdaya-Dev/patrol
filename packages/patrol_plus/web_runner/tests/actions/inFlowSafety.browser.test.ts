@@ -4,6 +4,7 @@ import * as path from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 import { chromium } from "playwright"
+import { PageManager } from "../pageManager.ts"
 import { resizeWindow } from "./resizeWindow.ts"
 import { setLocale } from "./setLocale.ts"
 
@@ -69,8 +70,14 @@ test("in-flow setLocale + resizeWindow: locale override survives past the action
 
   await page.setContent(fixtureHtml, { waitUntil: "load" })
 
+  // Both actions take upstream's ActionParams shape and address the page under
+  // test through pageManager.activePage — the same real PageManager the
+  // harness builds per test in tests/test.spec.ts.
+  const pageManager = new PageManager(page.context(), page)
+  t.after(() => pageManager.dispose())
+
   // ---- mid-flow setLocale (regression guard) ---------------------------------
-  await setLocale(page, { locale: "ar-SA" })
+  await setLocale({ pageManager, params: { locale: "ar-SA" } })
 
   // Read AFTER the action has fully returned, not merely inside its own
   // `languagechange` dispatch. This is exactly what a silent no-op would
@@ -95,7 +102,7 @@ test("in-flow setLocale + resizeWindow: locale override survives past the action
   // The fixture's <flt-semantics> stand-ins lag the resize by ~100ms before
   // repositioning (see fixture comment) — this only settles within bounds if
   // resizeWindow genuinely waits for it rather than firing-and-forgetting.
-  await resizeWindow(page, { width: 400, height: 300 })
+  await resizeWindow({ pageManager, params: { width: 400, height: 300 } })
 
   const semanticsRects = await page.evaluate(() =>
     Array.from(document.querySelectorAll("flt-semantics")).map(el => {

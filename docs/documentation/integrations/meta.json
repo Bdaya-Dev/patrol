@@ -2,9 +2,10 @@
   "title": "Integrations",
   "pages": [
     "firebase-test-lab",
+    "marathon",
     "allure",
     "browserstack",
+    "saucelabs",
     "lambdatest"
   ]
 }
-

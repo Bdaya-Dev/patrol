@@ -1,5 +1,4 @@
-import type { Page } from "playwright"
-import type { ResizeWindowRequest } from "../contracts"
+import type { ActionParams, ResizeWindowRequest } from "../contracts"
 // NOTE: explicit `.ts` extensions — see setLocale.ts's identical note.
 // inFlowSafety.browser.test.ts now imports this file directly and runs
 // under `node --test --experimental-strip-types`, whose ESM resolver
@@ -55,8 +54,12 @@ import { resolveResizeSettleTimeoutMs } from "../resizeSettle.ts"
  * a small number of legitimate configurations (e.g. a scrollbar-reserving
  * headless profile) can keep `innerWidth`/`innerHeight` from ever matching
  * the requested size exactly.
+ *
+ * The action resizes the page under test — `pageManager.activePage`, the
+ * initial page unless the flow switched to another one via `switchToPage`.
  */
-export async function resizeWindow(page: Page, params: ResizeWindowRequest["params"]) {
+export async function resizeWindow({ pageManager, params }: ActionParams<ResizeWindowRequest>) {
+  const page = pageManager.activePage
   const { width, height } = params
   const settleTimeoutMs = resolveResizeSettleTimeoutMs()
 

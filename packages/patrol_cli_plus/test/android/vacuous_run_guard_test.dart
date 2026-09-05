@@ -25,20 +25,24 @@ void main() {
       );
     });
 
-    test('does not flag develop mode, which legitimately completes no test',
-        () {
-      expect(
-        isVacuousRun(exitCode: 0, interruptible: true, totalTests: 0),
-        isFalse,
-      );
-    });
+    test(
+      'does not flag develop mode, which legitimately completes no test',
+      () {
+        expect(
+          isVacuousRun(exitCode: 0, interruptible: true, totalTests: 0),
+          isFalse,
+        );
+      },
+    );
 
-    test('does not flag an already-failing run (its own error path owns it)',
-        () {
-      expect(
-        isVacuousRun(exitCode: 1, interruptible: false, totalTests: 0),
-        isFalse,
-      );
-    });
+    test(
+      'does not flag an already-failing run (its own error path owns it)',
+      () {
+        expect(
+          isVacuousRun(exitCode: 1, interruptible: false, totalTests: 0),
+          isFalse,
+        );
+      },
+    );
   });
 }

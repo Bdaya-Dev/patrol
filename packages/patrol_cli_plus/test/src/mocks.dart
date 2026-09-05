@@ -7,6 +7,7 @@ import 'package:patrol_cli_plus/src/analytics/analytics.dart';
 import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:patrol_cli_plus/src/base/logger.dart' as logger;
 import 'package:patrol_cli_plus/src/compatibility_checker/compatibility_checker.dart';
+import 'package:patrol_cli_plus/src/crossplatform/flutter_tool.dart';
 import 'package:patrol_cli_plus/src/dart_defines_reader.dart';
 import 'package:patrol_cli_plus/src/devices.dart';
 import 'package:patrol_cli_plus/src/ios/ios_test_backend.dart';
@@ -14,6 +15,7 @@ import 'package:patrol_cli_plus/src/macos/macos_test_backend.dart';
 import 'package:patrol_cli_plus/src/pubspec_reader.dart';
 import 'package:patrol_cli_plus/src/test_bundler.dart';
 import 'package:patrol_cli_plus/src/test_finder.dart';
+import 'package:patrol_cli_plus/src/web/web_test_backend.dart';
 import 'package:process/process.dart' as process;
 import 'package:pub_updater/pub_updater.dart' as pub;
 
@@ -38,6 +40,10 @@ class MockAndroidTestBackend extends Mock implements AndroidTestBackend {}
 class MockIOSTestBackend extends Mock implements IOSTestBackend {}
 
 class MockMacOSTestBackend extends Mock implements MacOSTestBackend {}
+
+class MockWebTestBackend extends Mock implements WebTestBackend {}
+
+class MockFlutterTool extends Mock implements FlutterTool {}
 
 class MockTestFinderFactory extends Mock implements TestFinderFactory {}
 

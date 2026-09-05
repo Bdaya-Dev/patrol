@@ -1,5 +1,5 @@
 import type { CDPSession, Page } from "playwright"
-import type { SetLocaleRequest } from "../contracts"
+import type { ActionParams, SetLocaleRequest } from "../contracts"
 // NOTE: unlike sibling actions (tap.ts, resizeWindow.ts, …), these two
 // relative imports carry an explicit `.ts` extension. setLocale.test.ts
 // imports this file directly and runs under `node --test
@@ -136,7 +136,10 @@ function overrideNavigatorLocale(locale: string) {
   window.dispatchEvent(new Event("languagechange"))
 }
 
-export async function setLocale(page: Page, params: SetLocaleRequest["params"]) {
+export async function setLocale({ pageManager, params }: ActionParams<SetLocaleRequest>) {
+  // The page under test — the initial page unless the flow switched to another
+  // one via `switchToPage`; the CDP session below is cached per Page.
+  const page = pageManager.activePage
   const { locale } = params
   assertNonEmptyLocale(locale)
 

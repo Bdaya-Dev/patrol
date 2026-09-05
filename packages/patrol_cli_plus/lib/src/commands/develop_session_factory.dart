@@ -11,7 +11,8 @@ import 'package:patrol_cli_plus/src/crossplatform/flutter_tool.dart';
 import 'package:patrol_cli_plus/src/dart_defines_reader.dart';
 import 'package:patrol_cli_plus/src/devices.dart';
 import 'package:patrol_cli_plus/src/ios/ios_test_backend.dart';
-import 'package:patrol_cli_plus/src/macos/macos_test_backend.dart' hide BuildMode;
+import 'package:patrol_cli_plus/src/macos/macos_test_backend.dart'
+    hide BuildMode;
 import 'package:patrol_cli_plus/src/pubspec_reader.dart';
 import 'package:patrol_cli_plus/src/test_bundler.dart';
 import 'package:patrol_cli_plus/src/test_finder.dart';

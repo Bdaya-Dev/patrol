@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:patrol_cli_plus/src/base/exceptions.dart';
 import 'package:patrol_cli_plus/src/base/extensions/core.dart';
@@ -10,10 +11,12 @@ import 'package:patrol_cli_plus/src/commands/develop_options.dart';
 import 'package:patrol_cli_plus/src/compatibility_checker/compatibility_checker.dart';
 import 'package:patrol_cli_plus/src/crossplatform/app_options.dart';
 import 'package:patrol_cli_plus/src/crossplatform/flutter_tool.dart';
+import 'package:patrol_cli_plus/src/crossplatform/video_recording_config.dart';
 import 'package:patrol_cli_plus/src/dart_defines_reader.dart';
 import 'package:patrol_cli_plus/src/devices.dart';
 import 'package:patrol_cli_plus/src/ios/ios_test_backend.dart';
-import 'package:patrol_cli_plus/src/macos/macos_test_backend.dart' hide BuildMode;
+import 'package:patrol_cli_plus/src/macos/macos_test_backend.dart'
+    hide BuildMode;
 import 'package:patrol_cli_plus/src/pubspec_reader.dart';
 import 'package:patrol_cli_plus/src/test_bundler.dart';
 import 'package:patrol_cli_plus/src/test_finder.dart';
@@ -30,6 +33,22 @@ class TestCompletionResult {
   /// The error if the test backend failed, or `null` on success.
   final Object? error;
 }
+
+/// Whether `flutter attach` should connect to the Dart VM service URL read from
+/// the device logs instead of relying on its own discovery.
+///
+/// xcodebuild launches the app, so discovery is unreliable on the iOS
+/// simulator; physical iOS devices keep discovery. macOS always uses the URL,
+/// Android and web use discovery.
+@visibleForTesting
+bool shouldAttachUsingUrl(Device device) => switch (device.targetPlatform) {
+  TargetPlatform.macOS => true,
+  TargetPlatform.iOS => !device.real,
+  TargetPlatform.android ||
+  TargetPlatform.web ||
+  TargetPlatform.linux ||
+  TargetPlatform.windows => false,
+};
 
 /// Orchestrates a patrol develop session.
 ///
@@ -178,6 +197,13 @@ class DevelopService {
           .getInstalledAppsEnvVariable(device.id);
     }
 
+    if (config.screenshotOnFailure) {
+      _logger.warn(
+        "screenshot_on_failure is not supported in 'patrol develop'; native "
+        "screenshots are only collected by 'patrol test'.",
+      );
+    }
+
     final customDartDefines = {
       ..._dartDefinesReader.fromFile(),
       ..._dartDefinesReader.fromCli(args: options.dartDefines),
@@ -192,6 +218,9 @@ class DevelopService {
       'INTEGRATION_TEST_SHOULD_REPORT_RESULTS_TO_NATIVE': 'false',
       'PATROL_TEST_LABEL_ENABLED': options.displayLabel.toString(),
       'PATROL_TEST_DIRECTORY': config.testDirectory,
+      // Collected only by `patrol test`; `develop` never pulls them, so don't
+      // capture on the device here (warned about above).
+      'PATROL_SCREENSHOT_ON_FAILURE': 'false',
       // develop-specific
       ...{
         'PATROL_HOT_RESTART': 'true',
@@ -286,6 +315,7 @@ class DevelopService {
         showFlutterLogs: false,
         hideTestSteps: options.hideTestSteps,
         clearTestSteps: options.clearTestSteps,
+        videoConfig: options.videoConfig,
       );
     } finally {
       for (final sub in signalSubscriptions) {
@@ -362,6 +392,28 @@ class DevelopService {
     }
   }
 
+  /// `flutter logs` resolves the iOS app package without a build
+  /// configuration, so it needs a scheme named Runner and takes no option to
+  /// pick another: `showFlutterLogs` falls back to Patrol's own log stream,
+  /// and `forwardFlutterLogs` tells `flutter attach` not to open its own.
+  ///
+  /// Attaching by URL reads that URL from `flutter logs`, so it has to stay on.
+  @visibleForTesting
+  static ({bool showFlutterLogs, bool forwardFlutterLogs}) resolveFlutterLogs({
+    required TargetPlatform targetPlatform,
+    required String? flavor,
+    required bool showFlutterLogs,
+    required bool attachUsingUrl,
+  }) {
+    final flutterLogsUnavailable =
+        targetPlatform == TargetPlatform.iOS && flavor != null;
+    final skipFlutterLogs = flutterLogsUnavailable && !attachUsingUrl;
+    return (
+      showFlutterLogs: showFlutterLogs || skipFlutterLogs,
+      forwardFlutterLogs: !skipFlutterLogs,
+    );
+  }
+
   Future<void> _execute(
     FlutterAppOptions flutterOpts,
     AndroidAppOptions android,
@@ -375,10 +427,18 @@ class DevelopService {
     required bool showFlutterLogs,
     required bool hideTestSteps,
     required bool clearTestSteps,
+    VideoRecordingConfig? videoConfig,
   }) async {
     Future<void> Function() action;
     Future<void> Function()? finalizer;
     String? appId;
+
+    final flutterLogs = resolveFlutterLogs(
+      targetPlatform: device.targetPlatform,
+      flavor: flutterOpts.flavor,
+      showFlutterLogs: showFlutterLogs,
+      attachUsingUrl: shouldAttachUsingUrl(device),
+    );
 
     switch (device.targetPlatform) {
       case TargetPlatform.android:
@@ -392,6 +452,7 @@ class DevelopService {
           flavor: flutterOpts.flavor,
           clearTestSteps: clearTestSteps,
           onLogEntry: onLogEntry,
+          videoConfig: videoConfig,
         );
         final package = android.packageName;
         if (package != null && uninstall) {
@@ -407,10 +468,11 @@ class DevelopService {
           iosOpts,
           device,
           interruptible: true,
-          showFlutterLogs: showFlutterLogs,
+          showFlutterLogs: flutterLogs.showFlutterLogs,
           hideTestSteps: hideTestSteps,
           clearTestSteps: clearTestSteps,
           onLogEntry: onLogEntry,
+          videoConfig: videoConfig,
         );
         final bundleId = iosOpts.bundleId;
         if (bundleId != null && uninstall) {
@@ -438,6 +500,28 @@ class DevelopService {
     try {
       final future = action();
 
+      // If the backend settles before attach returns, the app shut down early.
+      // Report it now instead of after attach (which blocks for the whole
+      // session), so callers waiting on [onTestsCompleted] don't hang.
+      var testsReported = false;
+      void reportTestsCompleted(TestCompletionResult result) {
+        if (testsReported) {
+          return;
+        }
+        testsReported = true;
+        onTestsCompleted?.call(result);
+      }
+
+      unawaited(
+        future.then(
+          (_) =>
+              reportTestsCompleted(const TestCompletionResult(success: true)),
+          onError: (Object err, StackTrace st) => reportTestsCompleted(
+            TestCompletionResult(success: false, error: err),
+          ),
+        ),
+      );
+
       if (device.targetPlatform != TargetPlatform.web) {
         await _flutterTool.attachForHotRestart(
           flutterCommand: flutterOpts.command,
@@ -446,18 +530,17 @@ class DevelopService {
           appId: appId,
           dartDefines: flutterOpts.dartDefines,
           openDevtools: openDevtools,
-          attachUsingUrl: device.targetPlatform == TargetPlatform.macOS,
+          attachUsingUrl: shouldAttachUsingUrl(device),
+          forwardFlutterLogs: flutterLogs.forwardFlutterLogs,
           onQuit: onQuitCleanup,
         );
       }
 
       try {
         await future;
-        onTestsCompleted?.call(const TestCompletionResult(success: true));
+        reportTestsCompleted(const TestCompletionResult(success: true));
       } catch (err) {
-        onTestsCompleted?.call(
-          TestCompletionResult(success: false, error: err),
-        );
+        reportTestsCompleted(TestCompletionResult(success: false, error: err));
         rethrow;
       }
     } catch (err, st) {
@@ -492,6 +575,11 @@ class DevelopService {
     }
 
     subscriptions.add(ProcessSignal.sigint.watch().listen(cleanup));
+    // ProcessSignal.sigterm is not listenable on Windows and the failure
+    // surfaces as an unhandled async SignalException (not caught by a
+    // surrounding try/catch). Guard with Platform.isWindows to match the
+    // fix in patrol_mcp/_ExitSignal. Graceful cleanup on Windows still
+    // runs via the SIGINT path above and via stdio close.
     if (!Platform.isWindows) {
       subscriptions.add(ProcessSignal.sigterm.watch().listen(cleanup));
     }
