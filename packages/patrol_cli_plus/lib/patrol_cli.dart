@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 /// Public API for driving a patrol develop session programmatically.
 ///
 /// This barrel file re-exports the types needed by consumers such as the

@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import { getFooterNavigation } from "@/lib/footerNavigation"
 import { getPageImage, source } from "@/lib/source"
 import { getMDXComponents } from "@/mdx-components"
@@ -118,12 +119,12 @@ export async function generateMetadata(props: PageProps<"/[[...slug]]">): Promis
   const page = source.getPage(params.slug)
   if (!page) handleMissingPage(params.slug, "metadata")
 
-  const title = page.data.title ? `${page.data.title} | Patrol` : "Patrol"
+  const title = page.data.title ? `${page.data.title} | patrol_plus` : "patrol_plus docs"
   return {
     metadataBase: new URL(
       process.env.VERCEL_PROJECT_PRODUCTION_URL
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-        : "https://patrol.leancode.co",
+        : "https://github.com/Bdaya-Dev/patrol",
     ),
     title: page.data.headTitleOverride ?? title,
     description: page.data.description,

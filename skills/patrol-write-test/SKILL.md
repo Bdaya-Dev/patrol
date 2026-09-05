@@ -2,6 +2,7 @@
 name: patrol-write-test
 description: Write Patrol end-to-end (E2E) tests for a Flutter app — order of actions, Patrol API and assertion rules, native dialog handling, and test-key conventions. Use when adding or editing Patrol/integration tests, assigning widget keys for testing, or debugging a failing Patrol test.
 ---
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 
 # Order of actions when writing new tests
 
@@ -34,7 +35,7 @@ When working with Patrol tests:
 - ALWAYS inspect Patrol API before implementing test actions:
   - Search codebase for existing Patrol API usage patterns
   - Check $.platform APIs for the specific action
-  - If method not found in codebase, check: https://patrol.leancode.co/
+  - If method not found in codebase, check the upstream project at https://github.com/leancodepl/patrol or this repo's docs/
   - Only implement after confirming the correct API method
 - ALWAYS inspect `$.platform` methods before implementing test actions
 - Don't use flutter_test package. Use only patrol api

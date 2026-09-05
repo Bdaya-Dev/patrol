@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 // We want to keep tests on deprecated APIs.
 // ignore_for_file: deprecated_member_use
 

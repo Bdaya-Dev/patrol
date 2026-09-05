@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:patrol_cli_plus/src/compatibility_checker/version_comparator.dart';
 import 'package:test/test.dart';
 import 'package:version/version.dart';

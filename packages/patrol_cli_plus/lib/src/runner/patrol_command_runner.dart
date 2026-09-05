@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'dart:io' as p show Platform;
 import 'dart:io' show ProcessSignal, stdin;
 
@@ -59,8 +60,10 @@ Future<int> patrolCommandRunner(List<String> args) async {
     fs: fs,
     logger: logger,
     analytics: Analytics(
-      measurementId: _gaTrackingId,
-      apiSecret: _gaApiSecret,
+      // This fork ships no analytics destination: upstream reports to
+      // LeanCode's Google Analytics property, which is not ours to use.
+      measurementId: '',
+      apiSecret: '',
       fs: fs,
       platform: platform,
       isCI: isCI,
@@ -90,22 +93,7 @@ Future<int> patrolCommandRunner(List<String> args) async {
   return exitCode;
 }
 
-const _gaTrackingId = 'G-W8XN8GS5BC';
-const _gaApiSecret = 'CUIwI1nCQWGJQAK8E0AIfg';
 const _patrolAnalyticsEnvName = 'PATROL_ANALYTICS_ENABLED';
-const _helloPatrol = '''
-+---------------------------------------------------+
-|             Patrol - Ready for action!            |
-+---------------------------------------------------+
-| We would like to collect anonymous usage data     |
-| to improve Patrol CLI. No sensitive or private    |
-| information will ever leave your machine.         |
-|                                                   |
-| By default, analytics is enabled. If you want to  |
-| disable it, please set the environment variable:  |
-| `PATROL_ANALYTICS_ENABLED=false`                  |
-+---------------------------------------------------+
-''';
 
 class PatrolCommandRunner extends CompletionCommandRunner<int> {
   PatrolCommandRunner({
@@ -324,8 +312,8 @@ class PatrolCommandRunner extends CompletionCommandRunner<int> {
 
   @override
   String? get usageFooter => '''
-Read documentation at https://patrol.leancode.co
-Report bugs, request features at https://github.com/leancodepl/patrol/issues
+Read more at https://github.com/Bdaya-Dev/patrol
+Report bugs, request features at https://github.com/Bdaya-Dev/patrol/issues
 Ask questions, get support at Discord server: https://discord.gg/ukBK5t4EZg
 
 To deactivate Patrol CLI, run:
@@ -473,20 +461,10 @@ To install a specific version of Patrol CLI, run:
   }
 
   void _handleAnalytics() {
-    _logger.info(_helloPatrol);
-
-    /// If the environment variable `PATROL_ANALYTICS_ENABLED` is set,
-    /// use it to determine if the command should be sent.
-    /// If not, analytics will be enabled by default.
-    final patrolAnalyticsEnabled =
-        p.Platform.environment[_patrolAnalyticsEnvName];
-    _analytics.enabled =
-        bool.tryParse(patrolAnalyticsEnabled ?? 'true') ?? true;
-    if (_analytics.enabled) {
-      _logger.info('Analytics enabled. Thank you!');
-    } else {
-      _logger.info('Analytics disabled.');
-    }
+    // This fork ships no analytics destination (see [Analytics]), so there
+    // is nothing to opt into: just record the first run so the doctor does
+    // not repeat on every invocation.
+    _analytics.enabled = false;
   }
 
   void _runDoctor() {
@@ -652,7 +630,7 @@ To install a specific version of Patrol CLI, run:
     }
 
     buffer.writeln(
-      'Check the compatibility table at: ${lightCyan.wrap('https://patrol.leancode.co/documentation/compatibility-table')}',
+      'Check the compatibility table at: ${lightCyan.wrap('https://github.com/Bdaya-Dev/patrol/blob/master/docs/documentation/compatibility-table.mdx')}',
     );
 
     _logger

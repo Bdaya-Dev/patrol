@@ -1,21 +1,18 @@
+# Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 name: patrol_plus
 description: >
   A powerful, multiplatform E2E UI testing framework for Flutter apps that
   overcomes the limitations of integration_test by handling native interactions.
 version: 5.6.3
-homepage: https://patrol.leancode.co
+homepage: https://github.com/Bdaya-Dev/patrol
 repository: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_plus
 issue_tracker: https://github.com/Bdaya-Dev/patrol/issues
-documentation: https://patrol.leancode.co
 topics:
   - test
   - integration-test
   - ui-test
   - e2e
   - native-automation
-screenshots:
-  - description: The Patrol framework logo.
-    path: screenshots/logo.png
 
 environment:
   sdk: '>=3.8.0 <4.0.0'

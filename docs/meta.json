@@ -4,7 +4,6 @@
   "pages": [
     "---Overview---",
     "overview/getting-started",
-    "external:[LeanCode](https://leancode.co)",
     "---Announcements---",
     "spm-announcement",
     "patrol-mcp-announcement",

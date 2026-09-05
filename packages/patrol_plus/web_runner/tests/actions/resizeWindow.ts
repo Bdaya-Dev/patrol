@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import type { ActionParams, ResizeWindowRequest } from "../contracts"
 // NOTE: explicit `.ts` extensions — see setLocale.ts's identical note.
 // inFlowSafety.browser.test.ts now imports this file directly and runs

@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -752,12 +753,11 @@ abstract class PatrolCommand extends Command<int> {
     return port;
   }
 
-  /// The name of the command in the online docs (https://patrol.leancode.co),
-  /// if different than [name].
+  /// The name of the command in the online docs, if different than [name].
   String? get docsName => name;
 
   @override
   String? get usageFooter {
-    return 'Read detailed docs at https://patrol.leancode.co/cli-commands/$docsName';
+    return 'Read more at https://github.com/Bdaya-Dev/patrol';
   }
 }

@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'dart:async';
 import 'dart:convert' show LineSplitter;
 import 'dart:io' show Process;

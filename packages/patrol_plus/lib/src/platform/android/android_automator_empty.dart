@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:patrol_plus/src/platform/android/android_automator.dart'
     as android_automator;
 import 'package:patrol_plus/src/platform/android/android_automator_config.dart';

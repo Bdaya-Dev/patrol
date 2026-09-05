@@ -1,41 +1,12 @@
-# adb
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
+> **⚠️ Independent fork** — `adb_plus` is an independent fork of [Patrol](https://github.com/leancodepl/patrol), originally created by LeanCode. It is maintained by [Bdaya-Dev](https://github.com/Bdaya-Dev/patrol) and is **not maintained, supported, or endorsed by LeanCode**. Please report issues at <https://github.com/Bdaya-Dev/patrol/issues>, not to LeanCode. Both the original and this fork are licensed under the Apache License 2.0 (see LICENSE and NOTICE.md).
+
+# adb_plus
 
 [![package on pub.dev][pub_badge]][pub_link]
-[![codestyle][style_badge]][style_link]
 
 A simple wrapper around [adb][adb].
 
-## 🛠️ Maintained by LeanCode
-
-<div align="center">
-  <a href="https://leancode.co/?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme">
-    <img src="https://leancodepublic.blob.core.windows.net/public/wide.png" alt="LeanCode Logo" height="100" />
-  </a>
-</div>
-
-This package is built with 💙 by **[LeanCode](https://leancode.co?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme)**.
-We are **top-tier experts** focused on Flutter Enterprise solutions.
-
-### Why LeanCode?
-
-- **Creators of [Patrol](https://patrol.leancode.co/?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme)** – the next-gen testing framework for Flutter.
-
-- **Production-Ready** – We use this package in apps with millions of users.
-- **Full-Cycle Product Development** – We take your product from scratch to long-term maintenance.
-
-<div align="center">
-  <br />
-
-  **Need help with your Flutter project?**
-
-  [**👉 Hire our team**](https://leancode.co/get-estimate?utm_source=github.com&utm_medium=referral&utm_campaign=patrol-readme)
-  &nbsp;&nbsp;•&nbsp;&nbsp;
-  [Check our other packages](https://pub.dev/packages?q=publisher%3Aleancode.co&sort=downloads)
-
-</div>
-
 [adb]: https://developer.android.com/studio/command-line/adb
-[pub_badge]: https://img.shields.io/pub/v/adb.svg
-[pub_link]: https://pub.dartlang.org/packages/adb
-[style_badge]: https://img.shields.io/badge/style-leancode__lint-black
-[style_link]: https://pub.dartlang.org/packages/leancode_lint
+[pub_badge]: https://img.shields.io/pub/v/adb_plus.svg
+[pub_link]: https://pub.dev/packages/adb_plus

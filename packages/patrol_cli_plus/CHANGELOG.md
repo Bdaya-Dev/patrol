@@ -1,3 +1,4 @@
+<!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
 ## 5.5.1
 
  - **FIX**(patrol_cli_plus): don't await close() on a listenerless VM-connection controller ([#46](https://github.com/Bdaya-Dev/patrol/issues/46)). ([634b964e](https://github.com/Bdaya-Dev/patrol/commit/634b964eab4104a33b10a6f603b0772e144b5681))

@@ -1,3 +1,4 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:args/command_runner.dart';
 import 'package:file/file.dart';
 import 'package:file/memory.dart';
@@ -136,7 +137,7 @@ packages:
       expect(
         capturedMessage,
         contains(
-          'Check the compatibility table at: https://patrol.leancode.co/documentation/compatibility-table',
+          'Check the compatibility table at: https://github.com/Bdaya-Dev/patrol/blob/master/docs/documentation/compatibility-table.mdx',
         ),
       );
     });
@@ -192,7 +193,7 @@ packages:
         expect(
           capturedMessage,
           contains(
-            'Check the compatibility table at: https://patrol.leancode.co/documentation/compatibility-table',
+            'Check the compatibility table at: https://github.com/Bdaya-Dev/patrol/blob/master/docs/documentation/compatibility-table.mdx',
           ),
         );
       },
