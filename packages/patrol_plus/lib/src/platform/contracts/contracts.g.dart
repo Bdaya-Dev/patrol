@@ -2,7 +2,6 @@
 
 // Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 
-
 part of 'contracts.dart';
 
 // **************************************************************************
@@ -72,10 +71,16 @@ const _$RunDartTestResponseResultEnumMap = {
 ConfigureRequest _$ConfigureRequestFromJson(Map<String, dynamic> json) =>
     ConfigureRequest(
       findTimeoutMillis: (json['findTimeoutMillis'] as num).toInt(),
+      androidDontSuppressAccessibilityServices:
+          json['androidDontSuppressAccessibilityServices'] as bool?,
     );
 
 Map<String, dynamic> _$ConfigureRequestToJson(ConfigureRequest instance) =>
-    <String, dynamic>{'findTimeoutMillis': instance.findTimeoutMillis};
+    <String, dynamic>{
+      'findTimeoutMillis': instance.findTimeoutMillis,
+      'androidDontSuppressAccessibilityServices':
+          instance.androidDontSuppressAccessibilityServices,
+    };
 
 OpenAppRequest _$OpenAppRequestFromJson(Map<String, dynamic> json) =>
     OpenAppRequest(appId: json['appId'] as String);
@@ -903,6 +908,14 @@ Map<String, dynamic> _$AndroidTakeCameraPhotoRequestToJson(
   'doneButtonSelector': instance.doneButtonSelector?.toJson(),
   'timeoutMillis': instance.timeoutMillis,
 };
+
+AndroidTakeNativeScreenshotRequest _$AndroidTakeNativeScreenshotRequestFromJson(
+  Map<String, dynamic> json,
+) => AndroidTakeNativeScreenshotRequest(tag: json['tag'] as String);
+
+Map<String, dynamic> _$AndroidTakeNativeScreenshotRequestToJson(
+  AndroidTakeNativeScreenshotRequest instance,
+) => <String, dynamic>{'tag': instance.tag};
 
 IOSTakeCameraPhotoRequest _$IOSTakeCameraPhotoRequestFromJson(
   Map<String, dynamic> json,

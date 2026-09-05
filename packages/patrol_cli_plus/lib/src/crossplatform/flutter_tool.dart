@@ -40,6 +40,7 @@ class FlutterTool {
 
   var _hotRestartActive = false;
   var _logsActive = false;
+  var _logsSkipped = false;
   var _devtoolsUrl = '';
 
   /// Forwards logs and hot restarts the app when "r" is pressed.
@@ -51,8 +52,11 @@ class FlutterTool {
     required Map<String, String> dartDefines,
     required bool openDevtools,
     bool attachUsingUrl = false,
+    bool forwardFlutterLogs = true,
     Future<void> Function()? onQuit,
   }) async {
+    _logsSkipped = !forwardFlutterLogs;
+
     StdinModes? previousStdinModes;
     if (io.stdin.hasTerminal) {
       previousStdinModes = enableInteractiveMode();
@@ -87,7 +91,7 @@ class FlutterTool {
       );
     } else {
       await Future.wait<void>([
-        logs(deviceId, flutterCommand: flutterCommand),
+        if (forwardFlutterLogs) logs(deviceId, flutterCommand: flutterCommand),
         attach(
           flutterCommand: flutterCommand,
           target: target,
@@ -211,7 +215,7 @@ class FlutterTool {
               );
               _hotRestartActive = true;
 
-              if (!_logsActive) {
+              if (!_logsActive && !_logsSkipped) {
                 _logger.warn('Hot Restart: logs are not connected yet');
               }
               completer.complete();
@@ -276,9 +280,11 @@ class FlutterTool {
 
       process
           .listenStdOut((line) {
-            if (line.contains('Dart VM service')) {
-              final url = getObservationUrl(line);
-              observationUrlCompleter?.complete(url);
+            final urlCompleter = observationUrlCompleter;
+            if (line.contains('Dart VM service') &&
+                urlCompleter != null &&
+                !urlCompleter.isCompleted) {
+              urlCompleter.complete(getObservationUrl(line));
             }
             if (line.startsWith('Showing ') && line.endsWith('logs:')) {
               _logger.success('Hot Restart: logs connected');

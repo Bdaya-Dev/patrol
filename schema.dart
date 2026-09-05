@@ -40,6 +40,9 @@ abstract class PatrolAppService<IOSClient, AndroidClient, DartServer> {
 
 class ConfigureRequest {
   late int findTimeoutMillis;
+  // Android only. true (default) keeps third-party AccessibilityServices running
+  // (FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES); false suppresses them.
+  bool? androidDontSuppressAccessibilityServices;
 }
 
 class OpenAppRequest {
@@ -343,6 +346,10 @@ class AndroidTakeCameraPhotoRequest {
   late int? timeoutMillis;
 }
 
+class AndroidTakeNativeScreenshotRequest {
+  late String tag;
+}
+
 class IOSTakeCameraPhotoRequest {
   IOSSelector? shutterButtonSelector;
   IOSSelector? doneButtonSelector;
@@ -445,6 +452,9 @@ abstract class AndroidAutomator<AndroidServer, DartClient> {
   void enterText(AndroidEnterTextRequest request);
   void waitUntilVisible(AndroidWaitUntilVisibleRequest request);
   void swipe(AndroidSwipeRequest request);
+
+  // screenshots
+  void takeNativeScreenshot(AndroidTakeNativeScreenshotRequest request);
 
   // services
   void enableLocation();

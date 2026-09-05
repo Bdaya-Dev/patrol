@@ -1,20 +1,25 @@
 // Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
+import 'dart:io' show ProcessResult;
+
 import 'package:dispose_scope/dispose_scope.dart';
 import 'package:file/file.dart';
 import 'package:file/memory.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
+import 'package:patrol_cli_plus/src/base/exceptions.dart';
 import 'package:patrol_cli_plus/src/crossplatform/app_options.dart';
 import 'package:patrol_cli_plus/src/ios/ios_test_backend.dart';
 import 'package:patrol_cli_plus/src/runner/flutter_command.dart';
 import 'package:platform/platform.dart';
 import 'package:test/test.dart';
 
+import '../src/fixtures.dart';
 import '../src/mocks.dart';
 
 void main() {
   group('AndroidTestBackend', () {
     late AndroidTestBackend androidTestBackend;
+    late MockAdb adb;
     late MockProcessManager processManager;
     late MockProcess process;
     late MockLogger logger;
@@ -22,6 +27,7 @@ void main() {
     late Directory rootDirectory;
 
     setUp(() {
+      adb = MockAdb();
       processManager = MockProcessManager();
       process = MockProcess();
       logger = MockLogger();
@@ -29,7 +35,7 @@ void main() {
       rootDirectory = fs.currentDirectory;
 
       androidTestBackend = AndroidTestBackend(
-        adb: MockAdb(),
+        adb: adb,
         processManager: processManager,
         platform: FakePlatform(),
         rootDirectory: rootDirectory,
@@ -48,6 +54,86 @@ void main() {
       when(
         () => processManager.start(any(), runInShell: any(named: 'runInShell')),
       ).thenAnswer((_) async => process);
+    });
+
+    group('pullDeviceScreenshots', () {
+      test(
+        'pulls the device screenshots dir into the output dir and removes it '
+        'on success',
+        () async {
+          when(
+            () => adb.pull(
+              source: any(named: 'source'),
+              destination: any(named: 'destination'),
+              device: any(named: 'device'),
+            ),
+          ).thenAnswer((_) async => ProcessResult(0, 0, '', ''));
+          when(
+            () => adb.remove(
+              any(),
+              device: any(named: 'device'),
+              recursive: any(named: 'recursive'),
+            ),
+          ).thenAnswer((_) async => ProcessResult(0, 0, '', ''));
+
+          await androidTestBackend.pullDeviceScreenshots(
+            androidDevice,
+            'my_shots',
+          );
+
+          // Pulled straight into the requested output dir (not its parent), so
+          // a custom basename is honored.
+          final expectedDest = rootDirectory.childDirectory('my_shots').path;
+          verify(
+            () => adb.pull(
+              source: '/sdcard/Download/screenshots',
+              destination: expectedDest,
+              device: androidDeviceId,
+            ),
+          ).called(1);
+          verify(
+            () => adb.remove(
+              '/sdcard/Download/screenshots',
+              device: androidDeviceId,
+              recursive: true,
+            ),
+          ).called(1);
+        },
+      );
+
+      test(
+        'does not throw and skips removal when nothing was captured',
+        () async {
+          when(
+            () => adb.pull(
+              source: any(named: 'source'),
+              destination: any(named: 'destination'),
+              device: any(named: 'device'),
+            ),
+          ).thenAnswer((_) async => ProcessResult(0, 1, '', 'No such file'));
+
+          await androidTestBackend.pullDeviceScreenshots(
+            androidDevice,
+            'screenshots',
+          );
+
+          // No `rm` after a failed pull (nothing to clean up).
+          verify(
+            () => adb.pull(
+              source: any(named: 'source'),
+              destination: any(named: 'destination'),
+              device: any(named: 'device'),
+            ),
+          ).called(1);
+          verifyNever(
+            () => adb.remove(
+              any(),
+              device: any(named: 'device'),
+              recursive: any(named: 'recursive'),
+            ),
+          );
+        },
+      );
     });
 
     group('buildApkConfigOnly', () {
@@ -191,6 +277,91 @@ void main() {
             ),
           ),
         );
+      });
+    });
+
+    group('verifyAndroidSdkResolved', () {
+      void writeLocalProperties(String contents) {
+        rootDirectory.childDirectory('android').childFile('local.properties')
+          ..createSync(recursive: true)
+          ..writeAsStringSync(contents);
+      }
+
+      test('throws ToolExit when local.properties is missing', () {
+        expect(
+          androidTestBackend.verifyAndroidSdkResolved,
+          throwsA(
+            isA<ToolExit>().having(
+              (e) => e.message,
+              'message',
+              contains("Couldn't locate the Android SDK"),
+            ),
+          ),
+        );
+      });
+
+      test('throws ToolExit when sdk.dir is absent', () {
+        writeLocalProperties('flutter.sdk=/opt/flutter\n');
+
+        expect(
+          androidTestBackend.verifyAndroidSdkResolved,
+          throwsA(
+            isA<ToolExit>().having(
+              (e) => e.message,
+              'message',
+              contains("Couldn't locate the Android SDK"),
+            ),
+          ),
+        );
+      });
+
+      test('throws ToolExit when sdk.dir is empty', () {
+        writeLocalProperties('sdk.dir=\n');
+
+        expect(
+          androidTestBackend.verifyAndroidSdkResolved,
+          throwsA(
+            isA<ToolExit>().having(
+              (e) => e.message,
+              'message',
+              contains("Couldn't locate the Android SDK"),
+            ),
+          ),
+        );
+      });
+
+      test('throws ToolExit when sdk.dir points to a missing directory', () {
+        writeLocalProperties('sdk.dir=/nonexistent/sdk\n');
+
+        expect(
+          androidTestBackend.verifyAndroidSdkResolved,
+          throwsA(
+            isA<ToolExit>().having(
+              (e) => e.message,
+              'message',
+              contains('does not exist: /nonexistent/sdk'),
+            ),
+          ),
+        );
+      });
+
+      test('passes when sdk.dir points to an existing directory', () {
+        fs.directory('/android/sdk').createSync(recursive: true);
+        writeLocalProperties(
+          'flutter.sdk=/opt/flutter\nsdk.dir=/android/sdk\n',
+        );
+
+        expect(androidTestBackend.verifyAndroidSdkResolved, returnsNormally);
+      });
+
+      test('unescapes a Windows-style sdk.dir path', () {
+        fs.directory(r'C:\Users\me\Android\sdk').createSync(recursive: true);
+        writeLocalProperties(
+          r'sdk.dir=C\:\\Users\\me\\Android\\sdk'
+          '\n',
+        );
+
+        expect(androidTestBackend.verifyAndroidSdkResolved, returnsNormally);
       });
     });
   });

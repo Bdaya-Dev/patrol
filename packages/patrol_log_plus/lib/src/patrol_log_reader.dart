@@ -254,10 +254,11 @@ class PatrolLogReader {
             );
           }
         case StepEntry():
-          if (_singleEntries.isEmpty) {
+          final openEntry = _currentOpenSingleEntry();
+          if (openEntry == null) {
             break;
           }
-          _singleEntries.last.addEntry(entry);
+          openEntry.addEntry(entry);
           if (!hideTestSteps) {
             // Clear the previous line it's not the new step, or increment counter
             // for new step
@@ -271,7 +272,11 @@ class PatrolLogReader {
             log(entry.pretty(number: stepsCounter));
           }
         case LogEntry():
-          _singleEntries.last.addEntry(entry);
+          final openEntry = _currentOpenSingleEntry();
+          if (openEntry == null) {
+            break;
+          }
+          openEntry.addEntry(entry);
           logsCounter++;
 
           // Print the log entry to the console.
@@ -284,6 +289,15 @@ class PatrolLogReader {
           _readConfig(entry);
       }
     });
+  }
+
+  PatrolSingleTestEntry? _currentOpenSingleEntry() {
+    for (var i = _singleEntries.length - 1; i >= 0; i--) {
+      if (_singleEntries[i].closingTestEntry == null) {
+        return _singleEntries[i];
+      }
+    }
+    return null;
   }
 
   PatrolSingleTestEntry? _takeOpenSingleEntry(String testName) {

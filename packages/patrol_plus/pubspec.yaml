@@ -20,13 +20,14 @@ environment:
 
 dependencies:
   boolean_selector: ^2.1.1
-  equatable: ^2.0.5
+  equatable: ^2.1.0
   flutter:
     sdk: flutter
   flutter_test:
     sdk: flutter
   http: '^1.1.0'
-  json_annotation: ^4.8.1
+  http_multi_server: ^3.2.2
+  json_annotation: ^4.9.0
   meta: ^1.10.0
   patrol_finders_plus: ^5.0.2
   patrol_log_plus: ^5.0.2

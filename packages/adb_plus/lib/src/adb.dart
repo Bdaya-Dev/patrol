@@ -1,12 +1,10 @@
-// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 
-import 'package:adb_plus/adb.dart';
-import 'package:adb_plus/src/exceptions.dart';
-import 'package:adb_plus/src/extensions.dart';
-import 'package:adb_plus/src/internals.dart';
+import 'exceptions.dart';
+import 'extensions.dart';
+import 'internals.dart';
 
 /// Provides Dart interface for common Android Debug Bridge features.
 ///
@@ -83,6 +81,53 @@ class Adb {
     }
 
     return result;
+  }
+
+  /// Pulls a file or directory from [source] on the device to [destination] on
+  /// the host.
+  ///
+  /// If there is more than 1 device attached, decide which one to use by
+  /// passing [device].
+  ///
+  /// Returns the raw result for the caller to handle; does not throw on a
+  /// non-zero exit, so best-effort callers can inspect the outcome themselves.
+  Future<io.ProcessResult> pull({
+    required String source,
+    required String destination,
+    String? device,
+  }) async {
+    await _adbInternals.ensureServerRunning();
+
+    return io.Process.run('adb', [
+      if (device != null && device.isNotEmpty) ...['-s', device],
+      'pull',
+      source,
+      destination,
+    ], runInShell: true);
+  }
+
+  /// Removes [path] on the device via `adb shell rm`. Pass [recursive] to add
+  /// `-rf`.
+  ///
+  /// If there is more than 1 device attached, decide which one to use by
+  /// passing [device].
+  ///
+  /// Returns the raw result for the caller to handle; does not throw on a
+  /// non-zero exit.
+  Future<io.ProcessResult> remove(
+    String path, {
+    String? device,
+    bool recursive = false,
+  }) async {
+    await _adbInternals.ensureServerRunning();
+
+    return io.Process.run('adb', [
+      if (device != null && device.isNotEmpty) ...['-s', device],
+      'shell',
+      'rm',
+      if (recursive) '-rf',
+      path,
+    ], runInShell: true);
   }
 
   /// Sets up port forwarding on the attached device. Returns a function that

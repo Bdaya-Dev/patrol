@@ -26,6 +26,7 @@ interface AndroidAutomatorServer {
     fun enterText(request: Contracts.AndroidEnterTextRequest)
     fun waitUntilVisible(request: Contracts.AndroidWaitUntilVisibleRequest)
     fun swipe(request: Contracts.AndroidSwipeRequest)
+    fun takeNativeScreenshot(request: Contracts.AndroidTakeNativeScreenshotRequest)
     fun enableLocation()
     fun disableLocation()
     fun tapOnNotification(request: Contracts.AndroidTapOnNotificationRequest)
@@ -91,6 +92,11 @@ fun getAndroidAutomatorRoutes(server: AndroidAutomatorServer): RoutingHttpHandle
     "swipe" bind POST to {
       val body = json.fromJson(it.bodyString(), Contracts.AndroidSwipeRequest::class.java)
       server.swipe(body)
+      Response(OK)
+    },
+    "takeNativeScreenshot" bind POST to {
+      val body = json.fromJson(it.bodyString(), Contracts.AndroidTakeNativeScreenshotRequest::class.java)
+      server.takeNativeScreenshot(body)
       Response(OK)
     },
     "enableLocation" bind POST to {

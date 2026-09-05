@@ -1,6 +1,8 @@
 // Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:args/args.dart';
+import 'package:path/path.dart' as path;
 import 'package:patrol_cli_plus/src/commands/develop_arg_parser.dart';
+import 'package:patrol_cli_plus/src/crossplatform/video_recording_config.dart';
 import 'package:patrol_cli_plus/src/ios/ios_test_backend.dart';
 import 'package:patrol_cli_plus/src/runner/flutter_command.dart';
 import 'package:patrol_cli_plus/src/runner/patrol_command.dart';
@@ -33,6 +35,7 @@ class DevelopOptions {
     this.clearTestSteps = true,
     this.checkCompatibility = true,
     this.iosVersion,
+    this.videoConfig,
   });
 
   factory DevelopOptions.fromArgResults(
@@ -76,6 +79,14 @@ class DevelopOptions {
       clearTestSteps: results['clear-test-steps'] as bool,
       checkCompatibility: results['check-compatibility'] as bool,
       iosVersion: results['ios'] as String?,
+      videoConfig: VideoRecordingConfig(
+        enabled: results['record-video'] as bool,
+        outputDirectory:
+            results['video-output-dir'] as String? ??
+            path.join(path.dirname(target), 'videos'),
+        size: results['video-size'] as String?,
+        bitRate: int.tryParse(results['video-bit-rate'] as String? ?? ''),
+      ),
     );
   }
 
@@ -155,6 +166,9 @@ class DevelopOptions {
 
   /// iOS version for simulator. Defaults to 'latest' if null.
   final String? iosVersion;
+
+  /// Video recording configuration. `null` means video recording is disabled.
+  final VideoRecordingConfig? videoConfig;
 }
 
 class _DevelopOptionsParserCommand extends PatrolCommand {

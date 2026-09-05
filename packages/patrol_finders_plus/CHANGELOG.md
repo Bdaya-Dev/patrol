@@ -16,6 +16,14 @@
 
 ## Unreleased
 
+- Add a regression test for finding widgets by keys containing special characters (diacritics, symbols, emoji). (#3169)
+
+## 3.6.0
+
+- Bump `patrol_log` to `^0.10.0`.
+
+## 3.5.0
+
 - Fix issues with `enterText()`. (#2202, #2111)
 - Add `hideKeyboard` optional argument to `enterText()` method.
 

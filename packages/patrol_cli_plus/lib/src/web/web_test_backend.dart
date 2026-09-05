@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:dispose_scope/dispose_scope.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
+import 'package:path/path.dart' as p;
 import 'package:patrol_cli_plus/src/base/logger.dart';
 import 'package:patrol_cli_plus/src/base/process.dart';
 import 'package:patrol_cli_plus/src/coverage/vm_connection_details.dart';
@@ -14,7 +15,6 @@ import 'package:patrol_cli_plus/src/crossplatform/app_options.dart';
 import 'package:patrol_cli_plus/src/crossplatform/flutter_tool.dart';
 import 'package:patrol_cli_plus/src/devices.dart';
 import 'package:patrol_log_plus/patrol_log_reader.dart';
-import 'package:path/path.dart' as p;
 import 'package:process/process.dart';
 
 const _kDefaultWebServerTimeoutSeconds = 120;
@@ -462,9 +462,8 @@ class WebTestBackend {
             ).firstMatch(line);
             if (vmMatch != null) {
               final uri = Uri.parse(vmMatch.group(1)!);
-              final auth = uri.pathSegments
-                  .where((s) => s.isNotEmpty)
-                  .lastOrNull ?? '';
+              final auth =
+                  uri.pathSegments.where((s) => s.isNotEmpty).lastOrNull ?? '';
               if (auth.isNotEmpty) {
                 vmDetails = VMConnectionDetails(port: uri.port, auth: auth);
               }
@@ -634,57 +633,16 @@ class WebTestBackend {
                 'PATROL_WEB_ISOLATION': webIsolation,
                 'PATROL_TEST_RESULTS_DIR': testResultsDir,
                 'PATROL_TEST_REPORT_DIR': testReportDir,
-                if (options.retries != null)
-                  'PATROL_WEB_RETRIES': options.retries.toString(),
-                if (options.video != null)
-                  'PATROL_WEB_VIDEO': options.video.toString(),
-                if (options.trace != null)
-                  'PATROL_WEB_TRACE': options.trace.toString(),
-                if (options.timeout != null)
-                  'PATROL_WEB_TIMEOUT': options.timeout.toString(),
-                if (options.workers != null)
-                  'PATROL_WEB_WORKERS': options.workers.toString(),
-                if (options.reporter != null)
-                  'PATROL_WEB_REPORTER': options.reporter.toString(),
-                if (options.locale != null)
-                  'PATROL_WEB_LOCALE': options.locale.toString(),
-                if (options.timezone != null)
-                  'PATROL_WEB_TIMEZONE': options.timezone.toString(),
-                if (options.colorScheme != null)
-                  'PATROL_WEB_COLOR_SCHEME': options.colorScheme.toString(),
-                if (options.geolocation != null)
-                  'PATROL_WEB_GEOLOCATION': options.geolocation.toString(),
-                if (options.permissions != null)
-                  'PATROL_WEB_PERMISSIONS': options.permissions.toString(),
-                if (options.userAgent != null)
-                  'PATROL_WEB_USER_AGENT': options.userAgent.toString(),
-                if (options.viewport != null)
-                  'PATROL_WEB_VIEWPORT': options.viewport.toString(),
-                if (options.globalTimeout != null)
-                  'PATROL_WEB_GLOBAL_TIMEOUT': options.globalTimeout.toString(),
-                if (options.shard != null)
-                  'PATROL_WEB_SHARD': options.shard.toString(),
-                if (options.headless != null)
-                  'PATROL_WEB_HEADLESS': options.headless.toString(),
-                if (options.initTimeout != null)
-                  'PATROL_WEB_INIT_TIMEOUT': options.initTimeout.toString(),
-                if (options.browserArgs != null)
-                  'PATROL_WEB_BROWSER_ARGS': options.browserArgs.toString(),
-                if (options.grep != null) 'PATROL_WEB_GREP': options.grep!,
-                if (options.grepInvert != null)
-                  'PATROL_WEB_GREP_INVERT': options.grepInvert!,
-                'PATROL_WEB_ERROR_DETECTION': options.errorDetection.toString(),
-                if (options.errorAllow != null)
-                  'PATROL_WEB_ERROR_ALLOW': options.errorAllow!,
-                if (options.authFlow != null)
-                  'PATROL_WEB_AUTH_FLOW': options.authFlow!,
-                if (options.authStateFile != null)
+                ...options.toEnvironmentVariables(),
+                // Auth paths are given relative to the user's cwd but Playwright
+                // runs from the web_runner directory, so resolve them here.
+                if (options.authStateFile case final authStateFile?)
                   'PATROL_WEB_AUTH_STATE_FILE': _resolveRelativeToCwd(
-                    options.authStateFile!,
+                    authStateFile,
                   ),
-                if (options.authFlowModule != null)
+                if (options.authFlowModule case final authFlowModule?)
                   'PATROL_WEB_AUTH_FLOW_MODULE': _resolveRelativeToCwd(
-                    options.authFlowModule!,
+                    authFlowModule,
                   ),
               },
               runInShell: true,
@@ -929,7 +887,7 @@ class WebTestBackend {
       ..info('Node.js dependencies installed successfully.')
       ..info('Installing Playwright dependencies...');
     final result = await _processManager.run(
-      ['npx', 'playwright', 'install'],
+      ['npx', 'playwright', 'install', 'chromium'],
       workingDirectory: webRunnerPath,
       runInShell: true,
     );
@@ -937,7 +895,7 @@ class WebTestBackend {
     if (result.exitCode != 0) {
       throw ProcessException(
         'npx',
-        ['playwright', 'install'],
+        ['playwright', 'install', 'chromium'],
         'Failed to install Playwright dependencies:\n'
             'STDOUT: ${result.stdout}\n'
             'STDERR: ${result.stderr}',

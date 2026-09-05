@@ -79,5 +79,32 @@ String? mapUpstreamPathToWorkingPath(String upstreamPath) {
     return upstreamPath;
   }
   final tail = slash == -1 ? '' : rest.substring(slash);
-  return '$prefix$forkName$tail';
+  return '$prefix$forkName${_mapDarwinSwiftPackageTail(pkgName, tail)}';
+}
+
+/// Upstream's SwiftPM layout carries the package name in the path below the
+/// package directory: `darwin/patrol/Package.swift` holds a package and a
+/// Clang target both named `patrol`, at `darwin/patrol/Sources/patrol/`
+/// with the umbrella header `include/patrol.h`. Flutter resolves a plugin's
+/// package at `darwin/<package_name>/Package.swift` and the registrants
+/// `import <package_name>`, so the fork renames all three along with the
+/// package (`darwin/patrol_plus/Sources/patrol_plus/include/patrol_plus.h`).
+/// The `PatrolImpl` and `HTTPParserC` targets keep their names.
+///
+/// [tail] is the path below `packages/<pkg>` (leading slash included).
+String _mapDarwinSwiftPackageTail(String pkgName, String tail) {
+  if (pkgName != 'patrol') return tail;
+  const spmDir = '/darwin/patrol/';
+  if (!tail.startsWith(spmDir)) return tail;
+  var mapped = '/darwin/patrol_plus/${tail.substring(spmDir.length)}';
+  const clangTarget = '/darwin/patrol_plus/Sources/patrol/';
+  if (mapped.startsWith(clangTarget)) {
+    mapped =
+        '/darwin/patrol_plus/Sources/patrol_plus/'
+        '${mapped.substring(clangTarget.length)}';
+    if (mapped == '/darwin/patrol_plus/Sources/patrol_plus/include/patrol.h') {
+      mapped = '/darwin/patrol_plus/Sources/patrol_plus/include/patrol_plus.h';
+    }
+  }
+  return mapped;
 }

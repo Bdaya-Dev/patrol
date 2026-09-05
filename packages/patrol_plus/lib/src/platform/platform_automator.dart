@@ -73,17 +73,34 @@ class PlatformAutomatorConfig {
     /// Name of the application under test on iOS.
     String? iosAppName,
 
+    /// Whether Patrol should keep third-party `AccessibilityService`s running
+    /// during the test session.
+    ///
+    /// Android only. See
+    /// [AndroidAutomatorConfig.dontSuppressAccessibilityServices].
+    bool? androidDontSuppressAccessibilityServices,
+
     /// Called when a native action is performed.
     void Function(String)? logger,
+
+    /// Host of the native Patrol automation server.
+    String? host,
+
+    /// Port of the native Patrol automation server.
+    String? port,
   }) {
     return PlatformAutomatorConfig(
       androidConfig: AndroidAutomatorConfig(
         packageName: packageName,
         appName: androidAppName,
         keyboardBehavior: keyboardBehavior,
+        dontSuppressAccessibilityServices:
+            androidDontSuppressAccessibilityServices,
         connectionTimeout: connectionTimeout,
         findTimeout: findTimeout,
         logger: logger,
+        host: host,
+        port: port,
       ),
       iosConfig: IOSAutomatorConfig(
         iosInstalledApps: iosInstalledApps,
@@ -93,6 +110,8 @@ class PlatformAutomatorConfig {
         connectionTimeout: connectionTimeout,
         findTimeout: findTimeout,
         logger: logger,
+        host: host,
+        port: port,
       ),
       webConfig: WebAutomatorConfig(logger: logger),
     );
@@ -243,6 +262,12 @@ class PlatformAutomator {
       macos: () async => {await ios.markPatrolAppServiceReady()},
       desktop: () async => {await desktop.markPatrolAppServiceReady()},
     );
+  }
+
+  /// Captures a native screenshot (for a device farm to collect). Android only;
+  /// a no-op elsewhere.
+  Future<void> takeNativeScreenshot(String tag) async {
+    await action.maybe(android: () => android.takeNativeScreenshot(tag));
   }
 
   /// None of the native actions are supported on MacOS, so we will just always throw.

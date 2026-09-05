@@ -22,6 +22,7 @@ import 'package:patrol_cli_plus/src/commands/develop.dart';
 import 'package:patrol_cli_plus/src/commands/devices.dart';
 import 'package:patrol_cli_plus/src/commands/doctor.dart';
 import 'package:patrol_cli_plus/src/commands/test.dart';
+import 'package:patrol_cli_plus/src/commands/test_without_building.dart';
 import 'package:patrol_cli_plus/src/commands/update.dart';
 import 'package:patrol_cli_plus/src/compatibility_checker/compatibility_checker.dart';
 import 'package:patrol_cli_plus/src/compatibility_checker/version_compatibility.dart';
@@ -250,6 +251,18 @@ class PatrolCommandRunner extends CompletionCommandRunner<int> {
       ),
     );
 
+    addCommand(
+      TestWithoutBuildingCommand(
+        deviceFinder: deviceFinder,
+        testBundler: testBundler,
+        pubspecReader: PubspecReader(projectRoot: rootDirectory),
+        androidTestBackend: androidTestBackend,
+        iosTestBackend: iosTestBackend,
+        analytics: _analytics,
+        logger: _logger,
+      ),
+    );
+
     addCommand(DevicesCommand(deviceFinder: deviceFinder, logger: _logger));
 
     addCommand(DoctorCommand(logger: _logger, platform: _platform));
@@ -318,7 +331,7 @@ To install a specific version of Patrol CLI, run:
     try {
       _handleFirstRun();
 
-      final topLevelResults = parse(args);
+      final topLevelResults = parse(_normalizeArgs(args));
       verbose = topLevelResults['verbose'] == true;
 
       if (verbose) {
@@ -367,6 +380,47 @@ To install a specific version of Patrol CLI, run:
     }
 
     return exitCode;
+  }
+
+  /// Rewrites the deprecated `--web-headless=<value>` and
+  /// `--web-headless <value>` forms to the `--web-headless`/`--no-web-headless`
+  /// flag syntax, warning about the deprecation.
+  List<String> _normalizeArgs(Iterable<String> args) {
+    final list = args.toList();
+    final result = <String>[];
+
+    for (var i = 0; i < list.length; i++) {
+      final arg = list[i];
+
+      // Everything after `--` is positional, not options.
+      if (arg == '--') {
+        result.addAll(list.sublist(i));
+        break;
+      }
+
+      bool? headless;
+      if (arg == '--web-headless' && i + 1 < list.length) {
+        headless = bool.tryParse(list[i + 1]);
+        if (headless != null) {
+          i++;
+        }
+      } else if (arg.startsWith('--web-headless=')) {
+        headless = bool.tryParse(arg.substring('--web-headless='.length));
+      }
+
+      if (headless == null) {
+        result.add(arg);
+        continue;
+      }
+
+      _logger.warn(
+        'Passing a value to --web-headless is deprecated. '
+        'Use --web-headless or --no-web-headless instead.',
+      );
+      result.add(headless ? '--web-headless' : '--no-web-headless');
+    }
+
+    return result;
   }
 
   @override
@@ -421,6 +475,10 @@ To install a specific version of Patrol CLI, run:
   @visibleForTesting
   bool testWantsUpdateCheck(String? commandName) =>
       _wantsUpdateCheck(commandName);
+
+  /// For testing purposes only
+  @visibleForTesting
+  List<String> testNormalizeArgs(Iterable<String> args) => _normalizeArgs(args);
 
   /// For testing purposes only
   @visibleForTesting

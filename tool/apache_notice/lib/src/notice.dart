@@ -6,7 +6,7 @@ const String upstreamRepoUrl = 'https://github.com/leancodepl/patrol';
 
 /// The date the fork point commit was made on upstream `master`, spelled
 /// out in every generated NOTICE so a reader doesn't have to look it up.
-const String forkPointDate = '2026-05-29';
+const String forkPointDate = '2026-08-31';
 
 /// The upstream copyright line, quoted verbatim from `LICENSE` (line 189 as
 /// of this writing) so every generated NOTICE carries it exactly as

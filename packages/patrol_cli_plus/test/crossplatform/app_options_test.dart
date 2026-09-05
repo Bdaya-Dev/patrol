@@ -1,5 +1,6 @@
 // Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:patrol_cli_plus/src/crossplatform/app_options.dart';
+import 'package:patrol_cli_plus/src/devices.dart';
 import 'package:patrol_cli_plus/src/ios/ios_test_backend.dart';
 import 'package:patrol_cli_plus/src/runner/flutter_command.dart';
 import 'package:test/test.dart';
@@ -8,6 +9,45 @@ import '../src/fixtures.dart';
 
 void main() {
   const flutterCommand = FlutterCommand('flutter');
+
+  group('FlutterAppOptions.toFlutterTestDiscoveryInvocation', () {
+    const flutterOptions = FlutterAppOptions(
+      command: flutterCommand,
+      target: 'patrol_test/test_bundle.dart',
+      buildMode: BuildMode.debug,
+      flavor: null,
+      buildName: null,
+      buildNumber: null,
+      dartDefines: {'TARGET_ENV': 'staging'},
+      dartDefineFromFilePaths: [],
+    );
+
+    test('runs only the explorer test and forwards the dart-defines', () {
+      final invocation = flutterOptions.toFlutterTestDiscoveryInvocation(
+        manifestOutputPath: '/tmp/manifest.json',
+      );
+
+      expect(
+        invocation,
+        equals([
+          'flutter',
+          'test',
+          'patrol_test/test_bundle.dart',
+          '--suppress-analytics',
+          // Restricting the run to the explorer keeps the user's setUp/tearDown
+          // (however they were registered) from executing during discovery.
+          '--plain-name',
+          'patrol_test_explorer',
+          '--dart-define',
+          'PATROL_TEST_DISCOVERY=true',
+          '--dart-define',
+          'PATROL_MANIFEST_OUTPUT=/tmp/manifest.json',
+          '--dart-define',
+          'TARGET_ENV=staging',
+        ]),
+      );
+    });
+  });
 
   group('AndroidAppOptions', () {
     late AndroidAppOptions options;
@@ -43,6 +83,7 @@ void main() {
             '-Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true',
             '-Papp-server-port=1',
             '-Ptest-server-port=2',
+            '-Ppatrol-enabled=true',
           ]),
         );
       });
@@ -77,6 +118,7 @@ void main() {
             '-Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true',
             '-Papp-server-port=1',
             '-Ptest-server-port=2',
+            '-Ppatrol-enabled=true',
           ]),
         );
       });
@@ -119,6 +161,7 @@ void main() {
             '-Pdart-defines=RU1BSUw9dXNlckBleGFtcGxlLmNvbQ==,UEFTU1dPUkQ9bnk0bmNhdA==,Zm9vPWJhcg==',
             '-Papp-server-port=1',
             '-Ptest-server-port=2',
+            '-Ppatrol-enabled=true',
           ]),
         );
       });
@@ -153,6 +196,7 @@ void main() {
             '-Pdart-defines=RU1BSUw9dXNlckBleGFtcGxlLmNvbQ==,UEFTU1dPUkQ9bnk0bmNhdA==,Zm9vPWJhcg==',
             '-Papp-server-port=1',
             '-Ptest-server-port=2',
+            '-Ppatrol-enabled=true',
           ]),
         );
       });
@@ -188,6 +232,7 @@ void main() {
             '-Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true',
             '-Papp-server-port=1',
             '-Ptest-server-port=2',
+            '-Ppatrol-enabled=true',
           ]),
         );
       });
@@ -255,6 +300,7 @@ void main() {
               '-quiet',
               ...['-derivedDataPath', '../build/ios_integ'],
               r'OTHER_SWIFT_FLAGS=$(inherited) -D PATROL_ENABLED',
+              r'OTHER_LDFLAGS=$(inherited) -weak_framework XCTest -F$(PLATFORM_DIR)/Developer/Library/Frameworks -L$(PLATFORM_DIR)/Developer/usr/lib',
               r'OTHER_CFLAGS=$(inherited) -D FULL_ISOLATION=0 -D CLEAR_PERMISSIONS=0',
             ]),
           );
@@ -276,7 +322,7 @@ void main() {
               ...['xcodebuild', 'test-without-building'],
               ...['-xctestrun', xcTestRunPath],
               ...['-only-testing', 'RunnerUITests/RunnerUITests'],
-              ...['-destination', 'platform=iOS,name=iPhone 13'],
+              ...['-destination', 'platform=iOS,id=$iosDeviceId'],
               ...['-destination-timeout', '30'],
               ...['-resultBundlePath', ''],
             ]),
@@ -341,6 +387,7 @@ void main() {
               '-quiet',
               ...['-derivedDataPath', '../build/ios_integ'],
               r'OTHER_SWIFT_FLAGS=$(inherited) -D PATROL_ENABLED',
+              r'OTHER_LDFLAGS=$(inherited) -weak_framework XCTest -F$(PLATFORM_DIR)/Developer/Library/Frameworks -L$(PLATFORM_DIR)/Developer/usr/lib',
               r'OTHER_CFLAGS=$(inherited) -D FULL_ISOLATION=0 -D CLEAR_PERMISSIONS=0',
             ]),
           );
@@ -362,7 +409,7 @@ void main() {
               ...['xcodebuild', 'test-without-building'],
               ...['-xctestrun', xcTestRunPath],
               ...['-only-testing', 'RunnerUITests/RunnerUITests'],
-              ...['-destination', 'platform=iOS,name=iPhone 13'],
+              ...['-destination', 'platform=iOS,id=$iosDeviceId'],
               ...['-destination-timeout', '30'],
               ...['-resultBundlePath', ''],
             ]),
@@ -371,79 +418,130 @@ void main() {
       },
     );
 
-    group(
-      'correctly encodes customized xcodebuild invocation for real device',
-      () {
-        const flutterOpts = FlutterAppOptions(
-          command: flutterCommand,
-          target: 'patrol_test/app_test.dart',
-          buildMode: BuildMode.release,
-          flavor: 'prod',
-          buildName: '1.2.3',
-          buildNumber: '123',
-          dartDefines: {
-            'EMAIL': 'user@example.com',
-            'PASSWORD': 'ny4ncat',
-            'foo': 'bar',
-          },
-          dartDefineFromFilePaths: [],
+    group('correctly encodes customized xcodebuild invocation for real device', () {
+      const flutterOpts = FlutterAppOptions(
+        command: flutterCommand,
+        target: 'patrol_test/app_test.dart',
+        buildMode: BuildMode.release,
+        flavor: 'prod',
+        buildName: '1.2.3',
+        buildNumber: '123',
+        dartDefines: {
+          'EMAIL': 'user@example.com',
+          'PASSWORD': 'ny4ncat',
+          'foo': 'bar',
+        },
+        dartDefineFromFilePaths: [],
+      );
+
+      setUp(() {
+        options = IOSAppOptions(
+          flutter: flutterOpts,
+          scheme: 'prod',
+          configuration: 'Release-prod',
+          simulator: false,
+          osVersion: 'latest',
+          testServerPort: 8081,
+          appServerPort: 8082,
+          fullIsolation: true,
+        );
+      });
+
+      test('when building tests', () {
+        final flutterInvocation = options.toFlutterBuildInvocation(
+          flutterOpts.buildMode,
         );
 
-        setUp(() {
-          options = IOSAppOptions(
-            flutter: flutterOpts,
-            scheme: 'prod',
-            configuration: 'Release-prod',
-            simulator: false,
-            osVersion: 'latest',
-            testServerPort: 8081,
-            appServerPort: 8082,
-            fullIsolation: true,
-          );
-        });
+        expect(
+          flutterInvocation,
+          equals([
+            ...['flutter', 'build', 'ios'],
+            '--no-version-check',
+            '--suppress-analytics',
+            ...['--config-only', '--no-codesign', '--release'],
+            ...['--flavor', 'prod'],
+            ...['--build-name', '1.2.3'],
+            ...['--build-number', '123'],
+            ...['--target', 'patrol_test/app_test.dart'],
+            ...['--dart-define', 'EMAIL=user@example.com'],
+            ...['--dart-define', 'PASSWORD=ny4ncat'],
+            ...['--dart-define', 'foo=bar'],
+          ]),
+        );
 
-        test('when building tests', () {
-          final flutterInvocation = options.toFlutterBuildInvocation(
-            flutterOpts.buildMode,
-          );
+        final xcodebuildInvocation = options.buildForTestingInvocation();
 
-          expect(
-            flutterInvocation,
-            equals([
-              ...['flutter', 'build', 'ios'],
-              '--no-version-check',
-              '--suppress-analytics',
-              ...['--config-only', '--no-codesign', '--release'],
-              ...['--flavor', 'prod'],
-              ...['--build-name', '1.2.3'],
-              ...['--build-number', '123'],
-              ...['--target', 'patrol_test/app_test.dart'],
-              ...['--dart-define', 'EMAIL=user@example.com'],
-              ...['--dart-define', 'PASSWORD=ny4ncat'],
-              ...['--dart-define', 'foo=bar'],
-            ]),
-          );
+        expect(
+          xcodebuildInvocation,
+          equals([
+            ...['xcodebuild', 'build-for-testing'],
+            ...['-workspace', 'Runner.xcworkspace'],
+            ...['-scheme', 'prod'],
+            ...['-configuration', 'Release-prod'],
+            ...['-sdk', 'iphoneos'],
+            ...['-destination', 'generic/platform=iOS'],
+            '-quiet',
+            ...['-derivedDataPath', '../build/ios_integ'],
+            r'OTHER_SWIFT_FLAGS=$(inherited) -D PATROL_ENABLED',
+            r'OTHER_LDFLAGS=$(inherited) -weak_framework XCTest -F$(PLATFORM_DIR)/Developer/Library/Frameworks -L$(PLATFORM_DIR)/Developer/usr/lib',
+            r'OTHER_CFLAGS=$(inherited) -D FULL_ISOLATION=1 -D CLEAR_PERMISSIONS=0',
+          ]),
+        );
+      });
+    });
 
-          final xcodebuildInvocation = options.buildForTestingInvocation();
+    group('works when device name contains a comma', () {
+      setUp(() {
+        options = IOSAppOptions(
+          flutter: const FlutterAppOptions(
+            command: flutterCommand,
+            target: 'patrol_test/app_test.dart',
+            buildMode: BuildMode.debug,
+            flavor: null,
+            buildName: null,
+            buildNumber: null,
+            dartDefines: {},
+            dartDefineFromFilePaths: [],
+          ),
+          scheme: 'Runner',
+          configuration: 'Debug',
+          simulator: false,
+          osVersion: 'latest',
+          testServerPort: 8081,
+          appServerPort: 8082,
+        );
+      });
 
-          expect(
-            xcodebuildInvocation,
-            equals([
-              ...['xcodebuild', 'build-for-testing'],
-              ...['-workspace', 'Runner.xcworkspace'],
-              ...['-scheme', 'prod'],
-              ...['-configuration', 'Release-prod'],
-              ...['-sdk', 'iphoneos'],
-              ...['-destination', 'generic/platform=iOS'],
-              '-quiet',
-              ...['-derivedDataPath', '../build/ios_integ'],
-              r'OTHER_SWIFT_FLAGS=$(inherited) -D PATROL_ENABLED',
-              r'OTHER_CFLAGS=$(inherited) -D FULL_ISOLATION=1 -D CLEAR_PERMISSIONS=0',
-            ]),
-          );
-        });
-      },
-    );
+      test('testWithoutBuildingInvocation', () {
+        const deviceWithCommaInName = Device(
+          name: 'Test, test device',
+          id: iosDeviceId,
+          targetPlatform: TargetPlatform.iOS,
+          real: true,
+        );
+
+        const xcTestRunPath =
+            '/Users/charlie/awesome_app/build/ios_integ/Build/Products/Runner_iphoneos.xctestrun';
+
+        final xcodebuildInvocation = options.testWithoutBuildingInvocation(
+          deviceWithCommaInName,
+          xcTestRunPath: xcTestRunPath,
+          resultBundlePath: '',
+        );
+
+        expect(
+          xcodebuildInvocation,
+          equals([
+            ...['xcodebuild', 'test-without-building'],
+            ...['-xctestrun', xcTestRunPath],
+            ...['-only-testing', 'RunnerUITests/RunnerUITests'],
+            ...['-destination', 'platform=iOS,id=$iosDeviceId'],
+            ...['-destination-timeout', '30'],
+            ...['-resultBundlePath', ''],
+          ]),
+        );
+      });
+    });
 
     group('correctly targets a simulator device by UDID', () {
       test('test-without-building uses -destination id=<udid>', () {
@@ -484,6 +582,48 @@ void main() {
             ...['xcodebuild', 'test-without-building'],
             ...['-xctestrun', 'some.xctestrun'],
             ...['-only-testing', 'RunnerUITests/RunnerUITests'],
+            ...['-destination', 'id=$iosSimulatorDeviceId'],
+            ...['-destination-timeout', '30'],
+            ...['-resultBundlePath', ''],
+          ]),
+        );
+      });
+
+      test('test-without-building emits one -only-testing per selector', () {
+        const flutterOpts = FlutterAppOptions(
+          command: flutterCommand,
+          target: 'patrol_test/app_test.dart',
+          buildMode: BuildMode.debug,
+          flavor: null,
+          buildName: null,
+          buildNumber: null,
+          dartDefines: {},
+          dartDefineFromFilePaths: [],
+        );
+        final simOptions = IOSAppOptions(
+          flutter: flutterOpts,
+          scheme: 'Runner',
+          configuration: 'Debug',
+          simulator: true,
+          osVersion: 'latest',
+          testServerPort: 8081,
+          appServerPort: 8082,
+        );
+
+        final xcodebuildInvocation = simOptions.testWithoutBuildingInvocation(
+          iosSimulatorDevice,
+          xcTestRunPath: 'some.xctestrun',
+          resultBundlePath: '',
+          onlyTesting: ['testA', 'testB'],
+        );
+
+        expect(
+          xcodebuildInvocation,
+          equals([
+            ...['xcodebuild', 'test-without-building'],
+            ...['-xctestrun', 'some.xctestrun'],
+            ...['-only-testing', 'RunnerUITests/RunnerUITests/testA'],
+            ...['-only-testing', 'RunnerUITests/RunnerUITests/testB'],
             ...['-destination', 'id=$iosSimulatorDeviceId'],
             ...['-destination-timeout', '30'],
             ...['-resultBundlePath', ''],
@@ -892,21 +1032,21 @@ void main() {
         expect(options.authFlow, spec);
       });
 
-      test('authStateFile defaults to null (auth flow runs fresh every time)', () {
-        options = const WebAppOptions(flutter: flutterOpts);
-        expect(options.authStateFile, isNull);
-      });
-
       test(
-        'authStateFile is carried through (from --web-auth-state-file)',
+        'authStateFile defaults to null (auth flow runs fresh every time)',
         () {
-          options = const WebAppOptions(
-            flutter: flutterOpts,
-            authStateFile: '.patrol_auth_state.json',
-          );
-          expect(options.authStateFile, '.patrol_auth_state.json');
+          options = const WebAppOptions(flutter: flutterOpts);
+          expect(options.authStateFile, isNull);
         },
       );
+
+      test('authStateFile is carried through (from --web-auth-state-file)', () {
+        options = const WebAppOptions(
+          flutter: flutterOpts,
+          authStateFile: '.patrol_auth_state.json',
+        );
+        expect(options.authStateFile, '.patrol_auth_state.json');
+      });
 
       test(
         'authFlowModule defaults to null (registration escape hatch unused)',
@@ -929,6 +1069,147 @@ void main() {
           );
         },
       );
+    });
+
+    group('toEnvironmentVariables', () {
+      const flutterOpts = FlutterAppOptions(
+        command: flutterCommand,
+        target: 'patrol_test/app_test.dart',
+        buildMode: BuildMode.debug,
+        flavor: null,
+        buildName: null,
+        buildNumber: null,
+        dartDefines: {},
+        dartDefineFromFilePaths: [],
+      );
+
+      test(
+        'omits unset options (only the always-on error-gate flag remains)',
+        () {
+          options = const WebAppOptions(flutter: flutterOpts);
+
+          expect(
+            options.toEnvironmentVariables(),
+            equals({'PATROL_WEB_ERROR_DETECTION': 'false'}),
+          );
+        },
+      );
+
+      test('includes only the options that were set', () {
+        options = const WebAppOptions(
+          flutter: flutterOpts,
+          timeout: 30000,
+          headless: true,
+          channel: 'chrome',
+        );
+
+        expect(
+          options.toEnvironmentVariables(),
+          equals({
+            'PATROL_WEB_TIMEOUT': '30000',
+            'PATROL_WEB_HEADLESS': 'true',
+            'PATROL_WEB_CHANNEL': 'chrome',
+            'PATROL_WEB_ERROR_DETECTION': 'false',
+          }),
+        );
+      });
+
+      test('stringifies every supported option', () {
+        options = const WebAppOptions(
+          flutter: flutterOpts,
+          retries: 2,
+          video: 'on',
+          timeout: 30000,
+          workers: 4,
+          reporter: 'html',
+          locale: 'en-US',
+          timezone: 'UTC',
+          colorScheme: 'dark',
+          geolocation: '{"latitude":1,"longitude":2}',
+          permissions: '["geolocation"]',
+          userAgent: 'test-agent',
+          viewport: '{"width":800,"height":600}',
+          globalTimeout: 60000,
+          shard: '1/2',
+          headless: false,
+          browserArgs: '["--no-sandbox"]',
+          channel: 'msedge',
+          executablePath: '/usr/bin/chromium',
+          slowMo: 100,
+          chromiumSandbox: false,
+          downloadsPath: '/tmp/downloads',
+          ignoreDefaultArgs: 'true',
+          proxy: '{"server":"http://localhost:8080"}',
+          browserTimeout: 5000,
+          tracesDir: '/tmp/traces',
+          bypassCsp: true,
+          ignoreHttpsErrors: true,
+          offline: false,
+          httpCredentials: '{"username":"user","password":"pass"}',
+          extraHttpHeaders: '{"X-Test":"1"}',
+          screenshot: 'only-on-failure',
+          trace: 'retain-on-failure',
+          storageState: '/tmp/state.json',
+          acceptDownloads: true,
+          initTimeout: 120000,
+          grep: '@billing,@checkout',
+          grepInvert: '@slow',
+          errorDetection: true,
+          errorAllow: 'is unimplemented,UNIMPLEMENTED',
+          authFlow: '{"loginUrlPattern":"https://idp.example"}',
+          authStateFile: '.patrol_auth_state.json',
+          authFlowModule: 'patrol_test/ci/flow.ts',
+        );
+
+        expect(
+          options.toEnvironmentVariables(),
+          equals({
+            'PATROL_WEB_RETRIES': '2',
+            'PATROL_WEB_VIDEO': 'on',
+            'PATROL_WEB_TIMEOUT': '30000',
+            'PATROL_WEB_WORKERS': '4',
+            'PATROL_WEB_REPORTER': 'html',
+            'PATROL_WEB_LOCALE': 'en-US',
+            'PATROL_WEB_TIMEZONE': 'UTC',
+            'PATROL_WEB_COLOR_SCHEME': 'dark',
+            'PATROL_WEB_GEOLOCATION': '{"latitude":1,"longitude":2}',
+            'PATROL_WEB_PERMISSIONS': '["geolocation"]',
+            'PATROL_WEB_USER_AGENT': 'test-agent',
+            'PATROL_WEB_VIEWPORT': '{"width":800,"height":600}',
+            'PATROL_WEB_GLOBAL_TIMEOUT': '60000',
+            'PATROL_WEB_SHARD': '1/2',
+            'PATROL_WEB_HEADLESS': 'false',
+            'PATROL_WEB_BROWSER_ARGS': '["--no-sandbox"]',
+            'PATROL_WEB_CHANNEL': 'msedge',
+            'PATROL_WEB_EXECUTABLE_PATH': '/usr/bin/chromium',
+            'PATROL_WEB_SLOW_MO': '100',
+            'PATROL_WEB_CHROMIUM_SANDBOX': 'false',
+            'PATROL_WEB_DOWNLOADS_PATH': '/tmp/downloads',
+            'PATROL_WEB_IGNORE_DEFAULT_ARGS': 'true',
+            'PATROL_WEB_PROXY': '{"server":"http://localhost:8080"}',
+            'PATROL_WEB_BROWSER_TIMEOUT': '5000',
+            'PATROL_WEB_TRACES_DIR': '/tmp/traces',
+            'PATROL_WEB_BYPASS_CSP': 'true',
+            'PATROL_WEB_IGNORE_HTTPS_ERRORS': 'true',
+            'PATROL_WEB_OFFLINE': 'false',
+            'PATROL_WEB_HTTP_CREDENTIALS':
+                '{"username":"user","password":"pass"}',
+            'PATROL_WEB_EXTRA_HTTP_HEADERS': '{"X-Test":"1"}',
+            'PATROL_WEB_SCREENSHOT': 'only-on-failure',
+            'PATROL_WEB_TRACE': 'retain-on-failure',
+            'PATROL_WEB_STORAGE_STATE': '/tmp/state.json',
+            'PATROL_WEB_ACCEPT_DOWNLOADS': 'true',
+            'PATROL_WEB_INIT_TIMEOUT': '120000',
+            'PATROL_WEB_GREP': '@billing,@checkout',
+            'PATROL_WEB_GREP_INVERT': '@slow',
+            'PATROL_WEB_ERROR_DETECTION': 'true',
+            'PATROL_WEB_ERROR_ALLOW': 'is unimplemented,UNIMPLEMENTED',
+            'PATROL_WEB_AUTH_FLOW': '{"loginUrlPattern":"https://idp.example"}',
+            'PATROL_WEB_AUTH_STATE_FILE': '.patrol_auth_state.json',
+            'PATROL_WEB_AUTH_FLOW_MODULE': 'patrol_test/ci/flow.ts',
+          }),
+        );
+      });
     });
   });
 }

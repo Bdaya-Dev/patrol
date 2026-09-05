@@ -548,7 +548,8 @@ test("runAuthFlow: forwards a custom timeoutMs to every step; defaults to " + "3
   ])
 
   await run(page, { ...baseSpec, timeoutMs: 5000 })
-  assert.ok(page.calls.every(c => c.timeout === 5000))
+  // `evaluate` calls carry no timeout, so (as before) any such call fails the check.
+  assert.ok(page.calls.every(c => c.kind !== "evaluate" && c.timeout === 5000))
 
   page.calls.length = 0
   const page2 = new FakePage("https://dev-dashboard.invora.app/", [
@@ -556,5 +557,5 @@ test("runAuthFlow: forwards a custom timeoutMs to every step; defaults to " + "3
     "https://dev-dashboard.invora.app/home",
   ])
   await run(page2, baseSpec)
-  assert.ok(page2.calls.every(c => c.timeout === 30000))
+  assert.ok(page2.calls.every(c => c.kind !== "evaluate" && c.timeout === 30000))
 })

@@ -51,6 +51,7 @@ class BuildAndroidCommand extends PatrolCommand {
 
     usesAndroidOptions();
     usesAppNameOption();
+    usesEmitTestManifestOption();
   }
 
   final TestFinderFactory _testFinderFactory;
@@ -94,12 +95,13 @@ class BuildAndroidCommand extends PatrolCommand {
     }
 
     final testFinder = _testFinderFactory.create(testDirectory);
+    final excludes = stringsArg('exclude').toSet();
 
     final target = stringsArg('target');
     final targets = target.isNotEmpty
-        ? testFinder.findTests(target, testFileSuffix)
+        ? testFinder.findTests(target, testFileSuffix, excludes)
         : testFinder.findAllTests(
-            excludes: stringsArg('exclude').toSet(),
+            excludes: excludes,
             testFileSuffix: testFileSuffix,
           );
 
@@ -153,6 +155,7 @@ class BuildAndroidCommand extends PatrolCommand {
       'PATROL_ANDROID_APP_NAME': appName,
       'PATROL_TEST_LABEL_ENABLED': displayLabel.toString(),
       'PATROL_TEST_DIRECTORY': config.testDirectory,
+      'PATROL_SCREENSHOT_ON_FAILURE': config.screenshotOnFailure.toString(),
       'INTEGRATION_TEST_SHOULD_REPORT_RESULTS_TO_NATIVE': 'false',
     }.withNullsRemoved();
 
@@ -196,6 +199,8 @@ class BuildAndroidCommand extends PatrolCommand {
       appServerPort: super.appServerPort,
       testServerPort: super.testServerPort,
       uninstall: uninstall,
+      emitTestManifest:
+          optionalBoolArg('emit-test-manifest') ?? config.emitTestManifest,
     );
 
     try {

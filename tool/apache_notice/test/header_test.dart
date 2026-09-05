@@ -27,6 +27,26 @@ void main() {
       expect(result, '#!/usr/bin/env bash\n# $headerText\necho hi\n');
     });
 
+    test('SwiftPM manifest keeps swift-tools-version on line 1', () {
+      // SwiftPM rejects a Package.swift whose tools-version comment is not
+      // the first line ("the manifest is backward-incompatible with Swift
+      // < 6.0 because the tools-version was specified in a subsequent line").
+      const input =
+          '// swift-tools-version: 5.9\n\nimport PackageDescription\n';
+      final result = insertHeader(
+        input,
+        const LineCommentStyle('//'),
+        headerText,
+      );
+      expect(
+        result,
+        '// swift-tools-version: 5.9\n// $headerText\n\n'
+        'import PackageDescription\n',
+      );
+      expect(hasHeader(result), isTrue);
+      expect(removeHeader(result), input);
+    });
+
     test('markdown with frontmatter gets header after closing ---', () {
       const input = '---\ntitle: x\n---\n\ncontent\n';
       final result = insertHeader(
@@ -183,6 +203,51 @@ void main() {
     test('false when the marker only appears deep in the body', () {
       final input = '---\ntitle: x\n---\n\n# T\n\n\n\n\n\n\ntext $headerText\n';
       expect(hasHeader(input), isFalse);
+    });
+  });
+
+  group('removeHeader', () {
+    test('is the inverse of insertHeader for a plain file', () {
+      const original = 'void main() {}\n';
+      final withHeader = insertHeader(
+        original,
+        const LineCommentStyle('//'),
+        headerText,
+      );
+      expect(removeHeader(withHeader), original);
+    });
+
+    test('removes a header that follows a shebang', () {
+      expect(
+        removeHeader('#!/usr/bin/env bash\n# $headerText\necho hi\n'),
+        '#!/usr/bin/env bash\necho hi\n',
+      );
+    });
+
+    test('removes a header that follows frontmatter', () {
+      expect(
+        removeHeader('---\ntitle: x\n---\n<!-- $headerText -->\n\ncontent\n'),
+        '---\ntitle: x\n---\n\ncontent\n',
+      );
+    });
+
+    test('preserves CRLF line endings and a BOM', () {
+      expect(
+        removeHeader('\u{FEFF}// $headerText\r\nvoid main() {}\r\n'),
+        '\u{FEFF}void main() {}\r\n',
+      );
+    });
+
+    test('preserves a missing trailing newline', () {
+      expect(removeHeader('// $headerText\nvoid main() {}'), 'void main() {}');
+    });
+
+    test('is a no-op without a header, or with the marker deep in the '
+        'body', () {
+      const plain = 'void main() {}\n';
+      expect(removeHeader(plain), plain);
+      final deep = '---\ntitle: x\n---\n\n# T\n\n\n\n\n\n\ntext $headerText\n';
+      expect(removeHeader(deep), deep);
     });
   });
 }

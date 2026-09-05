@@ -1,4 +1,3 @@
-// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import 'package:app_links/app_links.dart';
 import 'package:e2e_app/applink_screen.dart';
 import 'package:e2e_app/at_finder_screen.dart';
@@ -270,12 +269,12 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const WebViewScreen(
-                  title: 'WebView (Hacker News)',
-                  url: 'https://news.ycombinator.com',
+                  title: 'WebView (Patrol docs)',
+                  url: 'https://patrol.leancode.co',
                 ),
               ),
             ),
-            child: const Text('Open webview (Hacker News)'),
+            child: const Text('Open webview (Patrol docs)'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).push(

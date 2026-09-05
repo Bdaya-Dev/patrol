@@ -17,8 +17,8 @@ class Violation {
 
   final String path;
 
-  /// One of: `'missing header'`, `'NOTICE.md stale'`, `'NOTICE.md missing'`,
-  /// `'unmapped rename'`.
+  /// One of: `'missing header'`, `'stale header'`, `'NOTICE.md stale'`,
+  /// `'NOTICE.md missing'`, `'unmapped rename'`.
   final String reason;
 
   @override
@@ -139,6 +139,19 @@ RunResult runApacheNotice(RunOptions options, {required StringSink out}) {
       file.writeAsBytesSync(utf8.encode(updated));
     } else {
       violations.add(Violation(relPath, 'missing header'));
+    }
+  }
+
+  // 1b. A file that is byte-identical to upstream apart from its notice line
+  // must not claim a modification: the notice is stale (upstream adopted the
+  // fork's change, or the fork point moved past it) and gets removed.
+  for (final relPath in modifiedSet.staleHeader) {
+    if (options.fix) {
+      final file = File(p.join(repo.root, relPath));
+      final content = utf8.decode(file.readAsBytesSync(), allowMalformed: true);
+      file.writeAsBytesSync(utf8.encode(removeHeader(content)));
+    } else {
+      violations.add(Violation(relPath, 'stale header'));
     }
   }
 

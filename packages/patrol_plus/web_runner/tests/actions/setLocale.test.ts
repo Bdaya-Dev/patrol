@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { assertNonEmptyLocale } from "../localeValidation.ts"
+import type { PageManager } from "../pageManager"
 import { setLocale } from "./setLocale.ts"
 
 // ---- assertNonEmptyLocale ----------------------------------------------------
@@ -79,9 +80,12 @@ class FakePage {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function callSetLocale(page: FakePage, locale: string) {
-  return setLocale(page as any, { locale })
+  // setLocale takes upstream's ActionParams shape and reads the page under
+  // test from pageManager.activePage; a minimal stand-in keeps this test
+  // free of a real browser (and of PageManager's real BrowserContext).
+  const pageManager = { activePage: page } as unknown as PageManager
+  return setLocale({ pageManager, params: { locale } })
 }
 
 test("setLocale: sends Emulation.setLocaleOverride with the requested locale", async () => {

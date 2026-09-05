@@ -1,7 +1,7 @@
 # Bdaya-Dev/patrol fork changes vs upstream (leancodepl/patrol)
 
 **Branch:** fixed
-**Upstream ref:** 41fe088e6
+**Upstream ref:** 4e19760bd (leancodepl/patrol master, 2026-08-31; synced by #53 - previously 41fe088e6)
 **Generated:** 2026-05-31
 **Total commits ahead:** 39 (excluding merges: ~30 unique changes)
 

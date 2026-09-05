@@ -76,7 +76,10 @@ abstract class PatrolCommand extends Command<int> {
     );
   }
 
-  void usesBuildModeOption() {
+  /// Registers only the build-mode selection flags. These pick the build mode
+  /// *and* therefore which already-built artifacts are used, so commands that
+  /// merely run prebuilt tests need them as well.
+  void usesBuildModeSelectionOption() {
     _usesBuildOption = true;
     argParser
       ..addFlag(
@@ -87,12 +90,16 @@ abstract class PatrolCommand extends Command<int> {
         'profile',
         help: 'Build a version of your app for performance profiling.',
       )
-      ..addFlag('release', help: 'Build a release version of your app')
-      ..addFlag(
-        'no-tree-shake-icons',
-        help: 'Disable tree shaking of icons when building the app.',
-        negatable: false,
-      );
+      ..addFlag('release', help: 'Build a release version of your app');
+  }
+
+  void usesBuildModeOption() {
+    usesBuildModeSelectionOption();
+    argParser.addFlag(
+      'no-tree-shake-icons',
+      help: 'Disable tree shaking of icons when building the app.',
+      negatable: false,
+    );
   }
 
   void usesFlavorOption() {
@@ -201,6 +208,39 @@ abstract class PatrolCommand extends Command<int> {
       );
   }
 
+  /// Registers the experimental `--emit-test-manifest` flag, shared by the iOS
+  /// and Android build/test paths.
+  ///
+  /// Declared with a null default (via [optionalBoolArg]) so that "flag not
+  /// passed" is distinguishable from an explicit `--no-emit-test-manifest`;
+  /// this lets the CLI flag override the persistent `patrol.emit_test_manifest`
+  /// pubspec setting when present, and fall back to it otherwise.
+  void usesEmitTestManifestOption() {
+    argParser.addFlag(
+      'emit-test-manifest',
+      help:
+          'Experimental: discover Dart tests at build time (host `flutter '
+          'test`) and generate static native test methods, so each Dart test '
+          'becomes an individually-selectable native test and the runtime '
+          'discovery launch is skipped. Defaults to the '
+          '`patrol.emit_test_manifest` value in pubspec.yaml.',
+      defaultsTo: null,
+    );
+  }
+
+  /// Registers `--only`, which selects individual already-built tests by their
+  /// Dart name. Selection happens natively (the name is mapped to the generated
+  /// test method through the build-time manifest), so it needs no rebuild.
+  void usesOnlyOption() {
+    argParser.addMultiOption(
+      'only',
+      help:
+          'Run only the test(s) with the given exact Dart name (as printed '
+          'during discovery). Repeatable; omit to run every built test.',
+      valueHelp: 'example_test logs in',
+    );
+  }
+
   void usesMacOSOptions() {
     argParser.addOption(
       'bundle-id',
@@ -286,14 +326,7 @@ abstract class PatrolCommand extends Command<int> {
       ..addOption(
         'web-video',
         help: 'Video recording mode.',
-        valueHelp: 'off | on | retain-on-failure | on-first-retry',
-      )
-      ..addOption(
-        'web-trace',
-        help:
-            'Playwright trace recording mode. Traces can be viewed with `npx playwright show-report`.',
-        valueHelp:
-            'off | on | retain-on-failure | on-first-retry | on-all-retries',
+        allowed: ['off', 'on', 'retain-on-failure', 'on-first-retry'],
       )
       ..addOption(
         'web-timeout',
@@ -323,7 +356,7 @@ abstract class PatrolCommand extends Command<int> {
       ..addOption(
         'web-color-scheme',
         help: 'Preferred color scheme for browser emulation.',
-        valueHelp: 'light | dark',
+        allowed: ['light', 'dark', 'no-preference'],
       )
       ..addOption(
         'web-geolocation',
@@ -360,10 +393,10 @@ abstract class PatrolCommand extends Command<int> {
             'Specify in the format "current/total" (e.g., "1/4" for the first of 4 shards).',
         valueHelp: '1/4',
       )
-      ..addOption(
+      ..addFlag(
         'web-headless',
         help: 'Whether to run browser in headless mode.',
-        valueHelp: 'true | false',
+        defaultsTo: null,
       )
       ..addOption(
         'web-port',
@@ -469,7 +502,7 @@ abstract class PatrolCommand extends Command<int> {
             'Path to a JSON file used to cache/reuse a --web-auth-flow (or '
             '--web-auth-flow-module) session across tests in the same run '
             '(Playwright storageState reuse). Unset = auth flow runs fresh '
-            'for every page needing it (today\'s behavior). When set, only '
+            "for every page needing it (today's behavior). When set, only "
             'the first page in the run that needs auth performs the live '
             'identity-provider round-trip; every subsequent page restores '
             'the cached session instead. WARNING: the file contains live '
@@ -483,13 +516,154 @@ abstract class PatrolCommand extends Command<int> {
       ..addOption(
         'web-auth-flow-module',
         help:
-            'Path to a Node/TS module (exporting an async \'runAuthFlow\' or '
+            "Path to a Node/TS module (exporting an async 'runAuthFlow' or "
             'default function taking {page, log, timeoutMs}) that drives a '
             'custom cross-origin auth flow — the escape hatch for flows the '
             'declarative --web-auth-flow spec cannot express (e.g. '
             'registration with an external email-code fetch). Mutually '
             'exclusive with --web-auth-flow.',
         valueHelp: 'patrol_test/ci/real_dev_register_flow.ts',
+      )
+      ..addOption(
+        'web-channel',
+        help:
+            'Browser distribution channel, e.g. a branded build instead of '
+            'the bundled Chromium, see https://playwright.dev/docs/browsers.',
+        valueHelp: 'chromium|chrome|msedge|...',
+      )
+      ..addOption(
+        'web-executable-path',
+        help:
+            'Path to a custom Chromium-based browser binary to use instead of '
+            'the bundled one. Takes precedence over --web-channel.',
+        valueHelp: 'path',
+      )
+      ..addOption(
+        'web-slow-mo',
+        help:
+            'Slow down operations by the specified number of milliseconds. Useful for debugging.',
+        valueHelp: 'number',
+      )
+      ..addFlag(
+        'web-chromium-sandbox',
+        help: 'Whether to enable the Chromium sandbox.',
+        defaultsTo: null,
+      )
+      ..addOption(
+        'web-downloads-path',
+        help: 'Directory where downloaded files will be saved.',
+        valueHelp: 'path',
+      )
+      ..addOption(
+        'web-ignore-default-args',
+        help:
+            "Skip Playwright's default browser arguments. Pass true/false or "
+            'a JSON array of arguments to skip.',
+        valueHelp: 'true | false | \'["--mute-audio"]\'',
+      )
+      ..addOption(
+        'web-proxy',
+        help: 'Network proxy configuration. JSON object.',
+        valueHelp: '\'{"server": "http://myproxy:3128"}\'',
+      )
+      ..addOption(
+        'web-browser-timeout',
+        help:
+            'Maximum time in milliseconds to wait for the browser instance to start.',
+        valueHelp: 'number',
+      )
+      ..addOption(
+        'web-traces-dir',
+        help: 'Directory where trace files will be saved.',
+        valueHelp: 'path',
+      )
+      ..addFlag(
+        'web-bypass-csp',
+        help: 'Whether to bypass the page Content-Security-Policy.',
+        defaultsTo: null,
+      )
+      ..addFlag(
+        'web-ignore-https-errors',
+        help: 'Whether to ignore HTTPS errors when sending network requests.',
+        defaultsTo: null,
+      )
+      ..addFlag(
+        'web-offline',
+        help: 'Whether to emulate network being offline.',
+        defaultsTo: null,
+      )
+      ..addOption(
+        'web-http-credentials',
+        help: 'Credentials for HTTP authentication. JSON object.',
+        valueHelp: '\'{"username": "user", "password": "pass"}\'',
+      )
+      ..addOption(
+        'web-extra-http-headers',
+        help: 'Additional HTTP headers sent with every request. JSON object.',
+        valueHelp: '\'{"X-My-Header": "value"}\'',
+      )
+      ..addOption(
+        'web-screenshot',
+        help: 'Screenshot capture mode.',
+        allowed: ['off', 'on', 'only-on-failure', 'on-first-failure'],
+      )
+      ..addOption(
+        'web-trace',
+        help: 'Trace recording mode.',
+        allowed: [
+          'off',
+          'on',
+          'retain-on-failure',
+          'on-first-retry',
+          'on-all-retries',
+          'retain-on-first-failure',
+        ],
+      )
+      ..addOption(
+        'web-storage-state',
+        help:
+            'Path to a file with the storage state to seed the browser context with.',
+        valueHelp: 'path',
+      )
+      ..addFlag(
+        'web-accept-downloads',
+        help: 'Whether to automatically accept all downloads.',
+        defaultsTo: null,
+      );
+  }
+
+  void usesVideoRecordingOptions() {
+    argParser
+      ..addFlag(
+        'record-video',
+        help:
+            'Record video of the test execution (Android emulators and iOS '
+            'simulators). May also work on physical Android devices, '
+            'depending on the vendor. iOS physical devices are not '
+            'supported.',
+      )
+      ..addOption(
+        'video-output-dir',
+        help: 'Directory to save recorded videos.',
+        valueHelp: 'path/to/videos',
+      )
+      ..addOption(
+        'video-size',
+        help: 'Video recording size (e.g., 1280x720). Android only.',
+        valueHelp: '1280x720',
+      )
+      ..addOption(
+        'video-bit-rate',
+        help: 'Video recording bit rate in bits per second. Android only.',
+        valueHelp: '4000000',
+      )
+      ..addOption(
+        'screenshots-output-dir',
+        help:
+            'Directory to save native screenshots pulled from the device '
+            'after an Android `patrol test` run. Defaults to '
+            '<test-directory>/screenshots.',
+        valueHelp: 'path/to/screenshots',
       );
   }
 
@@ -498,6 +672,12 @@ abstract class PatrolCommand extends Command<int> {
   /// If no flag named [name] was added to the `ArgParser`, an [ArgumentError]
   /// will be thrown.
   bool boolArg(String name) => argResults![name] as bool;
+
+  /// Gets the parsed command-line flag named [name] as a nullable `bool`.
+  ///
+  /// Returns null if the flag was declared with a null default and wasn't
+  /// passed on the command line.
+  bool? optionalBoolArg(String name) => argResults![name] as bool?;
 
   /// Gets the parsed command-line option named [name] as a `String`.
   ///

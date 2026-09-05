@@ -11,6 +11,9 @@ A powerful, multiplatform E2E UI testing framework for Flutter apps that
 overcomes the limitations of integration_test by handling native interactions.
 Battle-tested and shaped by production-grade experience since 2022.
 
+> **Patrol 4.7.0 adds Swift Package Manager support for iOS and macOS!**
+> If you migrate your project to SPM, a few small setup changes are needed — see the [iOS setup][docs_ios_setup_spm] guide for details.
+
 ## Patrol CLI
 
 Command-line tool to run and debug tests written with the [`patrol_plus`][patrol_link] framework.
@@ -72,4 +75,5 @@ for options specific to running tests. For the full documentation, see the
 [patrol_link]: https://pub.dev/packages/patrol_plus
 [patrol_finders_link]: https://pub.dev/packages/patrol_finders_plus
 [patrol_cli_link]: https://pub.dev/packages/patrol_cli_plus
+[docs_ios_setup_spm]: https://github.com/Bdaya-Dev/patrol/blob/master/docs/documentation/index.mdx
 [patrol_github_link]: https://github.com/leancodepl/patrol

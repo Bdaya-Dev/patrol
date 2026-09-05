@@ -3,6 +3,7 @@
 // ignore_for_file: avoid_single_child_in_multi_child_widgets
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol_finders_plus/src/custom_finders/custom_finders.dart';
@@ -215,6 +216,8 @@ void main() {
         expect(find.text('content: some input'), findsOneWidget);
       });
 
+      // The unfocus and testTextInput assertions in the three tests below don't
+      // hold on web, where enterText() skips that path.
       patrolWidgetTest('unfocuses already focused field after entering text', (
         tester,
       ) async {
@@ -250,7 +253,7 @@ void main() {
         expect(valuesOnUnfocus, isNotEmpty);
         expect(valuesOnUnfocus.first, 'updated input');
         expect(valuesOnUnfocus, isNot(contains('initial input')));
-      });
+      }, skip: kIsWeb);
 
       patrolWidgetTest('runs on-unfocus validation after entering text', (
         tester,
@@ -286,10 +289,11 @@ void main() {
         expect(validatedValues, isNotEmpty);
         expect(validatedValues.first, 'updated input');
         expect(validatedValues, isNot(contains('initial input')));
-      });
+      }, skip: kIsWeb);
 
       patrolWidgetTest(
         'keeps already focused field focused when hideKeyboard is false',
+        skip: kIsWeb,
         (tester) async {
           final controller = TextEditingController(text: 'initial input');
           final focusNode = FocusNode();

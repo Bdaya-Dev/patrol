@@ -11,6 +11,7 @@ import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate
 import { filterByTags, parseTagList } from "./filterByTags"
 import { initialise } from "./initialise"
 import { logger } from "./logger"
+import { PageManager } from "./pageManager"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
 import { resolveSourceMaps } from "./sourceMapResolver"
 import { PatrolTestEntry } from "./types"
@@ -134,6 +135,45 @@ type CoverageReporter = { add: (entries: any[]) => Promise<void>; generate: () =
 // dart2js source lost sourcesContent and got zero real hit attribution; see
 // that file's doc comment and invora-flutter#86 R5 for the full writeup).
 
+// Upstream's platform-handler binding (the PageManager-based multi-page
+// support: openNewPage / switchToPage / waitForPopup / …) is registered on the
+// BrowserContext, and Playwright refuses to expose the same binding name twice
+// on one context. In the default "context" isolation mode every test gets a
+// fresh context, so that never matters — but in "page" isolation mode the
+// worker-shared context outlives each test's page. So the binding is exposed
+// at most once per context and resolves its PageManager lazily, through this
+// map, to whichever one the CURRENT test installed for that context.
+const activePageManagers = new WeakMap<BrowserContext, PageManager>()
+
+async function attachPageManager(context: BrowserContext, page: Page): Promise<PageManager> {
+  const pageManager = new PageManager(context, page)
+  const bindingAlreadyExposed = activePageManagers.has(context)
+  activePageManagers.set(context, pageManager)
+
+  if (!bindingAlreadyExposed) {
+    await exposePatrolPlatformHandler(context, () => activePageManagers.get(context) ?? pageManager)
+  }
+
+  return pageManager
+}
+
+/**
+ * Upstream teardown: closes every page in [pages] except the page under test,
+ * so pages a test opened (openNewPage, window.open popups) never leak into the
+ * next test. Runs BEFORE the error gate is asserted, so a failing gate cannot
+ * leave them behind in a worker-shared context.
+ */
+async function closeSecondaryPages(pages: Page[], page: Page) {
+  for (const p of pages) {
+    if (p !== page && !p.isClosed()) {
+      await p.close().catch(() => {
+        // The page may already be closing (e.g. a popup its opener dismissed)
+        // — there is nothing left to clean up.
+      })
+    }
+  }
+}
+
 async function setupPage(page: Page) {
   page.on("console", message => {
     const text = message.text()
@@ -185,7 +225,10 @@ async function setupPage(page: Page) {
     window.__patrol__isInitialised = true
   })
 
-  await exposePatrolPlatformHandler(page)
+  // Expose the platform-handler binding BEFORE navigation (so Flutter's boot
+  // can never race it), through upstream's PageManager so the multi-page
+  // actions address this page's own context.
+  const pageManager = await attachPageManager(page.context(), page)
   await page.goto("/", { waitUntil: "domcontentloaded" })
 
   await page.evaluate(() => {
@@ -224,7 +267,10 @@ async function setupPage(page: Page) {
     // re-initialises exactly like the declarative branch does.
     logger.info("Auth flow: running --web-auth-flow-module %s", authFlowModulePath)
     const flow = await loadAuthFlowModule(authFlowModulePath)
-    await flow({ page, log: (msg, ...args) => logger.info(msg, ...args), timeoutMs: DEFAULT_TIMEOUT_MS })
+    // pino 9 derives the allowed printf args from the message's literal type;
+    // the module contract forwards an opaque (msg, ...args) pair, so the
+    // spread is widened here. Runtime behaviour is unchanged.
+    await flow({ page, log: (msg, ...args) => logger.info(msg, ...(args as [])), timeoutMs: DEFAULT_TIMEOUT_MS })
     await initialise(page)
 
     if (authStateFile) {
@@ -233,7 +279,7 @@ async function setupPage(page: Page) {
     }
   }
 
-  return errorGate
+  return { errorGate, pageManager }
 }
 
 export const patrolTest = base.extend<
@@ -314,7 +360,7 @@ export const patrolTest = base.extend<
       const context = cdpBrowser.contexts()[0]
       page = context.pages()[0] ?? await context.newPage()
 
-      await exposePatrolPlatformHandler(page)
+      const pageManager = await attachPageManager(context, page)
 
       page.on("console", message => {
         const text = message.text()
@@ -344,6 +390,11 @@ export const patrolTest = base.extend<
         await resolveSourceMaps(entries, coverageDir ? path.dirname(coverageDir) : null)
         await coverageReporter.add(entries)
       }
+
+      // Attached Chrome: only close pages this test opened (the ones the
+      // PageManager registered), never other tabs that already existed there.
+      await closeSecondaryPages(pageManager.ids.map(id => pageManager.resolve(id)), page)
+      pageManager.dispose()
       return
     }
 
@@ -351,7 +402,7 @@ export const patrolTest = base.extend<
       page = await sharedContext.newPage()
     }
 
-    const errorGate = await setupPage(page)
+    const { errorGate, pageManager } = await setupPage(page)
 
     if (coverageReporter) await page.coverage.startJSCoverage()
     await use(page)
@@ -361,15 +412,22 @@ export const patrolTest = base.extend<
       await coverageReporter.add(entries)
     }
 
-    // F-B: fail this test if an un-allowlisted browser error surfaced during
-    // setup or the test body. Thrown from fixture teardown, which Playwright
-    // attributes to the currently running test.
+    // Teardown: close all secondary pages (not the initial one)
+    await closeSecondaryPages(page.context().pages(), page)
+    pageManager.dispose()
+
     errorGate.dispose()
-    assertNoViolations(errorGate.violations)
 
     if (isolationMode === "page") {
       await page.close()
     }
+
+    // F-B: fail this test if an un-allowlisted browser error surfaced during
+    // setup or the test body. Thrown from fixture teardown, which Playwright
+    // attributes to the currently running test. Asserted last, after the
+    // page-mode close above, so a violation never leaks the page into the
+    // worker-shared context.
+    assertNoViolations(errorGate.violations)
   },
 })
 

@@ -1,6 +1,6 @@
 // Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
-import { docs } from "@/.source"
-import { fab } from "@fortawesome/free-brands-svg-icons"
+import { docs } from "@/.source/server"
+import { fab, faDiscord, faXTwitter } from "@fortawesome/free-brands-svg-icons"
 import { faCode, fas } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { type InferPageType, loader, LoaderPlugin, PageTreeTransformer } from "fumadocs-core/source"

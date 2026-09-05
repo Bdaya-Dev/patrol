@@ -58,26 +58,26 @@ void main() {
             name: '',
             type: GroupEntryType.group,
             skip: false,
-            tags: [],
+            tags: const [],
             entries: [
               DartGroupEntry(
                 name: 'example_test',
                 type: GroupEntryType.group,
                 skip: false,
-                tags: [],
+                tags: const [],
                 entries: [
                   DartGroupEntry(
                     name: 'alpha',
                     type: GroupEntryType.group,
                     skip: false,
-                    tags: [],
+                    tags: const [],
                     entries: [_testEntry('first'), _testEntry('second')],
                   ),
                   DartGroupEntry(
                     name: 'bravo',
                     type: GroupEntryType.group,
                     skip: false,
-                    tags: [],
+                    tags: const [],
                     entries: [_testEntry('first'), _testEntry('second')],
                   ),
                 ],
@@ -86,7 +86,7 @@ void main() {
                 name: 'open_app_test',
                 type: GroupEntryType.group,
                 skip: false,
-                tags: [],
+                tags: const [],
                 entries: [_testEntry('open maps'), _testEntry('open browser')],
               ),
             ],
@@ -125,20 +125,20 @@ void main() {
             name: '',
             type: GroupEntryType.group,
             skip: false,
-            tags: [],
+            tags: const [],
             entries: [
               DartGroupEntry(
                 name: 'example_test',
                 type: GroupEntryType.group,
                 skip: false,
-                tags: [],
+                tags: const [],
                 entries: [
                   _testEntry('alpha'),
                   DartGroupEntry(
                     name: 'bravo',
                     type: GroupEntryType.group,
                     skip: false,
-                    tags: [],
+                    tags: const [],
                     entries: [_testEntry('first'), _testEntry('second')],
                   ),
                   _testEntry('charlie'),
@@ -146,7 +146,7 @@ void main() {
                     name: 'delta',
                     type: GroupEntryType.group,
                     skip: false,
-                    tags: [],
+                    tags: const [],
                     entries: [_testEntry('first'), _testEntry('second')],
                   ),
                   _testEntry('echo'),
@@ -182,13 +182,13 @@ void main() {
             name: '',
             type: GroupEntryType.group,
             skip: false,
-            tags: [],
+            tags: const [],
             entries: [
               DartGroupEntry(
                 name: 'example_test',
                 type: GroupEntryType.group,
                 skip: false,
-                tags: [],
+                tags: const [],
                 entries: [_testEntry('alpha'), _testEntry('zielony')],
               ),
             ],
@@ -241,20 +241,20 @@ void main() {
             name: '',
             type: GroupEntryType.group,
             skip: false,
-            tags: [],
+            tags: const [],
             entries: [
               DartGroupEntry(
                 name: 'example_test',
                 type: GroupEntryType.group,
                 skip: true,
-                tags: [],
+                tags: const [],
                 entries: [_testEntry('alpha')],
               ),
               DartGroupEntry(
                 name: 'example2_test',
                 type: GroupEntryType.group,
                 skip: false,
-                tags: [],
+                tags: const [],
                 entries: [
                   _testEntry('alpha'),
                   _testEntry('bravo first'),
@@ -297,13 +297,13 @@ void main() {
             name: '',
             type: GroupEntryType.group,
             skip: false,
-            tags: [],
+            tags: const [],
             entries: [
               DartGroupEntry(
                 name: 'example_test',
                 type: GroupEntryType.group,
                 skip: false,
-                tags: [],
+                tags: const [],
                 entries: [
                   _testEntry('alpha', tags: ['tag1']),
                   _testEntry('bravo first', tags: ['tag2']),
@@ -344,13 +344,13 @@ void main() {
             name: '',
             type: GroupEntryType.group,
             skip: false,
-            tags: [],
+            tags: const [],
             entries: [
               DartGroupEntry(
                 name: 'example_test',
                 type: GroupEntryType.group,
                 skip: false,
-                tags: [],
+                tags: const [],
                 entries: [
                   _testEntry('alpha', tags: ['tag1']),
                 ],
@@ -392,13 +392,13 @@ void main() {
             name: '',
             type: GroupEntryType.group,
             skip: false,
-            tags: [],
+            tags: const [],
             entries: [
               DartGroupEntry(
                 name: 'example_test',
                 type: GroupEntryType.group,
                 skip: false,
-                tags: [],
+                tags: const [],
                 entries: [
                   _testEntry('bravo first', tags: ['tag2']),
                   _testEntry('bravo second', tags: ['tag3']),
@@ -442,13 +442,13 @@ void main() {
             name: '',
             type: GroupEntryType.group,
             skip: false,
-            tags: [],
+            tags: const [],
             entries: [
               DartGroupEntry(
                 name: 'example_test',
                 type: GroupEntryType.group,
                 skip: false,
-                tags: [],
+                tags: const [],
                 entries: [
                   _testEntry('alpha', tags: ['tag1']),
                   _testEntry('bravo second', tags: ['tag3']),
@@ -473,7 +473,7 @@ DartGroupEntry _testEntry(
   return DartGroupEntry(
     name: name,
     type: GroupEntryType.test,
-    entries: [],
+    entries: const [],
     skip: skip,
     tags: tags,
   );

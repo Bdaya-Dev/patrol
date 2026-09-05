@@ -356,6 +356,136 @@ void main() {
       expect(checkResult.stdout as String, isNot(contains('unmapped rename')));
     });
   });
+
+  group('symbolic links', () {
+    test('a symlink that exists upstream is neither modified nor removed', () {
+      final root = Directory.systemTemp
+          .createTempSync('apache_notice_test_symlink_')
+          .path;
+      addTearDown(() => Directory(root).deleteSync(recursive: true));
+
+      _git(root, ['init', '-q', '-b', 'main']);
+      _git(root, ['config', 'user.email', 'test@example.com']);
+      _git(root, ['config', 'user.name', 'Test']);
+      _git(root, ['config', 'core.autocrlf', 'false']);
+      _git(root, ['config', 'core.symlinks', 'true']);
+
+      _write(root, '.agents/skills/README.md', 'skills\n');
+      try {
+        Link(
+          p.join(root, '.claude', 'skills'),
+        ).createSync('../.agents/skills', recursive: true);
+      } on FileSystemException {
+        // Creating symlinks needs elevated rights on some Windows setups.
+        markTestSkipped('cannot create symbolic links here');
+        return;
+      }
+      _git(root, ['add', '-A']);
+      _git(root, ['commit', '-q', '-m', 'upstream']);
+      final forkPoint = _git(root, ['rev-parse', 'HEAD']).trim();
+
+      final checkResult = _runTool(toolDir, binPath, [
+        '--fix',
+        '--repo',
+        root,
+        '--fork-point',
+        forkPoint,
+      ]);
+      expect(checkResult.exitCode, 0, reason: checkResult.stdout as String);
+      final rootNotice = File(p.join(root, 'NOTICE.md')).readAsStringSync();
+      expect(rootNotice, isNot(contains('.claude/skills')));
+      expect(rootNotice, contains('## Removed files\n\n(none)'));
+    });
+  });
+
+  group('stale header', () {
+    test('a file identical to upstream apart from its notice line is '
+        'reported by --check, stripped by --fix, and left out of NOTICE', () {
+      final root = Directory.systemTemp
+          .createTempSync('apache_notice_test_stale_')
+          .path;
+      addTearDown(() => Directory(root).deleteSync(recursive: true));
+
+      _git(root, ['init', '-q', '-b', 'main']);
+      _git(root, ['config', 'user.email', 'test@example.com']);
+      _git(root, ['config', 'user.name', 'Test']);
+      _git(root, ['config', 'core.autocrlf', 'false']);
+
+      // Upstream has since adopted the fork's change: at the (new) fork
+      // point the file already has the fork's content.
+      _write(root, 'packages/patrol/same.dart', 'void same() { changed(); }\n');
+      _write(root, 'packages/patrol/other.dart', 'void other() {}\n');
+      _git(root, ['add', '-A']);
+      _git(root, ['commit', '-q', '-m', 'upstream']);
+      final forkPoint = _git(root, ['rev-parse', 'HEAD']).trim();
+
+      Directory(p.join(root, 'packages', 'patrol')).deleteSync(recursive: true);
+      const header =
+          '// Modified by Bdaya-Dev from the original LeanCode Patrol source '
+          '(Apache-2.0). See NOTICE.md.\n';
+      _write(
+        root,
+        'packages/patrol_plus/same.dart',
+        '${header}void same() { changed(); }\n',
+      );
+      _write(
+        root,
+        'packages/patrol_plus/other.dart',
+        '${header}void other() { alsoChanged(); }\n',
+      );
+      _git(root, ['add', '-A']);
+      _git(root, ['commit', '-q', '-m', 'fork']);
+
+      final checkResult = _runTool(toolDir, binPath, [
+        '--check',
+        '--repo',
+        root,
+        '--fork-point',
+        forkPoint,
+      ]);
+      expect(checkResult.exitCode, 1, reason: checkResult.stderr as String);
+      final stdout = checkResult.stdout as String;
+      expect(stdout, contains('packages/patrol_plus/same.dart: stale header'));
+      expect(stdout, isNot(contains('other.dart: ')));
+
+      final fixResult = _runTool(toolDir, binPath, [
+        '--fix',
+        '--repo',
+        root,
+        '--fork-point',
+        forkPoint,
+      ]);
+      expect(fixResult.exitCode, 0, reason: fixResult.stdout as String);
+
+      expect(
+        File(p.join(root, 'packages/patrol_plus/same.dart')).readAsStringSync(),
+        'void same() { changed(); }\n',
+      );
+      // A genuinely modified file keeps its notice.
+      expect(
+        File(
+          p.join(root, 'packages/patrol_plus/other.dart'),
+        ).readAsStringSync(),
+        '${header}void other() { alsoChanged(); }\n',
+      );
+
+      final rootNotice = File(p.join(root, 'NOTICE.md')).readAsStringSync();
+      expect(rootNotice, isNot(contains('same.dart')));
+      expect(
+        rootNotice,
+        contains('packages/patrol_plus/other.dart (notice in file)'),
+      );
+
+      final recheck = _runTool(toolDir, binPath, [
+        '--check',
+        '--repo',
+        root,
+        '--fork-point',
+        forkPoint,
+      ]);
+      expect(recheck.exitCode, 0, reason: recheck.stdout as String);
+    });
+  });
 }
 
 void _write(String repoRoot, String relPath, String content) {

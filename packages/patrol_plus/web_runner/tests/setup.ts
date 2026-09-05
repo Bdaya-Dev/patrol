@@ -3,21 +3,16 @@ import * as fs from "fs"
 import * as path from "path"
 import { chromium, type FullConfig, type Page } from "@playwright/test"
 import { initialise } from "./initialise"
+import { PageManager } from "./pageManager"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
-import { resolveLocale } from "./resolveLocale"
 import { DartTestEntry, PatrolTestEntry } from "./types"
 
 async function setup(config: FullConfig) {
-  const { baseURL } = config.projects[0].use
-  const browserArgs: string[] | undefined = process.env.PATROL_WEB_BROWSER_ARGS
-    ? JSON.parse(process.env.PATROL_WEB_BROWSER_ARGS)
-    : undefined
+  // `locale` is the pinned value resolveLocale() produced in playwright.config.ts
+  // (en-US unless --web-locale / PATROL_WEB_LOCALE overrides it).
+  const { baseURL, channel, launchOptions, locale } = config.projects[0].use
 
-  const locale = resolveLocale()
-
-  const browser = await chromium.launch({
-    args: browserArgs,
-  })
+  const browser = await chromium.launch({ ...launchOptions, channel })
 
   const page = await browser.newPage({ locale })
 
@@ -52,7 +47,8 @@ async function setup(config: FullConfig) {
 
   // Expose platform handler bindings before navigation to prevent race condition
   // during Flutter booting/initialization logic
-  await exposePatrolPlatformHandler(page)
+  const context = page.context()
+  await exposePatrolPlatformHandler(context, new PageManager(context, page))
 
   // We want to initialize the platform handler and things *before* we potentially miss the boat
   // during load.

@@ -63,6 +63,13 @@ class AndroidAutomator extends NativeMobileAutomator
 
   late final AndroidAutomatorClient _client;
 
+  @override
+  ConfigureRequest buildConfigureRequest() => ConfigureRequest(
+    findTimeoutMillis: _config.findTimeout.inMilliseconds,
+    androidDontSuppressAccessibilityServices:
+        _config.dontSuppressAccessibilityServices,
+  );
+
   /// Path of the recording [startScreenRecording] began and nothing has stopped
   /// yet, so [stopAbandonedScreenRecording] knows whether there is one.
   String? _activeScreenRecordingPath;
@@ -547,6 +554,15 @@ class AndroidAutomator extends NativeMobileAutomator
           doneButtonSelector: doneButtonSelector,
           timeoutMillis: timeout?.inMilliseconds,
         ),
+      );
+    });
+  }
+
+  @override
+  Future<void> takeNativeScreenshot(String tag) async {
+    await wrapRequest('takeNativeScreenshot', () async {
+      await _client.takeNativeScreenshot(
+        AndroidTakeNativeScreenshotRequest(tag: tag),
       );
     });
   }
