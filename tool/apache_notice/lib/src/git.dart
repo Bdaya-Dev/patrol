@@ -3,6 +3,26 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+/// One rename git detected between two revisions (`git diff --diff-filter=R
+/// --name-status`), as reported by [GitRepo.renamesBetween].
+class RenameEntry {
+  RenameEntry({
+    required this.similarity,
+    required this.oldPath,
+    required this.newPath,
+  });
+
+  /// The similarity percentage git reported (0-100). 100 means the two
+  /// blobs are byte-identical.
+  final int similarity;
+
+  /// Posix-style path (relative to the repo root) the file had at [from].
+  final String oldPath;
+
+  /// Posix-style path (relative to the repo root) the file has at [to].
+  final String newPath;
+}
+
 /// A git or usage-level failure (maps to CLI exit code 2).
 class GitError implements Exception {
   GitError(this.message);
@@ -89,6 +109,39 @@ class GitRepo {
       map[path] = meta[2];
     }
     return map;
+  }
+
+  /// Returns every rename git detects between [from] and [to] (both git
+  /// revisions -- commits, branches, etc.) with at least 50% similarity,
+  /// as it would report via `git diff -M50% --name-status
+  /// --diff-filter=R`.
+  List<RenameEntry> renamesBetween(String from, String to) {
+    final result = _run([
+      'diff',
+      '-M50%',
+      '--name-status',
+      '--diff-filter=R',
+      from,
+      to,
+    ]);
+    final entries = <RenameEntry>[];
+    for (final line in const LineSplitter().convert(result.stdout as String)) {
+      if (line.isEmpty) continue;
+      final parts = line.split('\t');
+      if (parts.length < 3) continue;
+      final status = parts[0];
+      // e.g. "R100" or "R075" -- similarity is everything after the 'R'.
+      final similarity = int.tryParse(status.substring(1));
+      if (similarity == null) continue;
+      entries.add(
+        RenameEntry(
+          similarity: similarity,
+          oldPath: parts[1],
+          newPath: parts[2],
+        ),
+      );
+    }
+    return entries;
   }
 
   /// Computes the git blob SHA-1 that `git add` would produce for each of

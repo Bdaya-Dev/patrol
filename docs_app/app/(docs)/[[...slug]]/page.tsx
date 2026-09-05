@@ -46,7 +46,7 @@ export async function generateMetadata(props: PageProps<"/[[...slug]]">): Promis
   const page = source.getPage(params.slug)
   if (!page) notFound()
 
-  const title = page.data.title ? `${page.data.title} | Patrol` : "Patrol"
+  const title = page.data.title ? `${page.data.title} | patrol_plus` : "patrol_plus docs"
   return {
     metadataBase: new URL(
       process.env.VERCEL_PROJECT_PRODUCTION_URL

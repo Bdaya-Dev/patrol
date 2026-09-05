@@ -16,7 +16,8 @@ class Violation {
 
   final String path;
 
-  /// One of: `'missing header'`, `'NOTICE.md stale'`, `'NOTICE.md missing'`.
+  /// One of: `'missing header'`, `'NOTICE.md stale'`, `'NOTICE.md missing'`,
+  /// `'unmapped rename'`.
   final String reason;
 
   @override
@@ -94,6 +95,21 @@ RunResult runApacheNotice(RunOptions options, {required StringSink out}) {
   final headerText = headerTextFor(options.attribution);
   final violations = <Violation>[];
 
+  // 0. Every rename git can detect (>= 50% similarity) between the fork
+  // point and HEAD must be explained by either the generic packages/<x> ->
+  // packages/<x>_plus rule or an entry in [explicitRenameMap] -- otherwise
+  // a rename has slipped past both and would silently show up as
+  // removed+added instead of modified. Not auto-fixable: there's no safe
+  // way to guess the right mapping, so this is reported even under --fix.
+  for (final rename in repo.renamesBetween(options.forkPoint, 'HEAD')) {
+    if (rename.similarity == 100) continue; // identical content -- fine.
+    final mapped = mapUpstreamPathToWorkingPath(rename.oldPath);
+    if (mapped == rename.newPath) continue; // explained.
+    violations.add(
+      Violation('${rename.oldPath} -> ${rename.newPath}', 'unmapped rename'),
+    );
+  }
+
   // 1. Every modified file needs an in-file header, unless it can't carry
   // one (NOTICE.md will list it instead).
   for (final relPath in modifiedSet.modified) {
@@ -158,7 +174,7 @@ RunResult runApacheNotice(RunOptions options, {required StringSink out}) {
       continue;
     }
     final actual = file.readAsStringSync();
-    if (actual != expected) {
+    if (!noticeUpToDate(actual, expected)) {
       if (options.fix) {
         file.writeAsStringSync(expected);
       } else {

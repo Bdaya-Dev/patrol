@@ -2,6 +2,8 @@
 
 This product includes software developed by LeanCode — Patrol (https://github.com/leancodepl/patrol), licensed under the Apache License 2.0 (see LICENSE).
 
+Copyright 2021 LeanCode Sp. z o.o.
+
 This is an independent fork maintained by Bdaya-Dev and is not maintained, supported, or endorsed by LeanCode.
 
 Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-29).
@@ -11,6 +13,7 @@ Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-2
 - CHANGELOG.md (notice in file)
 - README.md (notice in file)
 - bin/main.dart (notice in file)
+- example/README.md (notice in file)
 - lib/patrol_cli.dart (notice in file)
 - lib/src/analytics/analytics.dart (notice in file)
 - lib/src/android/android_test_backend.dart (notice in file)
@@ -80,8 +83,8 @@ Fork point: 41fe088e6e9c98b536d330ba6c12d4af0bfb1189 (upstream master, 2026-05-2
 
 - screenshots/logo.png
 
----
-
+<!--
 To regenerate this file, run:
 
     dart run tool/apache_notice/bin/apache_notice.dart --fix
+-->

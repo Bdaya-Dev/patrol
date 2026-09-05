@@ -126,6 +126,27 @@ const _nonCommentableExtensions = {
 
 const _nonCommentableNames = {'package-lock.json'};
 
+// Files the Flutter tool rewrites from scratch on `flutter pub get` /
+// `flutter create`. A header inserted into one of these is stripped by the
+// next regeneration and would turn the CI check red, so they are listed in
+// NOTICE.md instead of annotated.
+const _flutterGeneratedNames = {
+  'GeneratedPluginRegistrant.swift',
+  'GeneratedPluginRegistrant.java',
+  'GeneratedPluginRegistrant.m',
+  'GeneratedPluginRegistrant.h',
+  'generated_plugin_registrant.cc',
+  'generated_plugin_registrant.h',
+  'generated_plugins.cmake',
+  '.metadata',
+  '.flutter-plugins-dependencies',
+};
+
+/// Whether [path] is a file the Flutter tool regenerates wholesale (see
+/// [_flutterGeneratedNames]); such files never get an in-file header.
+bool isFlutterGeneratedFile(String path) =>
+    _flutterGeneratedNames.contains(p.basename(path));
+
 /// Extension without the leading dot, lower-cased, or '' if there is none.
 String _extensionOf(String path) {
   final ext = p.extension(path);
@@ -153,6 +174,9 @@ CommentStyle commentStyleFor(
     return const NonCommentableStyle();
   }
   if (_nonCommentableNames.contains(base)) {
+    return const NonCommentableStyle();
+  }
+  if (isFlutterGeneratedFile(path)) {
     return const NonCommentableStyle();
   }
   if (_hashCommentNames.contains(base)) {

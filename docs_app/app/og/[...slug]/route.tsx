@@ -1,8 +1,7 @@
+// Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 import { getPageImage, source } from "@/lib/source"
-import { readFile } from "fs/promises"
 import { notFound } from "next/navigation"
 import { ImageResponse } from "next/og"
-import { join } from "path"
 
 export const revalidate = false
 
@@ -11,26 +10,25 @@ export async function GET(_req: Request, { params }: RouteContext<"/og/[...slug]
   const page = source.getPage(slug.slice(0, -1))
   if (!page) notFound()
 
-  const imageData = await readFile(join(process.cwd(), "public", "opengraph-image.jpg"))
-  const base64Image = `data:image/jpeg;base64,${imageData.toString("base64")}`
-
   return new ImageResponse(
     <div
       style={{
         width: "100%",
         height: "100%",
         display: "flex",
-        position: "relative",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#0b0b0f",
+        color: "#ffffff",
+        fontFamily: "sans-serif",
+        padding: "80px",
+        textAlign: "center",
       }}>
-      <img
-        src={base64Image}
-        alt="Patrol"
-        style={{
-          width: "1200px",
-          height: "630px",
-          objectFit: "cover",
-        }}
-      />
+      <div style={{ display: "flex", fontSize: 64, fontWeight: 700 }}>{page.data.title}</div>
+      <div style={{ display: "flex", fontSize: 32, marginTop: 24, color: "#a1a1aa" }}>
+        patrol_plus documentation
+      </div>
     </div>,
     {
       width: 1200,

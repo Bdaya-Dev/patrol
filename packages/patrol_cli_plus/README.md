@@ -1,12 +1,11 @@
 <!-- Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md. -->
-> **⚠️ Independent fork** — `patrol_cli_plus` is an independent fork of [Patrol](https://github.com/leancodepl/patrol), originally created by LeanCode. It is maintained by [Bdaya-Dev](https://github.com/Bdaya-Dev/patrol) and is **not maintained, supported, or endorsed by LeanCode**. Please report issues at <https://github.com/Bdaya-Dev/patrol/issues>, not to LeanCode.
+> **⚠️ Independent fork** — `patrol_cli_plus` is an independent fork of [Patrol](https://github.com/leancodepl/patrol), originally created by LeanCode. It is maintained by [Bdaya-Dev](https://github.com/Bdaya-Dev/patrol) and is **not maintained, supported, or endorsed by LeanCode**. Please report issues at <https://github.com/Bdaya-Dev/patrol/issues>, not to LeanCode. Both the original and this fork are licensed under the Apache License 2.0 (see LICENSE and NOTICE.md).
 
-# Patrol
+# patrol_cli_plus
 
 [![patrol_plus on pub.dev][patrol_badge]][patrol_link]
 [![patrol_cli_plus on pub.dev][patrol_cli_badge]][patrol_cli_link]
 [![patrol_finders_plus on pub.dev][patrol_finders_badge]][patrol_finders_link]
-[![code style][leancode_lint_badge]][leancode_lint_link]
 
 A powerful, multiplatform E2E UI testing framework for Flutter apps that
 overcomes the limitations of integration_test by handling native interactions.
@@ -68,9 +67,7 @@ for options specific to running tests. For the full documentation, see the
 [patrol_badge]: https://img.shields.io/pub/v/patrol_plus?label=patrol_plus
 [patrol_finders_badge]: https://img.shields.io/pub/v/patrol_finders_plus?label=patrol_finders_plus
 [patrol_cli_badge]: https://img.shields.io/pub/v/patrol_cli_plus?label=patrol_cli_plus
-[leancode_lint_badge]: https://img.shields.io/badge/code%20style-leancode__lint-blue
 [patrol_link]: https://pub.dev/packages/patrol_plus
 [patrol_finders_link]: https://pub.dev/packages/patrol_finders_plus
 [patrol_cli_link]: https://pub.dev/packages/patrol_cli_plus
-[leancode_lint_link]: https://pub.dev/packages/leancode_lint
 [patrol_github_link]: https://github.com/leancodepl/patrol

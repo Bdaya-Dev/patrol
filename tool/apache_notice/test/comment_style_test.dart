@@ -189,4 +189,37 @@ void main() {
       );
     });
   });
+
+  group('Flutter-regenerated files', () {
+    // `flutter pub get` / `flutter create` rewrite these from scratch, so a
+    // header inserted into them is stripped on the next run and would turn
+    // CI red; they are listed in NOTICE.md instead.
+    const regenerated = [
+      'dev/e2e_app/macos/Flutter/GeneratedPluginRegistrant.swift',
+      'dev/e2e_app/ios/Runner/GeneratedPluginRegistrant.m',
+      'dev/e2e_app/ios/Runner/GeneratedPluginRegistrant.h',
+      'x/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java',
+      'dev/e2e_app/linux/flutter/generated_plugin_registrant.cc',
+      'dev/e2e_app/linux/flutter/generated_plugin_registrant.h',
+      'dev/e2e_app/windows/flutter/generated_plugins.cmake',
+      'dev/e2e_app/.metadata',
+      'dev/e2e_app/.flutter-plugins-dependencies',
+    ];
+
+    for (final path in regenerated) {
+      test('$path is non-commentable and flagged as regenerated', () {
+        expect(commentStyleFor(path), equals(const NonCommentableStyle()));
+        expect(isFlutterGeneratedFile(path), isTrue);
+      });
+    }
+
+    test('ordinary Swift/Dart/cmake files are not flagged as regenerated', () {
+      expect(
+        isFlutterGeneratedFile('darwin/Classes/PatrolPlugin.swift'),
+        isFalse,
+      );
+      expect(isFlutterGeneratedFile('lib/src/binding.dart'), isFalse);
+      expect(isFlutterGeneratedFile('linux/CMakeLists.txt'), isFalse);
+    });
+  });
 }

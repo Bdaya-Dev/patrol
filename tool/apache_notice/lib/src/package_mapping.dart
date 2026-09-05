@@ -22,11 +22,41 @@ final List<String> forkPackageNames = upstreamToForkPackage.values.toList()
 
 const String _ignoredUpstreamPackage = 'patrol_mcp';
 
+/// Upstream file path -> working-tree path, for the individual files the
+/// fork renamed *outside* the blanket `packages/<x>` -> `packages/<x>_plus`
+/// rule above -- a filename change, not just a package-directory change, or
+/// a move to a path outside `packages/` entirely.
+///
+/// Consulted before the generic package-dir substitution in
+/// [mapUpstreamPathToWorkingPath], so these files are treated as MODIFIED
+/// (in-file header + NOTICE.md entry) rather than as removed+added, which
+/// is what the generic rule alone would produce for them (it only
+/// substitutes the package directory, leaving the rest of the path,
+/// filename included, unchanged).
+///
+/// Every entry here was confirmed against
+/// `git diff -M50% --name-status --diff-filter=R <fork point> HEAD` --see
+/// the tool's README for how to re-derive this list after a rename. Do NOT
+/// add an entry for a file whose rename the generic rule already resolves
+/// correctly (same filename, only the package directory changed) -- doing
+/// so would redirect the comparison away from the real counterpart and
+/// wrongly tag an unrelated new file as "modified from upstream".
+const Map<String, String> explicitRenameMap = {
+  'packages/patrol/darwin/patrol.podspec':
+      'packages/patrol_plus/darwin/patrol_plus.podspec',
+  'dev/e2e_app/patrol_test/macos/macos_app_test.dart':
+      'dev/e2e_app/patrol_test/e2e/mobile_automation_test.dart',
+};
+
 /// Maps a path as it existed in the upstream tree at the fork point to the
 /// path it corresponds to in the fork's working tree, or `null` if the
 /// upstream path has no fork counterpart (only `packages/patrol_mcp/**`,
 /// which the fork dropped entirely).
 String? mapUpstreamPathToWorkingPath(String upstreamPath) {
+  if (explicitRenameMap.containsKey(upstreamPath)) {
+    return explicitRenameMap[upstreamPath];
+  }
+
   const prefix = 'packages/';
   if (!upstreamPath.startsWith(prefix)) {
     return upstreamPath;

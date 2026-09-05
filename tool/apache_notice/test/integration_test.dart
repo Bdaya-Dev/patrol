@@ -188,6 +188,174 @@ void main() {
     final after = _snapshot(repoRoot);
     expect(after, equals(before));
   });
+
+  group('explicit rename map', () {
+    test('a file renamed outside the packages/<x> rule (in explicitRenameMap) '
+        'is treated as modified, never as removed', () {
+      final root = Directory.systemTemp
+          .createTempSync('apache_notice_test_podspec_')
+          .path;
+      addTearDown(() => Directory(root).deleteSync(recursive: true));
+
+      _git(root, ['init', '-q', '-b', 'main']);
+      _git(root, ['config', 'user.email', 'test@example.com']);
+      _git(root, ['config', 'user.name', 'Test']);
+      _git(root, ['config', 'core.autocrlf', 'false']);
+
+      _write(
+        root,
+        'packages/patrol/darwin/patrol.podspec',
+        "Pod::Spec.new do |s|\n  s.name = 'patrol'\nend\n",
+      );
+      _git(root, ['add', '-A']);
+      _git(root, ['commit', '-q', '-m', 'upstream']);
+      final forkPoint = _git(root, ['rev-parse', 'HEAD']).trim();
+
+      Directory(p.join(root, 'packages', 'patrol')).deleteSync(recursive: true);
+      _write(
+        root,
+        'packages/patrol_plus/darwin/patrol_plus.podspec',
+        "Pod::Spec.new do |s|\n  s.name = 'patrol_plus'\nend\n",
+      );
+      _git(root, ['add', '-A']);
+      _git(root, ['commit', '-q', '-m', 'fork']);
+
+      final checkResult = _runTool(toolDir, binPath, [
+        '--check',
+        '--repo',
+        root,
+        '--fork-point',
+        forkPoint,
+      ]);
+      expect(checkResult.exitCode, 1, reason: checkResult.stderr as String);
+      final stdout = checkResult.stdout as String;
+      expect(
+        stdout,
+        contains(
+          'packages/patrol_plus/darwin/patrol_plus.podspec: missing header',
+        ),
+      );
+      // Never classified as removed+added.
+      expect(stdout, isNot(contains('unmapped rename')));
+
+      final fixResult = _runTool(toolDir, binPath, [
+        '--fix',
+        '--repo',
+        root,
+        '--fork-point',
+        forkPoint,
+      ]);
+      expect(fixResult.exitCode, 0, reason: fixResult.stderr as String);
+
+      final podspecContent = File(
+        p.join(root, 'packages/patrol_plus/darwin/patrol_plus.podspec'),
+      ).readAsStringSync();
+      expect(podspecContent, contains('# Modified by Bdaya-Dev'));
+
+      final rootNotice = File(p.join(root, 'NOTICE.md')).readAsStringSync();
+      expect(rootNotice, contains('## Removed files\n\n(none)'));
+      expect(
+        rootNotice,
+        contains(
+          'packages/patrol_plus/darwin/patrol_plus.podspec (notice in file)',
+        ),
+      );
+      expect(rootNotice, isNot(contains('patrol.podspec')));
+    });
+  });
+
+  group('unmapped rename', () {
+    test('a rename git detects (>= 50% similarity) that is explained neither '
+        'by the package-dir rule nor by explicitRenameMap is reported and '
+        'is not auto-fixable', () {
+      final root = Directory.systemTemp
+          .createTempSync('apache_notice_test_unmapped_')
+          .path;
+      addTearDown(() => Directory(root).deleteSync(recursive: true));
+
+      _git(root, ['init', '-q', '-b', 'main']);
+      _git(root, ['config', 'user.email', 'test@example.com']);
+      _git(root, ['config', 'user.name', 'Test']);
+      _git(root, ['config', 'core.autocrlf', 'false']);
+
+      _write(
+        root,
+        'docs/guide.md',
+        'line one\nline two\nline three\nline four\nline five\n',
+      );
+      _git(root, ['add', '-A']);
+      _git(root, ['commit', '-q', '-m', 'upstream']);
+      final forkPoint = _git(root, ['rev-parse', 'HEAD']).trim();
+
+      File(p.join(root, 'docs', 'guide.md')).deleteSync();
+      _write(
+        root,
+        'docs/other.md',
+        'line one\nline two\nline three\nline four\nCHANGED\n',
+      );
+      _git(root, ['add', '-A']);
+      _git(root, ['commit', '-q', '-m', 'fork']);
+
+      final checkResult = _runTool(toolDir, binPath, [
+        '--check',
+        '--repo',
+        root,
+        '--fork-point',
+        forkPoint,
+      ]);
+      expect(checkResult.exitCode, 1, reason: checkResult.stderr as String);
+      expect(
+        checkResult.stdout as String,
+        contains('docs/guide.md -> docs/other.md: unmapped rename'),
+      );
+
+      final fixResult = _runTool(toolDir, binPath, [
+        '--fix',
+        '--repo',
+        root,
+        '--fork-point',
+        forkPoint,
+      ]);
+      // Not auto-fixable: --fix must still exit 1 and still list it.
+      expect(fixResult.exitCode, 1, reason: fixResult.stderr as String);
+      expect(
+        fixResult.stdout as String,
+        contains('docs/guide.md -> docs/other.md: unmapped rename'),
+      );
+    });
+
+    test('an identical-content rename (100% similarity) is never a '
+        'violation', () {
+      final root = Directory.systemTemp
+          .createTempSync('apache_notice_test_r100_')
+          .path;
+      addTearDown(() => Directory(root).deleteSync(recursive: true));
+
+      _git(root, ['init', '-q', '-b', 'main']);
+      _git(root, ['config', 'user.email', 'test@example.com']);
+      _git(root, ['config', 'user.name', 'Test']);
+      _git(root, ['config', 'core.autocrlf', 'false']);
+
+      _write(root, 'docs/guide.md', 'unchanged content\n');
+      _git(root, ['add', '-A']);
+      _git(root, ['commit', '-q', '-m', 'upstream']);
+      final forkPoint = _git(root, ['rev-parse', 'HEAD']).trim();
+
+      File(p.join(root, 'docs', 'guide.md')).deleteSync();
+      _write(root, 'docs/renamed.md', 'unchanged content\n');
+      _git(root, ['add', '-A']);
+      _git(root, ['commit', '-q', '-m', 'fork']);
+
+      final checkResult = _runTool(toolDir, binPath, [
+        '--check',
+        '--repo',
+        root,
+        '--fork-point',
+        forkPoint,
+      ]);
+      expect(checkResult.stdout as String, isNot(contains('unmapped rename')));
+    });
+  });
 }
 
 void _write(String repoRoot, String relPath, String content) {

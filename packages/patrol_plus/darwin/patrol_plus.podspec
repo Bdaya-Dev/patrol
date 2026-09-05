@@ -1,3 +1,4 @@
+# Modified by Bdaya-Dev from the original LeanCode Patrol source (Apache-2.0). See NOTICE.md.
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html
 # Run `pod lib lint patrol_plus.podspec` to validate before publishing.

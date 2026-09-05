@@ -12,7 +12,12 @@ It does two things:
    every working-tree file that differs, byte-for-byte, from its upstream
    counterpart at the fork point.
 2. **Generates `NOTICE.md`** at the repo root and inside each of the 7
-   renamed fork packages, listing every modified/removed file.
+   renamed fork packages, listing every modified/removed file. Each
+   `NOTICE.md` carries the upstream copyright line verbatim from `LICENSE`
+   and reads purely as attribution — the "how to regenerate this file"
+   instructions sit in an HTML comment (`<!-- ... -->`) at the bottom
+   rather than as visible prose, so they don't read as extra fork
+   commentary. See `lib/src/notice.dart` for the exact template.
 
 This tool lives at `tool/apache_notice/` — *outside* `packages/` — so
 Melos's `packages/**` globs (workspace resolution, versioning, `melos run`
@@ -66,6 +71,44 @@ has no fork counterpart and is ignored entirely. A file the fork *added*
 but has since been deleted is "removed" — listed in NOTICE.md under its own
 heading, never given a header (it doesn't exist to put one in).
 
+### Renames outside the packages/<x> rule
+
+The generic package-rename rule above only substitutes the package
+directory (`packages/patrol/...` → `packages/patrol_plus/...`) — it leaves
+the rest of the path, filename included, untouched. That's wrong for the
+handful of files the fork also renamed a level below the package directory
+(a filename change) or moved outside `packages/` entirely: the tool would
+look for the old filename at its new package location, not find it, and
+wrongly classify the file as "removed" (with the real new file treated as
+an unrelated addition, never checked for a header).
+
+`explicitRenameMap` in `lib/src/package_mapping.dart` is the fix: an
+explicit upstream-path → working-path table for exactly these files,
+consulted before the generic rule. It currently covers:
+
+- `packages/patrol/darwin/patrol.podspec` →
+  `packages/patrol_plus/darwin/patrol_plus.podspec`
+- `dev/e2e_app/patrol_test/macos/macos_app_test.dart` →
+  `dev/e2e_app/patrol_test/e2e/mobile_automation_test.dart`
+
+Don't add an entry for a rename the generic rule already resolves
+correctly (same filename, only the package directory changed) — redirecting
+the comparison there would compare the wrong two files and could wrongly
+tag an unrelated new file as "modified from upstream".
+
+### Catching the next one: `unmapped rename`
+
+Because it's easy to add a new renamed-outside-the-rule file upstream and
+forget to add it here, `--check`/`--fix` also run `git diff -M50%
+--name-status --diff-filter=R <fork point> HEAD` and flag any rename with
+similarity below 100% whose `(old, new)` pair isn't explained by the
+generic rule or by `explicitRenameMap`, as `<old> -> <new>: unmapped
+rename`. (A 100%-similarity rename — identical content — is never flagged:
+there's nothing to give a header to.) This violation has no safe
+auto-fix — there's no way to guess the right mapping — so it's still
+reported, and still fails the run, under `--fix`; fixing it means adding
+the pair to `explicitRenameMap` by hand and re-running.
+
 ## What gets a header, and what doesn't
 
 Most text source files get a one-line comment inserted (idempotently — a
@@ -115,7 +158,9 @@ dart test
 dart analyze
 ```
 
-`test/comment_style_test.dart` and `test/header_test.dart` are pure unit
+`test/comment_style_test.dart`, `test/header_test.dart`,
+`test/package_mapping_test.dart` and `test/notice_test.dart` are pure unit
 tests. `test/integration_test.dart` builds a throwaway git repository under
 the system temp directory for each test (upstream commit → renamed/modified
-"fork" commit) and drives the compiled CLI against it end-to-end.
+"fork" commit) and drives the compiled CLI against it end-to-end, including
+scenarios for `explicitRenameMap` and the `unmapped rename` check.
