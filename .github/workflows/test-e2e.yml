@@ -67,12 +67,6 @@ jobs:
         dart pub global activate --source path packages/patrol_cli_plus
       coverage: true
       verbose: true
-      # SCRATCH VERIFICATION ONLY (issue #57 / PR #58): deliberately absurdly
-      # low, to prove the new step-level timeout-minutes actually fires and
-      # the failure-only diagnostics/artifact-upload steps actually run.
-      # MUST be reverted to the real default (remove this line entirely)
-      # before this PR is marked ready for review.
-      web-timeout-minutes: 1
 
   e2e-android:
     uses: ./.github/workflows/patrol-test.yml
