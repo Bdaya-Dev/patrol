@@ -43,6 +43,17 @@ on:
         required: false
         type: number
         default: 35
+      web-timeout-minutes:
+        description: >-
+          Step-level timeout (minutes) for the "Run web tests" step. Bounds a
+          stalled web/Playwright run well under the job's outer 45-minute
+          timeout-minutes, so a hang produces an actionable step-timeout error
+          instead of 45 minutes of silence (see issue #57). Recent green
+          e2e-web runs finish "Run web tests" in ~5-7 minutes; 20 leaves ~3x
+          headroom for normal variance while still failing fast.
+        required: false
+        type: number
+        default: 20
       ios-simulator:
         description: 'iOS simulator device name'
         required: false
@@ -229,9 +240,21 @@ jobs:
       - name: Run web tests
         if: matrix.platform == 'web'
         working-directory: ${{ inputs.working-directory }}
+        timeout-minutes: ${{ inputs.web-timeout-minutes }}
         run: |
           # --web-headless is a flag since upstream 4.7.0 (was an option taking true/false).
-          ARGS="-d chrome --web-headless --web-locale en-US"
+          #
+          # --web-timeout / --web-global-timeout scope patrol's own Playwright
+          # harness timeouts (playwright.config.ts defaults: 10min/test,
+          # 2hr total run) down to values that fit under this step's
+          # ${{ inputs.web-timeout-minutes }}-minute timeout-minutes above.
+          # Without this, on a real stall the harness's own timeouts never
+          # fire first (they're far longer than the CI bound), so GitHub's
+          # step/job timeout has to kill it blind, with no indication of
+          # which test or phase hung (issue #57). These are CI-only bounds
+          # passed as flags -- they do not change the package's defaults for
+          # any other consumer.
+          ARGS="-d chrome --web-headless --web-locale en-US --web-timeout 180000 --web-global-timeout 900000"
           if [ -n "${{ inputs.test-target }}" ]; then
             ARGS="$ARGS --target ${{ inputs.test-target }}"
           fi
@@ -242,6 +265,32 @@ jobs:
             ARGS="$ARGS --coverage --coverage-package patrol_plus --coverage-package patrol_finders_plus"
           fi
           patrol_plus test $ARGS
+
+      - name: Capture web test diagnostics
+        if: failure() && matrix.platform == 'web'
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          # Runs when "Run web tests" above fails OR is killed by its
+          # step-level timeout-minutes (a step timeout counts as a step
+          # failure, so if: failure() still triggers this -- same pattern the
+          # Linux/Windows step timeouts below already rely on for their
+          # always()-gated coverage upload). Leaves evidence for the NEXT
+          # stall instead of 45 minutes of silence (issue #57).
+          mkdir -p web-diagnostics
+          (ps -ef --forest || ps aux) > web-diagnostics/processes.txt 2>&1 || true
+          cat web-diagnostics/processes.txt
+
+      - name: Upload web test diagnostics
+        if: failure() && matrix.platform == 'web'
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-diagnostics-${{ matrix.platform }}
+          path: |
+            ${{ inputs.working-directory }}/web-diagnostics/
+            ${{ inputs.working-directory }}/test-results/
+            ${{ inputs.working-directory }}/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Run Linux tests
         if: matrix.platform == 'linux'
