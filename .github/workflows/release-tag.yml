@@ -1,0 +1,51 @@
+name: Tag Release
+
+# Runs after a version-bump PR (opened by release-prepare.yml) is squash-merged
+# to master. Tags each publishable package at its current pubspec.yaml version,
+# against the REAL post-merge commit -- unlike melos-action's own `tag: true`,
+# which would tag the local pre-merge commit that becomes unreachable from
+# master the instant the PR is squash-merged. publish.yml then fires on the
+# pushed tag and publishes to pub.dev.
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    # Verified subject on master (e.g. c2dca30e7: "chore(release): Publish
+    # packages (#54)") -- the exact inverse of release-prepare.yml's guard.
+    if: "startsWith(github.event.head_commit.message, 'chore(release): Publish packages')"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.email "ahmednfwela@digrum.com"
+          git config user.name "ahmednfwela"
+
+      - name: Tag published packages
+        run: |
+          set -euo pipefail
+          for pubspec in packages/*/pubspec.yaml; do
+            if grep -qE '^publish_to:[[:space:]]*none' "$pubspec"; then
+              continue
+            fi
+            name=$(grep -m1 -E '^name:' "$pubspec" | sed -E 's/^name:[[:space:]]*//')
+            version=$(grep -m1 -E '^version:' "$pubspec" | sed -E 's/^version:[[:space:]]*([0-9][^[:space:]#]*).*/\1/')
+            tag="${name}-v${version}"
+            if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+              echo "Tag ${tag} already exists, skipping."
+              continue
+            fi
+            echo "Creating and pushing tag ${tag}"
+            git tag -a "${tag}" -m "${tag}"
+            git push origin "refs/tags/${tag}"
+          done
