@@ -1,3 +1,8 @@
+## 5.6.0
+
+ - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))
+ - **FEAT**(patrol_plus): native screenshot and screen recording on Android ([#48](https://github.com/Bdaya-Dev/patrol/issues/48)). ([1b878565](https://github.com/Bdaya-Dev/patrol/commit/1b87856572c722d74e756f1812ef733c5e9235fd))
+
 ## 5.5.2
 
  - **DOCS**: independent-fork notice, LeanCode de-branding, Apache-2.0 §4(b) notices ([#50](https://github.com/Bdaya-Dev/patrol/issues/50)). ([17cee4d8](https://github.com/Bdaya-Dev/patrol/commit/17cee4d8aa1a5938bddfef408340017fea7a1001))

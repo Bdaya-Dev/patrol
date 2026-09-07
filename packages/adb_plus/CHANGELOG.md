@@ -1,3 +1,7 @@
+## 5.1.0
+
+ - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))
+
 ## 5.0.1
 
  - **DOCS**: independent-fork notice, LeanCode de-branding, Apache-2.0 §4(b) notices ([#50](https://github.com/Bdaya-Dev/patrol/issues/50)). ([17cee4d8](https://github.com/Bdaya-Dev/patrol/commit/17cee4d8aa1a5938bddfef408340017fea7a1001))
