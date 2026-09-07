@@ -3,6 +3,49 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-09-07
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`adb_plus` - `v5.1.0`](#adb_plus---v510)
+ - [`patrol_cli_plus` - `v5.6.0`](#patrol_cli_plus---v560)
+ - [`patrol_finders_plus` - `v5.1.0`](#patrol_finders_plus---v510)
+ - [`patrol_log_plus` - `v5.1.0`](#patrol_log_plus---v510)
+ - [`patrol_plus` - `v5.7.0`](#patrol_plus---v570)
+
+---
+
+#### `adb_plus` - `v5.1.0`
+
+ - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))
+
+#### `patrol_cli_plus` - `v5.6.0`
+
+ - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))
+ - **FEAT**(patrol_plus): native screenshot and screen recording on Android ([#48](https://github.com/Bdaya-Dev/patrol/issues/48)). ([1b878565](https://github.com/Bdaya-Dev/patrol/commit/1b87856572c722d74e756f1812ef733c5e9235fd))
+
+#### `patrol_finders_plus` - `v5.1.0`
+
+ - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))
+
+#### `patrol_log_plus` - `v5.1.0`
+
+ - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))
+
+#### `patrol_plus` - `v5.7.0`
+
+ - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))
+ - **FEAT**(patrol_plus): native screenshot and screen recording on Android ([#48](https://github.com/Bdaya-Dev/patrol/issues/48)). ([1b878565](https://github.com/Bdaya-Dev/patrol/commit/1b87856572c722d74e756f1812ef733c5e9235fd))
+
+
 ## 2026-09-05
 
 ### Changes
