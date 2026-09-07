@@ -18,21 +18,36 @@ concurrency:
 jobs:
   guard:
     runs-on: ubuntu-latest
-    # Skip when the triggering push IS the release PR's own squash-merge commit
-    # (verified subject, e.g. c2dca30e7 on master: "chore(release): Publish
-    # packages (#54)") -- otherwise every release merge would re-trigger itself.
-    # workflow_dispatch has no head_commit, so this always evaluates true for it.
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      !startsWith(github.event.head_commit.message, 'chore(release): Publish packages')
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
     steps:
-      - name: Check for an already-open release PR
+      - name: Skip if this push is a release PR's own merge, or one is already open
         id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUSH_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        # Commit-message matching is NOT reliable here: this repo's squash
+        # setting is `squash_merge_commit_title: COMMIT_OR_PR_TITLE`, so the
+        # merge commit only gets the PR title when the PR has >1 commit; the
+        # common case (melos-action's create-pr producing a single commit)
+        # gives the merge commit that commit's own message instead (verified
+        # against all 6 past release merges: 5 of 6 do NOT start with
+        # "chore(release): Publish packages"). Query the PR API by merge-commit
+        # SHA and head-branch prefix instead -- structural data, not prose.
         run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "push" ]; then
+            prs_json=$(gh pr list --repo "${{ github.repository }}" --state merged --base master --limit 10 --json headRefName,mergeCommit)
+            is_release_merge=$(echo "$prs_json" | jq --arg sha "$PUSH_SHA" \
+              '[.[] | select(.mergeCommit.oid == $sha and (.headRefName | startswith("release-")))] | length')
+            if [ "$is_release_merge" -gt 0 ]; then
+              echo "This push is a release PR's own merge commit ($PUSH_SHA); skipping."
+              echo "should_run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
           open_count=$(gh pr list --repo "${{ github.repository }}" --search "chore(release)" --state open --json number --jq 'length')
           if [ "$open_count" -gt 0 ]; then
             echo "A release PR is already open; skipping."

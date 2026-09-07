@@ -1,14 +1,27 @@
 name: Tag Release
 
-# Runs after a version-bump PR (opened by release-prepare.yml) is squash-merged
-# to master. Tags each publishable package at its current pubspec.yaml version,
+# Runs after a version-bump PR (opened by release-prepare.yml) is merged to
+# master. Tags each publishable package at its current pubspec.yaml version,
 # against the REAL post-merge commit -- unlike melos-action's own `tag: true`,
 # which would tag the local pre-merge commit that becomes unreachable from
-# master the instant the PR is squash-merged. publish.yml then fires on the
-# pushed tag and publishes to pub.dev.
+# master once the PR merges. publish.yml then fires on the pushed tag and
+# publishes to pub.dev.
+#
+# Triggered on `pull_request: closed` rather than on push + commit-message
+# matching: this repo's squash setting is `squash_merge_commit_title:
+# COMMIT_OR_PR_TITLE`, so the merge commit only carries the PR title when the
+# PR has more than one commit -- the common case (melos-action's create-pr
+# step producing a single commit) gives the merge commit that commit's own
+# message instead ("[create-pull-request] automated change"), which never
+# matches. Verified against all 6 past release merges: only 1 of 6 actual
+# merge-commit messages started with "chore(release): Publish packages". The
+# PR's own headRefName (melos-action creates branches named `release-<run_id>`
+# -- verified across all 6) is structural data from the PR object, not prose,
+# so it doesn't have this problem.
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - master
 
@@ -18,12 +31,14 @@ permissions:
 jobs:
   tag:
     runs-on: ubuntu-latest
-    # Verified subject on master (e.g. c2dca30e7: "chore(release): Publish
-    # packages (#54)") -- the exact inverse of release-prepare.yml's guard.
-    if: "startsWith(github.event.head_commit.message, 'chore(release): Publish packages')"
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release-')
     steps:
       - uses: actions/checkout@v6
         with:
+          # The actual commit that landed on master (squash or merge commit),
+          # not the ephemeral PR merge-preview ref actions/checkout defaults
+          # to for pull_request events.
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
 
       - name: Configure git identity
