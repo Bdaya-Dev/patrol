@@ -6,7 +6,6 @@ import 'package:patrol_cli_plus/src/analytics/analytics.dart';
 import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:patrol_cli_plus/src/base/extensions/core.dart';
 import 'package:patrol_cli_plus/src/base/logger.dart';
-import 'package:patrol_cli_plus/src/commands/dart_define_utils.dart';
 import 'package:patrol_cli_plus/src/compatibility_checker/compatibility_checker.dart';
 import 'package:patrol_cli_plus/src/coverage/coverage_mode.dart';
 import 'package:patrol_cli_plus/src/coverage/coverage_tool.dart';
@@ -303,12 +302,6 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
 
     final dartDefineFromFilePaths = stringsArg('dart-define-from-file');
 
-    final mergedDartDefines = mergeDartDefines(
-      dartDefineFromFilePaths,
-      dartDefines,
-      _dartDefinesReader,
-    );
-
     final flavor = switch (device.targetPlatform) {
       TargetPlatform.android => androidFlavor,
       TargetPlatform.iOS => iosFlavor,
@@ -321,7 +314,17 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       target: entrypoint.path,
       flavor: flavor,
       buildMode: buildMode,
-      dartDefines: mergedDartDefines,
+      // SECURITY: never the values read from --dart-define-from-file's
+      // JSON/.env file (dartDefines, built above, carries ONLY the CLI
+      // --dart-define args and patrol's own internal, non-secret defines —
+      // it was never merged with the file's contents). Flutter receives
+      // those via dartDefineFromFilePaths below, which it reads from the
+      // file itself; the whole point of using a file over --dart-define is
+      // to keep the value off this process's own command line, which any
+      // local process can read (ps / Task Manager). A previous revision
+      // merged the file's values into this map and expanded EVERY entry
+      // into --dart-define=K=V on argv, defeating that entirely.
+      dartDefines: dartDefines,
       dartDefineFromFilePaths: dartDefineFromFilePaths,
       buildName: buildName,
       buildNumber: buildNumber,

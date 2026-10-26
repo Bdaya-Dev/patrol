@@ -431,11 +431,16 @@ void main() {
 
         expect(result, equals(0));
 
-        verify(
-          () => mockDartDefinesReader.extractDartDefineConfigJsonMap([
-            'defines.json',
-          ]),
-        ).called(1);
+        // SECURITY: this command must never read the file's own contents
+        // into memory at all -- it only needs to pass the PATH through so
+        // Flutter reads the file itself. The mock above is primed to return
+        // a secret precisely so this assertion proves the value was never
+        // fetched, let alone merged into dartDefines/argv. (Before the fix,
+        // this call site existed -- via `mergeDartDefines` -- and this
+        // `verifyNever` would fail.)
+        verifyNever(
+          () => mockDartDefinesReader.extractDartDefineConfigJsonMap(any()),
+        );
 
         final captured = verify(
           () => mockAndroidTestBackend.build(captureAny()),
@@ -443,6 +448,17 @@ void main() {
         final opts = captured.first as AndroidAppOptions;
 
         expect(opts.flutter.dartDefineFromFilePaths, contains('defines.json'));
+
+        // SECURITY: the file's own key/value must never end up in
+        // `dartDefines` -- that map is what gets expanded into
+        // `--dart-define=K=V` on the flutter/gradle command line, which any
+        // local process (ps / Task Manager) can read. Flutter reads
+        // `--dart-define-from-file`'s contents directly from the file via
+        // `dartDefineFromFilePaths` above; that's the whole point of using a
+        // file over `--dart-define`. A previous revision merged the file's
+        // values into `dartDefines` and defeated that entirely.
+        expect(opts.flutter.dartDefines, isNot(contains('FILE_KEY')));
+        expect(opts.flutter.dartDefines.values, isNot(contains('file_value')));
       });
 
       test('passes correct app and test server ports', () async {

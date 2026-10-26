@@ -7,7 +7,6 @@ import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:patrol_cli_plus/src/base/exceptions.dart';
 import 'package:patrol_cli_plus/src/base/extensions/core.dart';
 import 'package:patrol_cli_plus/src/base/logger.dart';
-import 'package:patrol_cli_plus/src/commands/dart_define_utils.dart';
 import 'package:patrol_cli_plus/src/commands/develop_options.dart';
 import 'package:patrol_cli_plus/src/compatibility_checker/compatibility_checker.dart';
 import 'package:patrol_cli_plus/src/crossplatform/app_options.dart';
@@ -247,12 +246,6 @@ class DevelopService {
       );
     }
 
-    final mergedDartDefines = mergeDartDefines(
-      options.dartDefineFromFilePaths,
-      dartDefines,
-      _dartDefinesReader,
-    );
-
     final flavor = switch (device.targetPlatform) {
       TargetPlatform.android => androidFlavor,
       TargetPlatform.iOS => iosFlavor,
@@ -265,7 +258,9 @@ class DevelopService {
       target: entrypoint.path,
       flavor: flavor,
       buildMode: options.buildMode,
-      dartDefines: mergedDartDefines,
+      // SECURITY: see test.dart's identical comment — never the file's
+      // values, which must stay off this process's own argv.
+      dartDefines: dartDefines,
       dartDefineFromFilePaths: options.dartDefineFromFilePaths,
       buildName: options.buildName,
       buildNumber: options.buildNumber,
