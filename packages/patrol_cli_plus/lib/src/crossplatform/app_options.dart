@@ -597,6 +597,7 @@ class WebAppOptions {
     this.grepInvert,
     this.errorDetection = false,
     this.errorAllow,
+    this.autoSemantics = true,
     this.authFlow,
     this.authStateFile,
     this.authFlowModule,
@@ -706,6 +707,14 @@ class WebAppOptions {
   /// is allowlisted rather than failing the test. Set by `--web-error-allow`.
   final String? errorAllow;
 
+  /// Whether to automatically dispatch a click on the CanvasKit
+  /// `flt-semantics-placeholder` host element before every test's body runs,
+  /// switching on Flutter's accessibility/semantics tree (otherwise off by
+  /// default, so `page.getByRole()` etc. see nothing). A no-op on the HTML
+  /// renderer. On by default; set by `--web-auto-semantics` /
+  /// `--no-web-auto-semantics`. See `canvasKitSemantics.ts` (web_runner).
+  final bool autoSemantics;
+
   /// JSON spec for the cross-origin auth prelude (F-A): drives a real
   /// identity-provider login by selector, on the same page/context the
   /// in-page test body runs on, before that body starts. Null (the default)
@@ -809,6 +818,8 @@ class WebAppOptions {
       // "true"/"false" rather than treating absence as off.
       'PATROL_WEB_ERROR_DETECTION': errorDetection,
       'PATROL_WEB_ERROR_ALLOW': errorAllow,
+      // Always emitted, same reasoning as PATROL_WEB_ERROR_DETECTION above.
+      'PATROL_WEB_AUTO_SEMANTICS': autoSemantics,
       'PATROL_WEB_AUTH_FLOW': authFlow,
       // Emitted as given; the web backend re-resolves these two paths
       // relative to the current working directory before spawning Playwright.

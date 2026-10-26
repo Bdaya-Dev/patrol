@@ -453,6 +453,10 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       // in web_runner + web_test_backend PATROL_WEB_ERROR_* env forwarding).
       errorDetection: boolArg('web-error-detection'),
       errorAllow: stringArg('web-error-allow'),
+      // Auto-enables CanvasKit semantics on every page before its test body
+      // runs (see canvasKitSemantics.ts in web_runner). On by default; set
+      // to false via --no-web-auto-semantics.
+      autoSemantics: boolArg('web-auto-semantics'),
       // F-A cross-origin auth prelude. Null (the default) means no prelude
       // runs (see authFlows/oidc.ts in web_runner + web_test_backend
       // PATROL_WEB_AUTH_FLOW env forwarding).
