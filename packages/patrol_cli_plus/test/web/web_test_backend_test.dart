@@ -193,4 +193,78 @@ void main() {
       );
     });
   });
+
+  group('parsePlaywrightRunResult (#61 ground-truth summary)', () {
+    test('parses a well-formed stats block', () {
+      final result = parsePlaywrightRunResult(
+        '{"stats":{"expected":3,"unexpected":1,"flaky":1,"skipped":2}}',
+      );
+      expect(result, isNotNull);
+      expect(result!.expected, 3);
+      expect(result.unexpected, 1);
+      expect(result.flaky, 1);
+      expect(result.skipped, 2);
+      expect(result.total, 7);
+      // A flaky test DID pass in the end — counted as successful.
+      expect(result.successful, 4);
+      expect(result.failed, 1);
+      expect(result.hasFailures, isTrue);
+      expect(result.ranNoTests, isFalse);
+    });
+
+    test('ranNoTests is true when every count is zero', () {
+      final result = parsePlaywrightRunResult(
+        '{"stats":{"expected":0,"unexpected":0,"flaky":0,"skipped":0}}',
+      );
+      expect(result!.ranNoTests, isTrue);
+      expect(result.hasFailures, isFalse);
+    });
+
+    test('missing fields default to 0 rather than throwing', () {
+      final result = parsePlaywrightRunResult('{"stats":{}}');
+      expect(result, isNotNull);
+      expect(result!.total, 0);
+    });
+
+    test('returns null when "stats" is missing', () {
+      expect(parsePlaywrightRunResult('{"notStats":{}}'), isNull);
+    });
+
+    test('returns null on malformed JSON rather than throwing', () {
+      expect(parsePlaywrightRunResult('not json at all'), isNull);
+    });
+
+    test('returns null when the top level is not an object', () {
+      expect(parsePlaywrightRunResult('[1,2,3]'), isNull);
+    });
+
+    // #61 repro: a test whose BODY logs a PATROL_LOG success entry, followed
+    // by a fixture-teardown throw (e.g. the F-B error gate firing from
+    // afterEach), must be flagged as a failure — even though a
+    // PATROL_LOG-only reader would have recorded it as "Successful: 1 /
+    // Failed: 0". The stats block below is the EXACT output Playwright's own
+    // JSON reporter produced for a live repro of that shape (a test that
+    // completes its body — logging
+    // `PATROL_LOG {"type":"test","name":"example success","status":
+    // "success"}` to stdout — then throws from test.afterEach): verified
+    // 2026-10-27, Playwright 1.56.0, patrol_plus/web_runner.
+    test('issue #61 repro: a harness-level failure after a logged success '
+        'is still flagged as a failure', () {
+      final result = parsePlaywrightRunResult(
+        '{"stats":{"startTime":"2026-10-26T22:47:22.403Z",'
+        '"duration":2495.04,"expected":0,"skipped":0,"unexpected":1,'
+        '"flaky":0}}',
+      );
+
+      expect(result, isNotNull);
+      // The ground truth: Playwright itself marked this test failed.
+      expect(result!.hasFailures, isTrue);
+      expect(result.failed, 1);
+      expect(result.successful, 0);
+      // Had this gone through PatrolLogReader alone (the pre-fix
+      // behaviour), the ONE PATROL_LOG entry on stdout was a success
+      // entry, so successfulTests would have read 1 and failedTestsCount
+      // would have read 0 — the exact false-green #61 describes.
+    });
+  });
 }

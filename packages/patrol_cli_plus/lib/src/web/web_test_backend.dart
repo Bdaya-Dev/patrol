@@ -132,6 +132,97 @@ SecurityContext? webProbeSecurityContext(String? certPath) {
     ..setTrustedCertificates(certPath);
 }
 
+/// The filename Playwright's always-on internal JSON reporter writes inside
+/// `PATROL_TEST_REPORT_DIR` — must match `INTERNAL_RESULTS_FILENAME` in
+/// `playwright.config.ts` exactly; this is the two sides of the same
+/// contract, kept in sync by hand since one is TS and the other Dart.
+@visibleForTesting
+const internalResultsFilename = 'patrol-internal-results.json';
+
+/// Ground-truth pass/fail/skip counts for one `npx playwright test` run,
+/// read from Playwright's own JSON reporter output (see
+/// `INTERNAL_RESULTS_FILENAME` / `internalResultsReporter` in
+/// `playwright.config.ts`) rather than derived from `PATROL_LOG` parsing.
+///
+/// Fixes https://github.com/Bdaya-Dev/patrol/issues/61: a harness-level
+/// failure — e.g. the F-B error gate throwing from fixture teardown AFTER
+/// the Dart test body already logged a `PATROL_LOG` success entry — never
+/// produces its own `PATROL_LOG` entry, so `PatrolLogReader`'s counts stay
+/// green (`Successful: N / Failed: 0`) under a run Playwright itself marked
+/// failed and exited 1 on. Playwright's own `stats.unexpected` always
+/// reflects fixture-teardown failures correctly (confirmed live:
+/// a body that completes cleanly, logging success, followed by a throwing
+/// `afterEach`, reports `unexpected: 1`), because it counts what Playwright
+/// itself decided about each test, not what any logging channel claims.
+@visibleForTesting
+class PlaywrightRunResult {
+  const PlaywrightRunResult({
+    required this.expected,
+    required this.unexpected,
+    required this.flaky,
+    required this.skipped,
+  });
+
+  /// Tests that passed and were expected to (Playwright's `stats.expected`).
+  final int expected;
+
+  /// Tests that failed and were NOT expected to (Playwright's
+  /// `stats.unexpected`) — the real failure count; see this class's doc
+  /// comment for why this is the ground truth `PATROL_LOG` alone is not.
+  final int unexpected;
+
+  /// Tests that failed at least once but passed on retry
+  /// (Playwright's `stats.flaky`).
+  final int flaky;
+
+  /// Tests Playwright skipped (`stats.skipped`).
+  final int skipped;
+
+  int get total => expected + unexpected + flaky + skipped;
+
+  /// Counted as successful: a flaky test DID pass in the end.
+  int get successful => expected + flaky;
+
+  int get failed => unexpected;
+
+  /// True when Playwright reported no tests of any kind. A genuinely empty
+  /// or misconfigured target must fail loudly, not print a cheerful
+  /// "Total: 0" and let the run exit 0 — same principle #61 is about, one
+  /// level up: an absence of signal must never read as success.
+  bool get ranNoTests => total == 0;
+
+  bool get hasFailures => unexpected > 0;
+}
+
+/// Parses [jsonContent] (the contents of the internal JSON reporter's output
+/// file) into a [PlaywrightRunResult]. Returns null on any malformed input
+/// (missing/unparseable `stats`) rather than throwing — a caller falls back
+/// to the pre-existing `PatrolLogReader`-derived behaviour when this returns
+/// null, which only happens if Playwright itself crashed before any
+/// reporter could flush (a strictly worse failure than the one #61 is
+/// about, and one the fallback still reports on via the exit code).
+@visibleForTesting
+PlaywrightRunResult? parsePlaywrightRunResult(String jsonContent) {
+  try {
+    final decoded = jsonDecode(jsonContent);
+    if (decoded is! Map<String, dynamic>) {
+      return null;
+    }
+    final stats = decoded['stats'];
+    if (stats is! Map<String, dynamic>) {
+      return null;
+    }
+    return PlaywrightRunResult(
+      expected: stats['expected'] as int? ?? 0,
+      unexpected: stats['unexpected'] as int? ?? 0,
+      flaky: stats['flaky'] as int? ?? 0,
+      skipped: stats['skipped'] as int? ?? 0,
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
 class WebTestBackend {
   WebTestBackend({
     required ProcessManager processManager,
@@ -687,17 +778,55 @@ class WebTestBackend {
         if (!completer.isCompleted) {
           stderrSubscription.cancel();
           patrolLogReader.stopTimer();
-          // TODO: Don't print the summary in develop
-          _logger.info(patrolLogReader.summary);
 
-          if (patrolLogReader.failedTestsCount > 0) {
-            completer.completeError('Some tests failed.');
-          } else if (exitCode != 0) {
-            completer.completeError(
-              'Playwright process exited unexpectedly with code $exitCode',
+          // #61: prefer Playwright's own ground-truth result over
+          // PATROL_LOG-derived counts for BOTH the printed summary and the
+          // pass/fail decision. Falls back to the old PatrolLogReader-only
+          // behaviour only if the internal results file is missing or
+          // malformed (Playwright crashed before any reporter could flush).
+          final internalResultsFile = File(
+            '$testReportDir/$internalResultsFilename',
+          );
+          final realResult = internalResultsFile.existsSync()
+              ? parsePlaywrightRunResult(internalResultsFile.readAsStringSync())
+              : null;
+
+          // TODO: Don't print the summary in develop
+          if (realResult != null) {
+            _logger.info(
+              'Test summary:\n'
+              '📝 Total: ${realResult.total}\n'
+              '✅ Successful: ${realResult.successful}\n'
+              '❌ Failed: ${realResult.failed}\n'
+              '⏩ Skipped: ${realResult.skipped}',
             );
+
+            if (realResult.hasFailures) {
+              completer.completeError('${realResult.failed} test(s) failed.');
+            } else if (realResult.ranNoTests) {
+              completer.completeError(
+                'No tests ran (Playwright reported zero expected, '
+                'unexpected, flaky, or skipped tests).',
+              );
+            } else if (exitCode != 0) {
+              completer.completeError(
+                'Playwright process exited unexpectedly with code $exitCode',
+              );
+            } else {
+              completer.complete();
+            }
           } else {
-            completer.complete();
+            _logger.info(patrolLogReader.summary);
+
+            if (patrolLogReader.failedTestsCount > 0) {
+              completer.completeError('Some tests failed.');
+            } else if (exitCode != 0) {
+              completer.completeError(
+                'Playwright process exited unexpectedly with code $exitCode',
+              );
+            } else {
+              completer.complete();
+            }
           }
         }
       }).ignore();
