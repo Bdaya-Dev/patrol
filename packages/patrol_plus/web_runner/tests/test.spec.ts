@@ -5,7 +5,11 @@ import { type BrowserContext, type Page, chromium, test as base } from "@playwri
 import { assertNotBothAuthFlowMechanismsSet, loadAuthFlowModule } from "./authFlows/module"
 import { DEFAULT_TIMEOUT_MS, parseAuthFlowSpec, runAuthFlow } from "./authFlows/oidc"
 import { hasSessionData, loadCachedSession, restoreCachedSession, saveCachedSession } from "./authFlows/sessionCache"
-import { enableCanvasKitSemantics } from "./canvasKitSemantics"
+import {
+  type CanvasKitSemanticsCache,
+  createCanvasKitSemanticsCache,
+  enableCanvasKitSemanticsCached,
+} from "./canvasKitSemantics"
 import { isExcludedCoverageEntry } from "./coverageEntryFilter"
 import { writeCoverageSummary } from "./coverageSummary"
 import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate"
@@ -176,7 +180,7 @@ async function closeSecondaryPages(pages: Page[], page: Page) {
   }
 }
 
-async function setupPage(page: Page) {
+async function setupPage(page: Page, canvasKitSemanticsCache: CanvasKitSemanticsCache) {
   page.on("console", message => {
     const text = message.text()
     if (text.startsWith("PATROL_LOG")) {
@@ -287,7 +291,7 @@ async function setupPage(page: Page) {
   // auth flow navigates the page itself and could otherwise be enabling
   // semantics on a page about to be torn down by that navigation.
   if (autoSemanticsEnabled) {
-    await enableCanvasKitSemantics(page)
+    await enableCanvasKitSemanticsCached(page, canvasKitSemanticsCache)
   }
 
   return { errorGate, pageManager }
@@ -296,8 +300,23 @@ async function setupPage(page: Page) {
 export const patrolTest = base.extend<
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   {},
-  { sharedContext: BrowserContext; coverageReporter: CoverageReporter | null }
+  {
+    sharedContext: BrowserContext
+    coverageReporter: CoverageReporter | null
+    canvasKitSemanticsCache: CanvasKitSemanticsCache
+  }
 >({
+  // Shared across every test in this worker so enableCanvasKitSemantics's
+  // full timeout (paid on the HTML renderer, where the placeholder never
+  // attaches) is paid at most once per worker instead of once per test —
+  // see canvasKitSemantics.ts's enableCanvasKitSemanticsCached doc comment.
+  canvasKitSemanticsCache: [
+    async ({}, use) => {
+      await use(createCanvasKitSemanticsCache())
+    },
+    { scope: "worker" },
+  ],
+
   coverageReporter: [
     async ({}, use) => {
       if (!collectCoverage) {
@@ -368,7 +387,7 @@ export const patrolTest = base.extend<
     { scope: "worker" },
   ],
 
-  page: async ({ page: defaultPage, sharedContext, coverageReporter }, use) => {
+  page: async ({ page: defaultPage, sharedContext, coverageReporter, canvasKitSemanticsCache }, use) => {
     let page: Page = defaultPage
 
     if (debuggerPort) {
@@ -422,7 +441,7 @@ export const patrolTest = base.extend<
       page = await sharedContext.newPage()
     }
 
-    const { errorGate, pageManager } = await setupPage(page)
+    const { errorGate, pageManager } = await setupPage(page, canvasKitSemanticsCache)
 
     if (coverageReporter) await page.coverage.startJSCoverage()
     await use(page)

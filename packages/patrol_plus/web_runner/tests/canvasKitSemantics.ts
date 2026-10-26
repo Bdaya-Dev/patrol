@@ -1,6 +1,6 @@
 // Added by Bdaya-Dev — not present in the original LeanCode Patrol source. See NOTICE.md.
 import type { Page } from "playwright"
-import { logger } from "./logger"
+import { logger } from "./logger.ts"
 
 /**
  * Flutter's CanvasKit web renderer paints the whole UI onto a single
@@ -17,9 +17,16 @@ import { logger } from "./logger"
  * Re-trigger on every navigation."). This makes it a one-line, reusable
  * step instead of a tribal-knowledge workaround repeated per project.
  *
- * Safe to call unconditionally: on the HTML renderer (where real DOM already
- * exists and no placeholder is ever inserted) this resolves to `false`
- * without throwing, so callers never need to branch on renderer choice.
+ * Safe to call unconditionally in the sense that it never THROWS: on the
+ * HTML renderer (where real DOM already exists and no placeholder is ever
+ * inserted) this resolves to `false` instead, so callers never need to
+ * branch on renderer choice to stay correct. It is NOT free, though --
+ * on the HTML renderer the placeholder never attaches, so this call
+ * blocks for the FULL [timeoutMs] every time before giving up. A caller
+ * that runs this once per test (as `test.spec.ts` does) and cares about
+ * that per-test cost on HTML-renderer apps should use
+ * [enableCanvasKitSemanticsCached] instead, which pays the full timeout
+ * at most once per worker.
  */
 export async function enableCanvasKitSemantics(page: Page, timeoutMs = 15000): Promise<boolean> {
   try {
@@ -54,4 +61,42 @@ export async function enableCanvasKitSemantics(page: Page, timeoutMs = 15000): P
  */
 export async function waitForFlutterEngineReady(page: Page, timeoutMs = 60000): Promise<void> {
   await page.waitForSelector("flt-glass-pane, flutter-view", { timeout: timeoutMs })
+}
+
+/**
+ * Per-worker memo for [enableCanvasKitSemanticsCached]. Create one via
+ * [createCanvasKitSemanticsCache] in a `{ scope: "worker" }` fixture and
+ * pass the SAME instance to every test in that worker.
+ */
+export type CanvasKitSemanticsCache = { determined: boolean; supported: boolean }
+
+export function createCanvasKitSemanticsCache(): CanvasKitSemanticsCache {
+  return { determined: false, supported: false }
+}
+
+/**
+ * Same contract as [enableCanvasKitSemantics], but avoids paying the full
+ * [timeoutMs] on every test for an app built with the HTML renderer.
+ *
+ * A single Patrol `test` invocation always serves ONE Flutter web build —
+ * `--web-renderer` is a build-time flag, not a per-test choice — so once
+ * any test in a worker has established that this build's pages never grow
+ * a `<flt-semantics-placeholder>` (i.e. [enableCanvasKitSemantics] returned
+ * `false`), every LATER test in that SAME worker can skip the wait
+ * entirely instead of re-discovering the same negative result at the same
+ * cost. The first call in a worker still pays the real timeout -- there is
+ * no way to know the renderer without asking the page at least once.
+ */
+export async function enableCanvasKitSemanticsCached(
+  page: Page,
+  cache: CanvasKitSemanticsCache,
+  timeoutMs = 15000,
+): Promise<boolean> {
+  if (cache.determined && !cache.supported) {
+    return false
+  }
+  const enabled = await enableCanvasKitSemantics(page, timeoutMs)
+  cache.determined = true
+  cache.supported = enabled
+  return enabled
 }
