@@ -1001,6 +1001,45 @@ void main() {
       });
     });
 
+    group(
+      'carries the artifact redaction config for the Playwright runner',
+      () {
+        const flutterOpts = FlutterAppOptions(
+          command: flutterCommand,
+          target: 'patrol_test/app_test.dart',
+          buildMode: BuildMode.profile,
+          flavor: null,
+          buildName: null,
+          buildNumber: null,
+          dartDefines: {},
+          dartDefineFromFilePaths: [],
+        );
+
+        test('redactArtifacts defaults to true; redactSelectors/redactColor '
+            'default to null (on by default, with the built-in password '
+            'selector only)', () {
+          options = const WebAppOptions(flutter: flutterOpts);
+          expect(options.redactArtifacts, isTrue);
+          expect(options.redactSelectors, isNull);
+          expect(options.redactColor, isNull);
+        });
+
+        test('redactArtifacts / redactSelectors / redactColor are carried '
+            'through (from --no-web-redact-artifacts / --web-redact-selector / '
+            '--web-redact-color)', () {
+          options = const WebAppOptions(
+            flutter: flutterOpts,
+            redactArtifacts: false,
+            redactSelectors: '["[data-sensitive]"]',
+            redactColor: '#000000',
+          );
+          expect(options.redactArtifacts, isFalse);
+          expect(options.redactSelectors, '["[data-sensitive]"]');
+          expect(options.redactColor, '#000000');
+        });
+      },
+    );
+
     group('carries the cross-origin auth-flow spec for the Playwright '
         'runner (F-A)', () {
       const flutterOpts = FlutterAppOptions(
@@ -1083,17 +1122,17 @@ void main() {
         dartDefineFromFilePaths: [],
       );
 
-      test(
-        'omits unset options (only the always-on error-gate flag remains)',
-        () {
-          options = const WebAppOptions(flutter: flutterOpts);
+      test('omits unset options (only the always-on flags remain)', () {
+        options = const WebAppOptions(flutter: flutterOpts);
 
-          expect(
-            options.toEnvironmentVariables(),
-            equals({'PATROL_WEB_ERROR_DETECTION': 'false'}),
-          );
-        },
-      );
+        expect(
+          options.toEnvironmentVariables(),
+          equals({
+            'PATROL_WEB_ERROR_DETECTION': 'false',
+            'PATROL_WEB_REDACT_ARTIFACTS': 'true',
+          }),
+        );
+      });
 
       test('includes only the options that were set', () {
         options = const WebAppOptions(
@@ -1110,6 +1149,7 @@ void main() {
             'PATROL_WEB_HEADLESS': 'true',
             'PATROL_WEB_CHANNEL': 'chrome',
             'PATROL_WEB_ERROR_DETECTION': 'false',
+            'PATROL_WEB_REDACT_ARTIFACTS': 'true',
           }),
         );
       });
@@ -1156,6 +1196,9 @@ void main() {
           grepInvert: '@slow',
           errorDetection: true,
           errorAllow: 'is unimplemented,UNIMPLEMENTED',
+          redactArtifacts: false,
+          redactSelectors: '["[data-sensitive]"]',
+          redactColor: '#000000',
           authFlow: '{"loginUrlPattern":"https://idp.example"}',
           authStateFile: '.patrol_auth_state.json',
           authFlowModule: 'patrol_test/ci/flow.ts',
@@ -1204,6 +1247,9 @@ void main() {
             'PATROL_WEB_GREP_INVERT': '@slow',
             'PATROL_WEB_ERROR_DETECTION': 'true',
             'PATROL_WEB_ERROR_ALLOW': 'is unimplemented,UNIMPLEMENTED',
+            'PATROL_WEB_REDACT_ARTIFACTS': 'false',
+            'PATROL_WEB_REDACT_SELECTORS': '["[data-sensitive]"]',
+            'PATROL_WEB_REDACT_COLOR': '#000000',
             'PATROL_WEB_AUTH_FLOW': '{"loginUrlPattern":"https://idp.example"}',
             'PATROL_WEB_AUTH_STATE_FILE': '.patrol_auth_state.json',
             'PATROL_WEB_AUTH_FLOW_MODULE': 'patrol_test/ci/flow.ts',

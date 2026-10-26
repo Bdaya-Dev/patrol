@@ -421,6 +421,9 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       // in web_runner + web_test_backend PATROL_WEB_ERROR_* env forwarding).
       errorDetection: boolArg('web-error-detection'),
       errorAllow: stringArg('web-error-allow'),
+      redactArtifacts: boolArg('web-redact-artifacts'),
+      redactSelectors: stringArg('web-redact-selector'),
+      redactColor: stringArg('web-redact-color'),
       // F-A cross-origin auth prelude. Null (the default) means no prelude
       // runs (see authFlows/oidc.ts in web_runner + web_test_backend
       // PATROL_WEB_AUTH_FLOW env forwarding).

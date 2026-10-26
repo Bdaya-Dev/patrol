@@ -597,6 +597,9 @@ class WebAppOptions {
     this.grepInvert,
     this.errorDetection = false,
     this.errorAllow,
+    this.redactArtifacts = true,
+    this.redactSelectors,
+    this.redactColor,
     this.authFlow,
     this.authStateFile,
     this.authFlowModule,
@@ -704,6 +707,26 @@ class WebAppOptions {
   /// is allowlisted rather than failing the test. Set by `--web-error-allow`.
   final String? errorAllow;
 
+  /// Whether to redact sensitive elements (every `input[type="password"]`
+  /// plus any [redactSelectors]) out of every captured artifact —
+  /// screenshot, video, and the visual reconstruction of a trace's DOM
+  /// snapshots. On by default; set to false via `--no-web-redact-artifacts`.
+  /// See `sensitiveRedaction.ts` (web_runner) for why this needs a live DOM
+  /// overlay rather than Playwright's own `page.screenshot({ mask })` —
+  /// that option has no equivalent for video or trace, and does not exist
+  /// at all for the automatic on-failure screenshot.
+  final bool redactArtifacts;
+
+  /// JSON array of additional CSS selectors to redact, beyond the built-in
+  /// `input[type="password"]`. Set by `--web-redact-selector`. Has no
+  /// effect when [redactArtifacts] is false.
+  final String? redactSelectors;
+
+  /// CSS color for the redaction overlay (default `#FF00FF`, matching
+  /// Playwright's own `page.screenshot({ mask })` default). Set by
+  /// `--web-redact-color`.
+  final String? redactColor;
+
   /// JSON spec for the cross-origin auth prelude (F-A): drives a real
   /// identity-provider login by selector, on the same page/context the
   /// in-page test body runs on, before that body starts. Null (the default)
@@ -783,6 +806,10 @@ class WebAppOptions {
       // "true"/"false" rather than treating absence as off.
       'PATROL_WEB_ERROR_DETECTION': errorDetection,
       'PATROL_WEB_ERROR_ALLOW': errorAllow,
+      // Always emitted, same reasoning as PATROL_WEB_ERROR_DETECTION above.
+      'PATROL_WEB_REDACT_ARTIFACTS': redactArtifacts,
+      'PATROL_WEB_REDACT_SELECTORS': redactSelectors,
+      'PATROL_WEB_REDACT_COLOR': redactColor,
       'PATROL_WEB_AUTH_FLOW': authFlow,
       // Emitted as given; the web backend re-resolves these two paths
       // relative to the current working directory before spawning Playwright.

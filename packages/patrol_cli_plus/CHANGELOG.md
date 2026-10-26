@@ -1,3 +1,11 @@
+## Unreleased
+
+- **FEAT**(patrol_cli_plus): add `--web-redact-artifacts` (default on;
+  disable with `--no-web-redact-artifacts`), `--web-redact-selector`
+  (repeatable, JSON array), and `--web-redact-color`. See `patrol_plus`'s
+  matching Unreleased entry for what artifact secret redaction does and
+  why.
+
 ## 5.6.0
 
  - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))

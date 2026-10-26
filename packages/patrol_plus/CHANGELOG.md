@@ -1,3 +1,23 @@
+## Unreleased
+
+- **FEAT**(patrol_plus): on-by-default artifact secret redaction. Every
+  `input[type="password"]` plus any selector added via
+  `--web-redact-selector` is covered by a live, position-tracking DOM
+  overlay for the whole page lifetime, so it is masked in every captured
+  artifact — screenshot (automatic or manual), video, and the visual
+  reconstruction of a trace's DOM snapshots — not just one-off
+  `page.screenshot({ mask })` calls, which have no equivalent for video or
+  trace and don't exist at all for the automatic on-failure screenshot.
+  Works even when the real pixels are painted onto a `<canvas>` (Flutter's
+  CanvasKit renderer) rather than styled DOM, since the overlay is drawn
+  on top using the matched element's own `getBoundingClientRect()` rather
+  than relying on that element's own visual rendering. Verified with a
+  real-screenshot, real-pixel test (`sensitiveRedaction.browser.test.ts`)
+  against a password input, a displayed-text secret, and a
+  canvas-painted secret. On by default; disable with
+  `--no-web-redact-artifacts`. New file:
+  `web_runner/tests/sensitiveRedaction.ts`.
+
 ## 5.7.0
 
  - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))

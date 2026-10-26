@@ -474,6 +474,32 @@ abstract class PatrolCommand extends Command<int> {
             'is set.',
         valueHelp: 'is unimplemented,UNIMPLEMENTED',
       )
+      ..addFlag(
+        'web-redact-artifacts',
+        defaultsTo: true,
+        help:
+            'Redact sensitive elements out of every captured artifact — '
+            'screenshot, video, and the visual reconstruction of a '
+            "trace's DOM snapshots. Always covers every "
+            'input[type="password"]; add more with --web-redact-selector. '
+            'On by default; use --no-web-redact-artifacts to disable.',
+      )
+      ..addOption(
+        'web-redact-selector',
+        help:
+            'JSON array of additional CSS selectors to redact out of '
+            'captured artifacts, beyond the built-in '
+            'input[type="password"]. Has no effect unless '
+            '--web-redact-artifacts is also set (the default).',
+        valueHelp: '\'["[data-sensitive]", "input[type=\\"tel\\"]"]\'',
+      )
+      ..addOption(
+        'web-redact-color',
+        help:
+            'CSS color for the redaction overlay. Defaults to #FF00FF, '
+            "matching Playwright's own page.screenshot({ mask }) default.",
+        valueHelp: '#FF00FF',
+      )
       ..addOption(
         'web-auth-flow',
         help:
