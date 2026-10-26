@@ -227,6 +227,7 @@ class WebTestBackend {
         clearTestSteps: clearTestSteps,
         webIsolation: webIsolation,
         specFile: playwrightSpecFileFor(options),
+        smokeMode: true,
       );
       return;
     }
@@ -637,6 +638,7 @@ class WebTestBackend {
     String webIsolation = 'context',
     String? coverageDir,
     String specFile = 'tests/test.spec.ts',
+    bool smokeMode = false,
   }) async {
     _logger.info('Running Playwright tests against: $baseUrl');
     final completer = Completer<void>();
@@ -672,6 +674,11 @@ class WebTestBackend {
                   'PATROL_WEB_COVERAGE_DIR': coverageDir!,
                 },
                 'PATROL_WEB_ISOLATION': webIsolation,
+                // F-URL: tells playwright.config.ts's globalSetup dispatcher
+                // to skip the Patrol-instrumented bootstrap (setup.ts) — see
+                // globalSetup.ts's doc comment for why running it against an
+                // uninstrumented deployed page hangs instead of failing fast.
+                'PATROL_WEB_SMOKE_MODE': smokeMode.toString(),
                 'PATROL_TEST_RESULTS_DIR': testResultsDir,
                 'PATROL_TEST_REPORT_DIR': testReportDir,
                 ...options.toEnvironmentVariables(),
