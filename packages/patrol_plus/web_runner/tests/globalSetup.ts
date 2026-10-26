@@ -23,12 +23,29 @@ import type { FullConfig } from "@playwright/test"
  * `--web-base-url` path, so every other run (the env var absent) is
  * byte-for-byte the same as calling `setup.ts` directly — zero behaviour
  * change for the existing, Patrol-instrumented flow.
+ *
+ * The dynamic `import("./setup.ts")` below uses an EXPLICIT ".ts"
+ * extension. A bare `import("./setup")` (no extension) broke the normal
+ * flow outright: every web e2e run failed in ~2s with "Total: 0" before
+ * any browser work happened. This package has no `"type": "module"` in
+ * package.json, and an extension-less dynamic specifier doesn't go
+ * through the same resolution Playwright's own loader uses for the
+ * static, extension-less imports the rest of this runner's files rely on
+ * (confirmed live: adding the extension is the only change needed to get
+ * `e2e-web` back to green — see this PR's history for the before/after
+ * CI runs). Kept dynamic (not hoisted to a static top-level import) so
+ * smoke mode's short-circuit above stays a true no-op: `setup.ts`
+ * transitively imports several OTHER extension-less sibling specifiers
+ * (`./initialise`, `./pageManager`, ...), and forcing those through
+ * static resolution at this file's own load time reintroduces the exact
+ * same extension problem one level down, just for all of its imports
+ * instead of only this one.
  */
 async function globalSetup(config: FullConfig): Promise<void> {
   if (process.env.PATROL_WEB_SMOKE_MODE === "true") {
     return
   }
-  const { default: setup } = await import("./setup")
+  const { default: setup } = await import("./setup.ts")
   await setup(config)
 }
 

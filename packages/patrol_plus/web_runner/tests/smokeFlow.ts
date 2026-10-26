@@ -39,6 +39,48 @@ export type SmokeScenario = {
   run: SmokeFlow
 }
 
+/**
+ * Runs every [scenario] via [runStep] (the caller passes `(name, fn) =>
+ * test.step(name, fn)`), collecting any failure instead of letting it abort
+ * the remaining scenarios.
+ *
+ * `test.step()` re-throws on failure -- that's for report granularity, not
+ * isolation, so calling it directly inside a bare `for` loop means every
+ * scenario listed AFTER a failing one in --web-smoke-flow-module silently
+ * never runs. That contradicts this module's own contract (each scenario
+ * "reported as its own step, so one failing check doesn't hide the
+ * others"). This function is the fix: each scenario still gets its own
+ * step (pass or fail, visible in the report), and once every scenario has
+ * had a chance to run, a single aggregate error naming ALL failures is
+ * thrown so the overall test still fails -- nothing is silently swallowed.
+ * Does nothing (resolves) if every scenario passed.
+ *
+ * [runStep] is injected (rather than importing `@playwright/test`'s `test`
+ * directly) so this aggregation logic is a plain, browser-free unit --
+ * see `smokeFlow.test.ts` for the proof.
+ */
+export async function runScenariosReportingAllFailures(
+  scenarios: SmokeScenario[],
+  ctx: SmokeFlowContext,
+  runStep: (name: string, fn: () => Promise<void>) => Promise<void>,
+): Promise<void> {
+  const failures: { name: string; error: unknown }[] = []
+  for (const scenario of scenarios) {
+    // eslint-disable-next-line no-await-in-loop
+    try {
+      await runStep(scenario.name, () => scenario.run(ctx))
+    } catch (err) {
+      failures.push({ name: scenario.name, error: err })
+    }
+  }
+  if (failures.length > 0) {
+    const summary = failures
+      .map(({ name, error }) => `  - ${name}: ${error instanceof Error ? error.message : String(error)}`)
+      .join("\n")
+    throw new Error(`${failures.length}/${scenarios.length} smoke scenario(s) failed:\n${summary}`)
+  }
+}
+
 function isScenario(value: unknown): value is SmokeScenario {
   return (
     !!value &&

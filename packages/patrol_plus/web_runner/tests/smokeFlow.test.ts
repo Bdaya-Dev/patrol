@@ -3,7 +3,7 @@ import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
 import { afterEach, beforeEach, test } from "node:test"
-import { loadSmokeFlowModule } from "./smokeFlow.ts"
+import { loadSmokeFlowModule, runScenariosReportingAllFailures } from "./smokeFlow.ts"
 
 let tmpDir: string
 
@@ -149,3 +149,126 @@ test("loadSmokeFlowModule: throws (does not swallow) when the module itself thro
     },
   )
 })
+
+// ---- runScenariosReportingAllFailures -----------------------------------------
+
+test("runScenariosReportingAllFailures: runs every scenario even when an earlier one fails", async () => {
+  const ran: string[] = []
+  const scenarios = [
+    {
+      name: "first (fails)",
+      run: async () => {
+        ran.push("first")
+        throw new Error("first blew up")
+      },
+    },
+    {
+      name: "second (passes)",
+      run: async () => {
+        ran.push("second")
+      },
+    },
+    {
+      name: "third (passes)",
+      run: async () => {
+        ran.push("third")
+      },
+    },
+  ]
+
+  // A fake `runStep` that reproduces test.step()'s real behaviour: it
+  // awaits the step body and re-throws whatever the body throws. Before the
+  // fix, calling this directly inside a bare `for` loop is exactly what
+  // made "second" and "third" never run once "first" threw.
+  const fakeRunStep = async (_name: string, fn: () => Promise<void>) => {
+    await fn()
+  }
+
+  await assert.rejects(
+    () => runScenariosReportingAllFailures(scenarios, fakeCtx(), fakeRunStep),
+    (err: Error) => {
+      assert.match(err.message, /1\/3 smoke scenario\(s\) failed/)
+      assert.match(err.message, /first \(fails\): first blew up/)
+      return true
+    },
+  )
+
+  // The regression this guards against: without it, `ran` would stop at
+  // ["first"] because the loop aborted on the first throw.
+  assert.deepEqual(ran, ["first", "second", "third"])
+})
+
+test("runScenariosReportingAllFailures: aggregates every failing scenario's name and message, not just the first", async () => {
+  const scenarios = [
+    {
+      name: "a",
+      run: async () => {
+        throw new Error("boom a")
+      },
+    },
+    { name: "b", run: async () => {} },
+    {
+      name: "c",
+      run: async () => {
+        throw new Error("boom c")
+      },
+    },
+  ]
+
+  const fakeRunStep = async (_name: string, fn: () => Promise<void>) => fn()
+
+  await assert.rejects(
+    () => runScenariosReportingAllFailures(scenarios, fakeCtx(), fakeRunStep),
+    (err: Error) => {
+      assert.match(err.message, /2\/3 smoke scenario\(s\) failed/)
+      assert.match(err.message, /a: boom a/)
+      assert.match(err.message, /c: boom c/)
+      assert.doesNotMatch(err.message, /b: /)
+      return true
+    },
+  )
+})
+
+test("runScenariosReportingAllFailures: resolves cleanly when every scenario passes", async () => {
+  const ran: string[] = []
+  const scenarios = [
+    {
+      name: "a",
+      run: async () => {
+        ran.push("a")
+      },
+    },
+    {
+      name: "b",
+      run: async () => {
+        ran.push("b")
+      },
+    },
+  ]
+
+  const fakeRunStep = async (_name: string, fn: () => Promise<void>) => fn()
+
+  await assert.doesNotReject(() => runScenariosReportingAllFailures(scenarios, fakeCtx(), fakeRunStep))
+  assert.deepEqual(ran, ["a", "b"])
+})
+
+test("runScenariosReportingAllFailures: each scenario is reported via runStep under its own name, in order", async () => {
+  const stepNames: string[] = []
+  const scenarios = [
+    { name: "first", run: async () => {} },
+    { name: "second", run: async () => {} },
+  ]
+
+  const recordingRunStep = async (name: string, fn: () => Promise<void>) => {
+    stepNames.push(name)
+    await fn()
+  }
+
+  await runScenariosReportingAllFailures(scenarios, fakeCtx(), recordingRunStep)
+  assert.deepEqual(stepNames, ["first", "second"])
+})
+
+function fakeCtx() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return { page: {} as any, log: () => {}, baseUrl: "https://q.ahkam.ae" }
+}
