@@ -22,6 +22,23 @@ const workers = envInt("PATROL_WEB_WORKERS") ?? 1
 const reporter = envParsed("PATROL_WEB_REPORTER", value => mapReporters(value, outputFolder)) ?? [
   ["html", { outputFolder, open: "never" }],
 ]
+
+// #61 — always-on, internal ground-truth reporter. patrol_cli_plus's
+// PATROL_LOG-derived summary/pass-fail decision can be wrong: a harness-
+// level failure (e.g. the F-B error gate throwing from fixture teardown
+// AFTER the Dart test body already logged a PATROL_LOG success entry) never
+// produces its own PATROL_LOG entry, so the summary printed "Successful: N /
+// Failed: 0" under a run Playwright itself marked failed and exited 1 on.
+// This reporter is independent of whatever --web-reporter the caller chose
+// (a distinct, internal filename so a user's own `json` reporter output is
+// never overwritten) and gives web_test_backend.dart Playwright's own
+// `stats.{expected,unexpected,flaky,skipped}` to derive the REAL summary
+// from, every run, unconditionally.
+export const INTERNAL_RESULTS_FILENAME = "patrol-internal-results.json"
+const internalResultsReporter: ReporterDescription = [
+  "json",
+  { outputFile: `${outputFolder}/${INTERNAL_RESULTS_FILENAME}` },
+]
 // Pinned to a well-formed default unless --web-locale / PATROL_WEB_LOCALE is
 // set: Chromium's host-derived default can be a non-BCP-47 tag that crashes the
 // Flutter web engine during boot (see tests/resolveLocale.ts). tests/setup.ts
@@ -90,7 +107,7 @@ export default defineConfig({
   },
   globalSetup: require.resolve("./tests/setup"),
   outputDir,
-  reporter,
+  reporter: [...reporter, internalResultsReporter],
   retries,
   timeout,
   globalTimeout,

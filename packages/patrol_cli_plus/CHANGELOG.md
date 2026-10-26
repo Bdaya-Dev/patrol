@@ -1,3 +1,11 @@
+## Unreleased
+
+- **FIX**(patrol_cli_plus): fix #61 — derive the web test summary and
+  pass/fail decision from Playwright's own ground-truth JSON reporter
+  output (`stats.{expected,unexpected,flaky,skipped}`) instead of
+  `PATROL_LOG`-derived counts alone. See `patrol_plus`'s matching Unreleased
+  entry for the full rationale and live repro.
+
 ## 5.6.0
 
  - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))

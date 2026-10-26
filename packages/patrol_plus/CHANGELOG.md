@@ -1,3 +1,17 @@
+## Unreleased
+
+- **FIX**(patrol_plus): fix #61 — web test summary could report a failed run
+  as green. `playwright.config.ts` now always includes an internal,
+  always-on JSON reporter (independent of whatever `--web-reporter` the
+  caller chose) that gives `patrol_cli_plus` Playwright's own ground-truth
+  `stats.{expected,unexpected,flaky,skipped}` counts. A harness-level
+  failure (e.g. the F-B error gate throwing from fixture teardown AFTER the
+  Dart test body already logged a `PATROL_LOG` success entry) is now
+  correctly reported as a failure — confirmed live: a test whose body
+  completes (logging success) followed by a throwing `test.afterEach`
+  reports Playwright's `stats.unexpected: 1`, which a `PATROL_LOG`-only
+  reader would have missed entirely.
+
 ## 5.7.0
 
  - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))
