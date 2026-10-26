@@ -717,7 +717,13 @@ class WebTestBackend {
               scope: scope,
               log: _logger.info,
               reportPath: testReportDir,
-              showFlutterLogs: showFlutterLogs,
+              // F-URL: smoke mode emits no PATROL_LOG entries at all (there
+              // is no Dart test bundle), so PatrolLogReader.parse's default
+              // branch is the ONLY thing that would ever surface Playwright's
+              // own output (pass/fail, error traces) — without this, a real
+              // failure prints nothing but "Total: 0" / a bare exit code.
+              // Always on here; unaffected by showFlutterLogs otherwise.
+              showFlutterLogs: showFlutterLogs || smokeMode,
               hideTestSteps: hideTestSteps || isShardedRun,
               clearTestSteps: clearTestSteps,
               hideTestLifecycle: isShardedRun,
@@ -740,8 +746,18 @@ class WebTestBackend {
         if (!completer.isCompleted) {
           stderrSubscription.cancel();
           patrolLogReader.stopTimer();
+          // F-URL: smoke mode has no PATROL_LOG entries to summarise —
+          // patrolLogReader.summary would always print a flatly-wrong
+          // "Total: 0 / Successful: 0 / Failed: 0" (every count derived
+          // SOLELY from PATROL_LOG parsing) regardless of what actually
+          // happened, which is worse than printing nothing. Playwright's own
+          // list-reporter output above (surfaced because showFlutterLogs is
+          // forced on for this mode) is the real summary; exit-code-driven
+          // pass/fail below is unaffected either way.
           // TODO: Don't print the summary in develop
-          _logger.info(patrolLogReader.summary);
+          if (!smokeMode) {
+            _logger.info(patrolLogReader.summary);
+          }
 
           if (patrolLogReader.failedTestsCount > 0) {
             completer.completeError('Some tests failed.');
