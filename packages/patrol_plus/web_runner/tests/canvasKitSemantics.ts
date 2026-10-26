@@ -25,12 +25,16 @@ export async function enableCanvasKitSemantics(page: Page, timeoutMs = 15000): P
   try {
     const placeholder = page.locator("flt-semantics-placeholder")
     await placeholder.waitFor({ state: "attached", timeout: timeoutMs })
-    // The placeholder is intentionally near-invisible (it exists only to
-    // catch the first a11y-intent interaction), so Playwright's default
-    // actionability checks (visible, not-obscured) would never pass on it.
-    // `force: true` bypasses them — this is the one legitimate use of force
-    // here, not a workaround for a flaky selector.
-    await placeholder.click({ force: true, timeout: timeoutMs })
+    // The placeholder is intentionally near-invisible and Flutter positions
+    // it off-screen on some layouts, so Playwright's default actionability
+    // checks (visible, not-obscured, inside the viewport) would never pass
+    // on it — `{ force: true }` bypasses visibility/obscured checks but NOT
+    // the viewport-bounds one, so it still fails there (confirmed live
+    // against a real app, 2026-10-27). dispatchEvent fires the DOM event
+    // directly with no actionability checks at all, which is correct here:
+    // this element exists ONLY to catch a synthetic "a11y intent" click, not
+    // to be a real, user-visible target.
+    await placeholder.dispatchEvent("click")
     return true
   } catch (err) {
     logger.warn(
