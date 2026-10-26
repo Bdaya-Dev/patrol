@@ -114,11 +114,21 @@ class TestCommand extends PatrolCommand {
     final testDirectory = config.testDirectory;
     final testFileSuffix = config.testFileSuffix;
 
+    // F-URL — deployed-URL smoke mode. Read this before any test-directory
+    // access: --web-base-url drives an already-deployed site directly, with
+    // no local Dart test suite to discover or bundle. A project adopting
+    // this flag may not even HAVE a patrol_test/integration_test directory
+    // (its tests may live elsewhere, or there may be none at all) — nothing
+    // below this should require one to exist.
+    final webBaseUrl = stringArg('web-base-url');
+
     final testFinder = _testFinderFactory.create(testDirectory);
     final excludes = stringsArg('exclude').toSet();
 
     final target = stringsArg('target');
-    final targets = target.isNotEmpty
+    final targets = webBaseUrl != null
+        ? const <String>[]
+        : target.isNotEmpty
         ? testFinder.findTests(target, testFileSuffix, excludes)
         : testFinder.findAllTests(
             excludes: excludes,
@@ -201,7 +211,6 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
 
     // F-URL — deployed-URL smoke mode only makes sense for the web platform
     // (there is no local app to skip building/serving on any other device).
-    final webBaseUrl = stringArg('web-base-url');
     if (webBaseUrl != null && !isWeb) {
       _logger.err(
         '--web-base-url is only supported when targeting the web platform.',
@@ -213,7 +222,10 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       testDirectory,
       web: isWeb,
     );
-    if (boolArg('generate-bundle')) {
+    // No local Dart test suite to bundle in deployed-URL smoke mode (see the
+    // webBaseUrl guard on `targets` above — createTestBundle throws on an
+    // empty testFilePaths list, which `targets` always is here).
+    if (webBaseUrl == null && boolArg('generate-bundle')) {
       _testBundler.createTestBundle(
         testDirectory,
         targets,
