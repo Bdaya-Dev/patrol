@@ -26,6 +26,7 @@ WebAppOptions _options({
   String? certPath,
   String? certKeyPath,
   String? hostname,
+  String? baseUrl,
 }) => WebAppOptions(
   flutter: const FlutterAppOptions(
     command: FlutterCommand('flutter'),
@@ -38,6 +39,7 @@ WebAppOptions _options({
     dartDefineFromFilePaths: [],
   ),
   webPort: 22433,
+  webBaseUrl: baseUrl,
   webTlsCertPath: certPath,
   webTlsCertKeyPath: certKeyPath,
   webHostname: hostname,
@@ -193,4 +195,27 @@ void main() {
       );
     });
   });
+
+  group(
+    'playwrightSpecFileFor (F-URL deployed-URL smoke mode spec selection)',
+    () {
+      test(
+        'runs the normal Patrol-instrumented spec when webBaseUrl is unset',
+        () {
+          expect(playwrightSpecFileFor(_options()), 'tests/test.spec.ts');
+        },
+      );
+
+      test('runs the uninstrumented smoke spec when webBaseUrl is set — the '
+          'deployed build was never compiled with the __patrol__ JS hooks '
+          "test.spec.ts's setupPage() waits on, so reusing it would hang", () {
+        expect(
+          playwrightSpecFileFor(
+            _options(baseUrl: 'https://staging.example.com'),
+          ),
+          'tests/smokeTest.spec.ts',
+        );
+      });
+    },
+  );
 }

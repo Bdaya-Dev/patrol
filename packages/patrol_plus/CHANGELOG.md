@@ -1,3 +1,19 @@
+## Unreleased
+
+- **FEAT**(patrol_plus): deployed-URL smoke mode (F-URL) — `--web-base-url`
+  skips building and serving a local Flutter web app and instead runs web
+  tests directly against an already-deployed site (e.g. a production bundle
+  or a preview/staging deployment), so a canary can verify what a real
+  hosting/CDN actually serves. Because the deployed build is almost certainly
+  not compiled with the Patrol test harness, native finders are unavailable in
+  this mode — drive it with the new `--web-smoke-flow-module` (a Node/TS
+  module receiving the real Playwright `page`, mirroring
+  `--web-auth-flow-module`'s escape hatch), or rely on the built-in check
+  alone (Flutter engine mounts, no un-allowlisted browser error on first
+  load). Also auto-enables the CanvasKit semantics/accessibility tree before
+  handing control to the caller's module. New files: `web_runner/tests/
+  canvasKitSemantics.ts`, `smokeFlow.ts`, `smokeTest.spec.ts`.
+
 ## 5.7.0
 
  - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))

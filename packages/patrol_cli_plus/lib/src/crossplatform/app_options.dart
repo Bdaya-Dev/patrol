@@ -600,6 +600,8 @@ class WebAppOptions {
     this.authFlow,
     this.authStateFile,
     this.authFlowModule,
+    this.webBaseUrl,
+    this.webSmokeFlowModule,
   });
 
   final FlutterAppOptions flutter;
@@ -737,6 +739,30 @@ class WebAppOptions {
   /// forwarded as `PATROL_WEB_AUTH_FLOW_MODULE`.
   final String? authFlowModule;
 
+  /// F-URL — deployed-URL smoke mode. When set, `patrol test` skips building
+  /// and serving a local Flutter web app entirely and instead runs the web
+  /// test suite directly against this ALREADY-DEPLOYED URL (e.g. a
+  /// production site or a preview/staging deployment). Because the deployed
+  /// build was not compiled with the Patrol test harness, Patrol's native
+  /// finders are unavailable in this mode — see [webSmokeFlowModule]. Null
+  /// (the default) means the normal local build-and-serve flow runs. Set by
+  /// `--web-base-url`. Not forwarded via [toEnvironmentVariables]; the web
+  /// backend passes it straight through as the Playwright run's `BASE_URL`,
+  /// exactly like the locally-served flow already does.
+  final String? webBaseUrl;
+
+  /// Path to a Node/TS module (exporting an async `default` function taking
+  /// `{ page, log, baseUrl }`, or a `scenarios`/`default` array of
+  /// `{ name, run }` entries) that drives app-specific assertions against
+  /// [webBaseUrl] — the escape hatch [webBaseUrl] mode needs because Patrol's
+  /// native finders don't exist there (see `smokeFlow.ts` (web_runner) for
+  /// the full rationale; mirrors [authFlowModule]'s module-loading pattern).
+  /// Null (the default) means only the built-in engine-mounts/no-console-
+  /// error check runs. Set by `--web-smoke-flow-module`, forwarded as
+  /// `PATROL_WEB_SMOKE_FLOW_MODULE`. Has no effect unless [webBaseUrl] is
+  /// also set.
+  final String? webSmokeFlowModule;
+
   /// Translates these options into environment variables consumed by the
   /// Playwright web runner. Unset options are omitted, except
   /// `PATROL_WEB_ERROR_DETECTION`, which is always present as `true`/`false`.
@@ -788,6 +814,11 @@ class WebAppOptions {
       // relative to the current working directory before spawning Playwright.
       'PATROL_WEB_AUTH_STATE_FILE': authStateFile,
       'PATROL_WEB_AUTH_FLOW_MODULE': authFlowModule,
+      // Emitted as given; the web backend re-resolves this path relative to
+      // the current working directory before spawning Playwright, same as
+      // the two auth paths above. webBaseUrl itself is intentionally NOT
+      // emitted here — it is passed as BASE_URL by the caller instead.
+      'PATROL_WEB_SMOKE_FLOW_MODULE': webSmokeFlowModule,
     };
 
     return {

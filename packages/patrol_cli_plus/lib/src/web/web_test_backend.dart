@@ -132,6 +132,22 @@ SecurityContext? webProbeSecurityContext(String? certPath) {
     ..setTrustedCertificates(certPath);
 }
 
+/// The Playwright spec file `execute` should run, given [options].
+///
+/// F-URL — deployed-URL smoke mode. When [WebAppOptions.webBaseUrl] is set,
+/// the target is an already-deployed, ordinary (uninstrumented) Flutter web
+/// build: the `__patrol__*` JS hooks `tests/test.spec.ts` depends on
+/// (`initialise()`, `exposePatrolPlatformHandler`) were never compiled into
+/// it, so running that spec against it would hang waiting for them.
+/// `tests/smokeTest.spec.ts` skips that machinery entirely — see its doc
+/// comment. Every other run (webBaseUrl unset) keeps using the normal,
+/// Patrol-instrumented spec.
+@visibleForTesting
+String playwrightSpecFileFor(WebAppOptions options) =>
+    options.webBaseUrl != null
+    ? 'tests/smokeTest.spec.ts'
+    : 'tests/test.spec.ts';
+
 class WebTestBackend {
   WebTestBackend({
     required ProcessManager processManager,
@@ -191,6 +207,30 @@ class WebTestBackend {
     bool coverageEnabled = false,
     String webIsolation = 'context',
   }) async {
+    // F-URL — deployed-URL smoke mode (--web-base-url). There is no local
+    // Flutter app to build or serve: the caller already deployed a site at
+    // this URL (production or a preview channel), so skip straight to
+    // Playwright, pointed at it directly. See playwrightSpecFileFor and
+    // smokeTest.spec.ts for why this cannot reuse the normal flow's spec
+    // file (that one depends on __patrol__ JS hooks a deployed, uninstrumented
+    // build never compiled in).
+    if (options.webBaseUrl case final baseUrl?) {
+      _logger
+        ..detail('--web-base-url set: skipping local Flutter build/serve.')
+        ..info('Running Patrol web smoke tests against deployed URL: $baseUrl');
+
+      await _runPlaywrightTests(
+        baseUrl,
+        options,
+        showFlutterLogs: showFlutterLogs,
+        hideTestSteps: hideTestSteps,
+        clearTestSteps: clearTestSteps,
+        webIsolation: webIsolation,
+        specFile: playwrightSpecFileFor(options),
+      );
+      return;
+    }
+
     _logger
       ..detail('Starting web test execution...')
       ..info('Building Flutter web app...');
@@ -596,6 +636,7 @@ class WebTestBackend {
     bool coverageEnabled = false,
     String webIsolation = 'context',
     String? coverageDir,
+    String specFile = 'tests/test.spec.ts',
   }) async {
     _logger.info('Running Playwright tests against: $baseUrl');
     final completer = Completer<void>();
@@ -620,7 +661,7 @@ class WebTestBackend {
 
       final playwrightProcess =
           await _processManager.start(
-              ['npx', 'playwright', 'test', 'tests/test.spec.ts'],
+              ['npx', 'playwright', 'test', specFile],
               workingDirectory: webRunnerPath,
               environment: {
                 ...Platform.environment,
@@ -634,8 +675,9 @@ class WebTestBackend {
                 'PATROL_TEST_RESULTS_DIR': testResultsDir,
                 'PATROL_TEST_REPORT_DIR': testReportDir,
                 ...options.toEnvironmentVariables(),
-                // Auth paths are given relative to the user's cwd but Playwright
-                // runs from the web_runner directory, so resolve them here.
+                // Auth/module paths are given relative to the user's cwd but
+                // Playwright runs from the web_runner directory, so resolve
+                // them here.
                 if (options.authStateFile case final authStateFile?)
                   'PATROL_WEB_AUTH_STATE_FILE': _resolveRelativeToCwd(
                     authStateFile,
@@ -643,6 +685,10 @@ class WebTestBackend {
                 if (options.authFlowModule case final authFlowModule?)
                   'PATROL_WEB_AUTH_FLOW_MODULE': _resolveRelativeToCwd(
                     authFlowModule,
+                  ),
+                if (options.webSmokeFlowModule case final smokeFlowModule?)
+                  'PATROL_WEB_SMOKE_FLOW_MODULE': _resolveRelativeToCwd(
+                    smokeFlowModule,
                   ),
               },
               runInShell: true,
@@ -823,6 +869,7 @@ class WebTestBackend {
       'playwright.config.ts',
       'tests/test.spec.ts',
       'tests/develop.ts',
+      'tests/smokeTest.spec.ts',
     ];
 
     for (final file in requiredFiles) {

@@ -199,6 +199,16 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       return 1;
     }
 
+    // F-URL — deployed-URL smoke mode only makes sense for the web platform
+    // (there is no local app to skip building/serving on any other device).
+    final webBaseUrl = stringArg('web-base-url');
+    if (webBaseUrl != null && !isWeb) {
+      _logger.err(
+        '--web-base-url is only supported when targeting the web platform.',
+      );
+      return 1;
+    }
+
     final entrypoint = _testBundler.getBundledTestFile(
       testDirectory,
       web: isWeb,
@@ -243,6 +253,16 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       _logger.err(
         'Coverage requires a debug build. '
         'Please remove the --${buildMode.name} flag.',
+      );
+      return 1;
+    }
+
+    // Coverage needs the dart2js/DDC source maps from a LOCAL build, and
+    // --web-base-url intentionally skips building one.
+    if (webBaseUrl != null && coverageMode != CoverageMode.none) {
+      _logger.err(
+        '--coverage is not supported together with --web-base-url. '
+        'Please remove one of the two flags.',
       );
       return 1;
     }
@@ -434,6 +454,11 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       // PATROL_WEB_AUTH_FLOW_MODULE env forwarding). Mutually exclusive with
       // authFlow — enforced at web_runner setup time, not here.
       authFlowModule: stringArg('web-auth-flow-module'),
+      // F-URL deployed-URL smoke mode. Null (the default) means the normal
+      // local build-and-serve flow runs (see web_test_backend.dart's
+      // playwrightSpecFileFor + execute()).
+      webBaseUrl: webBaseUrl,
+      webSmokeFlowModule: stringArg('web-smoke-flow-module'),
     );
 
     // No need to build web app for testing. It's done in the execute method.
