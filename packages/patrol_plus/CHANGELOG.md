@@ -1,3 +1,8 @@
+## 5.8.0
+
+ - **FEAT**(patrol_plus,patrol_cli_plus): auto-enable CanvasKit semantics for every web test ([#64](https://github.com/Bdaya-Dev/patrol/issues/64)). ([74406bfe](https://github.com/Bdaya-Dev/patrol/commit/74406bfe46346395c08401bb732273c3e6f0e35a))
+ - **FEAT**(patrol_plus,patrol_cli_plus): deployed-URL smoke mode (--web-base-url) ([#62](https://github.com/Bdaya-Dev/patrol/issues/62)). ([5fc9cf7d](https://github.com/Bdaya-Dev/patrol/commit/5fc9cf7db899d9f13aecf5288224483fceb63c59))
+
 ## Unreleased
 
 - **FEAT**(patrol_plus): deployed-URL smoke mode (F-URL) — `--web-base-url`
