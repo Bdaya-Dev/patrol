@@ -4,13 +4,16 @@ import {
   LaunchOptions,
   PlaywrightTestOptions,
   PlaywrightWorkerOptions,
-  ReporterDescription,
   VideoMode,
 } from "@playwright/test"
+import { machineReportsDirFor, mapReporters } from "./tests/reporterConfig"
 import { resolveLocale } from "./tests/resolveLocale"
 
 const outputDir = envString("PATROL_TEST_RESULTS_DIR") ?? "./test-results"
 const outputFolder = envString("PATROL_TEST_REPORT_DIR") ?? "./playwright-report"
+// See reporterConfig.ts's doc comment for why json/junit need their own,
+// separate directory rather than living inside outputFolder.
+const machineReportsDir = machineReportsDirFor(outputFolder)
 const baseURL = envString("BASE_URL")
 
 const retries = envInt("PATROL_WEB_RETRIES")
@@ -19,7 +22,7 @@ const timeout = envInt("PATROL_WEB_TIMEOUT") ?? 10 * 60 * 1000
 const globalTimeout = envInt("PATROL_WEB_GLOBAL_TIMEOUT") ?? 2 * 60 * 60 * 1000
 const workers = envInt("PATROL_WEB_WORKERS") ?? 1
 
-const reporter = envParsed("PATROL_WEB_REPORTER", value => mapReporters(value, outputFolder)) ?? [
+const reporter = envParsed("PATROL_WEB_REPORTER", value => mapReporters(value, outputFolder, machineReportsDir)) ?? [
   ["html", { outputFolder, open: "never" }],
 ]
 // Pinned to a well-formed default unless --web-locale / PATROL_WEB_LOCALE is
@@ -97,33 +100,6 @@ export default defineConfig({
   workers,
   fullyParallel: true,
 })
-
-function mapReporters(reporterEnv: string, outputFolder: string) {
-  const reporterNames: unknown = JSON.parse(reporterEnv)
-
-  if (!Array.isArray(reporterNames)) {
-    throw new Error("PATROL_WEB_REPORTER must be a JSON array of reporter names")
-  }
-
-  return reporterNames.map(name => {
-    switch (name) {
-      case "html":
-        return ["html", { outputFolder, open: "never" }] satisfies ReporterDescription
-      case "json":
-        return ["json", { outputFile: `${outputFolder}/results.json` }] satisfies ReporterDescription
-      case "junit":
-        return ["junit", { outputFile: `${outputFolder}/results.xml` }] satisfies ReporterDescription
-      case "list":
-      case "dot":
-      case "line":
-      case "github":
-      case "null":
-        return [name] satisfies ReporterDescription
-      default:
-        throw new Error(`Unsupported reporter: ${name}`)
-    }
-  })
-}
 
 function envString(name: string): string | undefined {
   return process.env[name] || undefined

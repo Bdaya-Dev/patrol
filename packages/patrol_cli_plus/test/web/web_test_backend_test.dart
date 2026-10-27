@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
 import 'package:patrol_cli_plus/src/crossplatform/app_options.dart';
 // BuildMode lives here, not in app_options.dart, which only consumes it.
 import 'package:patrol_cli_plus/src/ios/ios_test_backend.dart';
@@ -26,6 +29,8 @@ WebAppOptions _options({
   String? certPath,
   String? certKeyPath,
   String? hostname,
+  String? resultsDir,
+  String? reportDir,
 }) => WebAppOptions(
   flutter: const FlutterAppOptions(
     command: FlutterCommand('flutter'),
@@ -41,6 +46,8 @@ WebAppOptions _options({
   webTlsCertPath: certPath,
   webTlsCertKeyPath: certKeyPath,
   webHostname: hostname,
+  resultsDir: resultsDir,
+  reportDir: reportDir,
 );
 
 void main() {
@@ -193,4 +200,136 @@ void main() {
       );
     });
   });
+
+  group(
+    'resolveTestResultsDir/resolveTestReportDir anchor relative paths to the invoking cwd',
+    () {
+      test(
+        'a relative --web-results-dir resolves against Directory.current, not left bare',
+        () {
+          final resolved = resolveTestResultsDir(
+            _options(resultsDir: 'my-results'),
+          );
+
+          // Forwarding 'my-results' verbatim would have Playwright (whose own
+          // cwd is web_runner/, not the caller's project) resolve it there
+          // instead -- the exact bug this guards against.
+          expect(p.isAbsolute(resolved), isTrue);
+          expect(
+            resolved,
+            equals(p.join(Directory.current.path, 'my-results')),
+          );
+        },
+      );
+
+      test(
+        'a relative --web-report-dir resolves against Directory.current, not left bare',
+        () {
+          final resolved = resolveTestReportDir(
+            _options(reportDir: 'my-report'),
+          );
+
+          expect(p.isAbsolute(resolved), isTrue);
+          expect(resolved, equals(p.join(Directory.current.path, 'my-report')));
+        },
+      );
+
+      test(
+        'an already-absolute --web-results-dir is passed through unchanged',
+        () {
+          final absolute = Platform.isWindows
+              ? r'C:\ci\artifacts\results'
+              : '/ci/artifacts/results';
+
+          expect(
+            resolveTestResultsDir(_options(resultsDir: absolute)),
+            equals(absolute),
+          );
+        },
+      );
+
+      test(
+        'unset --web-results-dir/--web-report-dir fall back to Directory.current defaults',
+        () {
+          expect(
+            resolveTestResultsDir(_options()),
+            equals('${Directory.current.path}/test-results'),
+          );
+          expect(
+            resolveTestReportDir(_options()),
+            equals('${Directory.current.path}/playwright-report'),
+          );
+        },
+      );
+    },
+  );
+
+  group(
+    'nodeDependenciesUpToDate decides whether to skip npm install / playwright install',
+    () {
+      test(
+        'up to date: node_modules exists and the lockfile snapshot matches',
+        () {
+          expect(
+            nodeDependenciesUpToDate(
+              nodeModulesExists: true,
+              currentLockFileBytes: [1, 2, 3],
+              previousSnapshotBytes: [1, 2, 3],
+            ),
+            isTrue,
+          );
+        },
+      );
+
+      test('needs install: lockfile content changed since the last snapshot '
+          '(e.g. patrol_plus itself was upgraded, pinning different deps)', () {
+        expect(
+          nodeDependenciesUpToDate(
+            nodeModulesExists: true,
+            currentLockFileBytes: [1, 2, 3],
+            previousSnapshotBytes: [9, 9, 9],
+          ),
+          isFalse,
+        );
+      });
+
+      test('needs install: node_modules is missing entirely', () {
+        expect(
+          nodeDependenciesUpToDate(
+            nodeModulesExists: false,
+            currentLockFileBytes: [1, 2, 3],
+            previousSnapshotBytes: [1, 2, 3],
+          ),
+          isFalse,
+        );
+      });
+
+      test(
+        'needs install: no prior snapshot (first run against this web_runner copy)',
+        () {
+          expect(
+            nodeDependenciesUpToDate(
+              nodeModulesExists: true,
+              currentLockFileBytes: [1, 2, 3],
+              previousSnapshotBytes: null,
+            ),
+            isFalse,
+          );
+        },
+      );
+
+      test('needs install: package-lock.json is missing', () {
+        // Never treat "no lockfile to compare" as "nothing changed" --
+        // absence must never read as up-to-date.
+        expect(
+          nodeDependenciesUpToDate(
+            nodeModulesExists: true,
+            currentLockFileBytes: null,
+            previousSnapshotBytes: [1, 2, 3],
+          ),
+          isFalse,
+        );
+      });
+    },
+  );
 }
