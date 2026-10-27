@@ -1,5 +1,6 @@
 // Added by Bdaya-Dev — not present in the original LeanCode Patrol source. See NOTICE.md.
 import type { FullConfig } from "@playwright/test"
+import setup from "./setup"
 
 /**
  * Dispatches Playwright's single, config-level `globalSetup` hook (it runs
@@ -24,28 +25,32 @@ import type { FullConfig } from "@playwright/test"
  * byte-for-byte the same as calling `setup.ts` directly — zero behaviour
  * change for the existing, Patrol-instrumented flow.
  *
- * The dynamic `import("./setup.ts")` below uses an EXPLICIT ".ts"
- * extension. A bare `import("./setup")` (no extension) broke the normal
- * flow outright: every web e2e run failed in ~2s with "Total: 0" before
- * any browser work happened. This package has no `"type": "module"` in
- * package.json, and an extension-less dynamic specifier doesn't go
- * through the same resolution Playwright's own loader uses for the
- * static, extension-less imports the rest of this runner's files rely on
- * (confirmed live: adding the extension is the only change needed to get
- * `e2e-web` back to green — see this PR's history for the before/after
- * CI runs). Kept dynamic (not hoisted to a static top-level import) so
- * smoke mode's short-circuit above stays a true no-op: `setup.ts`
- * transitively imports several OTHER extension-less sibling specifiers
- * (`./initialise`, `./pageManager`, ...), and forcing those through
- * static resolution at this file's own load time reintroduces the exact
- * same extension problem one level down, just for all of its imports
- * instead of only this one.
+ * `setup` IS a static top-level import, same as every other Playwright-
+ * loaded file in this runner (test.spec.ts, setup.ts itself, etc. all
+ * import siblings extension-less and statically). It was previously a
+ * runtime `await import("./setup")` so smoke mode's short-circuit above
+ * could skip loading it — that broke the normal flow outright: Playwright
+ * pre-transforms the files it discovers via STATIC analysis (its own
+ * esbuild-based loader), but a runtime dynamic `import()` call is
+ * evaluated by Node's own bare module loader instead, which has no idea
+ * ".ts" needs stripping and tries to parse setup.ts as plain CommonJS —
+ * hence every web e2e run failing in ~1-2s with
+ * `SyntaxError: Cannot use import statement outside a module` at
+ * setup.ts's own `import` statements (confirmed by reproducing locally
+ * with `npx playwright test` directly, bypassing patrol_cli_plus's log
+ * capture, which had been swallowing that error and showing only a
+ * misleading ES-module warning + "Total: 0"). An explicit ".ts"
+ * extension on the dynamic specifier does NOT fix this — verified by
+ * reproducing the identical SyntaxError with `import("./setup.ts")` too;
+ * the dynamic-vs-static split, not the extension, is what Playwright's
+ * loader cares about. `setup.ts` has no top-level side effects (only
+ * imports + a function declaration), so loading it unconditionally even
+ * in smoke mode is free.
  */
 async function globalSetup(config: FullConfig): Promise<void> {
   if (process.env.PATROL_WEB_SMOKE_MODE === "true") {
     return
   }
-  const { default: setup } = await import("./setup.ts")
   await setup(config)
 }
 
