@@ -21,10 +21,12 @@ import { installSensitiveRedaction, validateSelectorsOrThrow } from "./sensitive
  *
  * Proves "an obscured field never appears unmasked in a captured artifact"
  * the only way that claim can actually be checked: by reading the PIXELS a
- * real screenshot produced (the same pixels a video frame or a trace's
- * visual DOM-snapshot reconstruction would show — all three render the same
- * composited page), not by inspecting DOM text or trusting that a CSS rule
- * was applied. Every region is checked BOTH with redaction off (the
+ * real screenshot produced (the same pixels a video frame would show — both
+ * render the same composited page; a `--web-trace`'s action-argument/DOM-
+ * snapshot recording is a SEPARATE, unrelated capture this feature does
+ * NOT reach — see sensitiveRedaction.ts's own doc comment), not by
+ * inspecting DOM text or trusting that a CSS rule was applied. Every region
+ * is checked BOTH with redaction off (the
  * control — proves the fixture's secret is genuinely visible/non-uniform
  * absent this feature, so a passing "is masked" assertion isn't vacuous)
  * and on (the fix).

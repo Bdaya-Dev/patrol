@@ -3,6 +3,7 @@ import { test } from "@playwright/test"
 import { enableCanvasKitSemantics, waitForFlutterEngineReady } from "./canvasKitSemantics"
 import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate"
 import { logger } from "./logger"
+import { DEFAULT_REDACT_COLOR, installSensitiveRedaction, parseRedactSelectors } from "./sensitiveRedaction"
 import { loadSmokeFlowModule, runScenariosReportingAllFailures } from "./smokeFlow"
 
 /**
@@ -25,6 +26,15 @@ import { loadSmokeFlowModule, runScenariosReportingAllFailures } from "./smokeFl
  * parsing anywhere in this file), so this mode is immune to the
  * harness-vs-summary mismatch tracked in
  * https://github.com/Bdaya-Dev/patrol/issues/61 by construction.
+ *
+ * Also installs the SAME artifact redaction overlay as `test.spec.ts`
+ * (`--web-redact-artifacts`, on by default). This path is a prime target for
+ * it specifically: a `--web-smoke-flow-module` on a deployed URL is the
+ * canonical way to drive a real, often signed-in flow against production,
+ * so a typed password here is exactly the secret that must never land
+ * unmasked in a screenshot or video artifact. See `sensitiveRedaction.ts`'s
+ * doc comment for what this does and does NOT cover (pixels only, never a
+ * `--web-trace`).
  */
 
 const baseUrl = process.env.BASE_URL
@@ -35,6 +45,12 @@ if (!baseUrl) {
 const errorGateConfig = {
   enabled: process.env.PATROL_WEB_ERROR_DETECTION === "true",
   allowlist: parseAllowList(process.env.PATROL_WEB_ERROR_ALLOW),
+}
+
+const redactConfig = {
+  enabled: process.env.PATROL_WEB_REDACT_ARTIFACTS !== "false",
+  selectors: parseRedactSelectors(process.env.PATROL_WEB_REDACT_SELECTORS),
+  maskColor: process.env.PATROL_WEB_REDACT_COLOR || DEFAULT_REDACT_COLOR,
 }
 
 const smokeFlowModulePath = process.env.PATROL_WEB_SMOKE_FLOW_MODULE
@@ -48,6 +64,16 @@ test.describe("patrol web smoke (--web-base-url)", () => {
   test("Flutter engine mounts with no un-allowlisted browser error on first load", async ({ page }) => {
     const errorGate = attachErrorGate(page, errorGateConfig)
     try {
+      // Registered BEFORE navigation -- addInitScript re-runs on every
+      // navigation/reload, but must be registered at least once before the
+      // first page.goto below for that first load to be covered too (same
+      // reasoning as test.spec.ts's own install site).
+      if (redactConfig.enabled) {
+        await installSensitiveRedaction(page, {
+          selectors: redactConfig.selectors,
+          maskColor: redactConfig.maskColor,
+        })
+      }
       await page.goto("/", { waitUntil: "domcontentloaded" })
       await waitForFlutterEngineReady(page, engineReadyTimeoutMs)
       const semanticsEnabled = await enableCanvasKitSemantics(page)
@@ -69,6 +95,15 @@ test.describe("patrol web smoke (--web-base-url)", () => {
       const scenarios = await loadSmokeFlowModule(smokeFlowModulePath)
       const errorGate = attachErrorGate(page, errorGateConfig)
       try {
+        // Same reasoning as the first test above -- must be registered
+        // before this test's own page.goto (if it navigates at all) so the
+        // overlay covers the custom flow's typed secrets too.
+        if (redactConfig.enabled) {
+          await installSensitiveRedaction(page, {
+            selectors: redactConfig.selectors,
+            maskColor: redactConfig.maskColor,
+          })
+        }
         if (!page.url() || page.url() === "about:blank") {
           await page.goto("/", { waitUntil: "domcontentloaded" })
           await waitForFlutterEngineReady(page, engineReadyTimeoutMs)
