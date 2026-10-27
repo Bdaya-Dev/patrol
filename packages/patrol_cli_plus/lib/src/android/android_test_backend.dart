@@ -89,6 +89,13 @@ class AndroidTestBackend {
       Process process;
       int exitCode;
 
+      // Written once and reused for both Gradle invocations below -- its
+      // content is static (it reads the environment at Gradle-run time), so
+      // there's no need to rewrite it per-invocation.
+      final dartDefinesInitScriptPath = _writeDartDefinesInitScriptIfNeeded(
+        options,
+      );
+
       // Build-time test discovery + static JUnit codegen (experimental,
       // opt-in). Runs a host `flutter test` in discovery mode to obtain a
       // manifest of the Dart test tree, then generates a static JUnit class so
@@ -138,12 +145,16 @@ class AndroidTestBackend {
           await _processManager.start(
               options.toGradleAssembleInvocation(
                 isWindows: _platform.isWindows,
+                dartDefinesGradleInitScriptPath: dartDefinesInitScriptPath,
               ),
               runInShell: true,
               workingDirectory: _rootDirectory.childDirectory('android').path,
-              environment: switch (javaPath) {
-                final String javaPath => {'JAVA_HOME': javaPath},
-                _ => {},
+              environment: {
+                ...switch (javaPath) {
+                  final String javaPath => {'JAVA_HOME': javaPath},
+                  _ => <String, String>{},
+                },
+                ...options.toGradleDartDefinesEnvironment(),
               },
             )
             ..disposedBy(scope);
@@ -166,12 +177,16 @@ class AndroidTestBackend {
           await _processManager.start(
               options.toGradleAssembleTestInvocation(
                 isWindows: _platform.isWindows,
+                dartDefinesGradleInitScriptPath: dartDefinesInitScriptPath,
               ),
               runInShell: true,
               workingDirectory: _rootDirectory.childDirectory('android').path,
-              environment: switch (javaPath) {
-                final String javaPath => {'JAVA_HOME': javaPath},
-                _ => {},
+              environment: {
+                ...switch (javaPath) {
+                  final String javaPath => {'JAVA_HOME': javaPath},
+                  _ => <String, String>{},
+                },
+                ...options.toGradleDartDefinesEnvironment(),
               },
             )
             ..disposedBy(scope);
@@ -191,6 +206,30 @@ class AndroidTestBackend {
         throw Exception(cause);
       }
     });
+  }
+
+  /// Writes the Gradle init script that delivers `dart-defines` via
+  /// [dartDefinesGradleEnvVar] (see
+  /// [AndroidAppOptions.toGradleDartDefinesEnvironment]'s doc comment) to a
+  /// fresh file in the system temp directory, returning its path -- or
+  /// `null`, adding no `--init-script` to the invocation at all, when there
+  /// are no dart-defines to deliver (the common case; skips the extra
+  /// Gradle init-script evaluation cost for nothing).
+  @visibleForTesting
+  String? writeDartDefinesInitScriptIfNeeded(AndroidAppOptions options) =>
+      _writeDartDefinesInitScriptIfNeeded(options);
+
+  String? _writeDartDefinesInitScriptIfNeeded(AndroidAppOptions options) {
+    if (options.toGradleDartDefinesEnvironment().isEmpty) {
+      return null;
+    }
+
+    final dir = _rootDirectory.fileSystem.systemTempDirectory.createTempSync(
+      'patrol_dart_defines_init_',
+    );
+    final file = dir.childFile('patrol_dart_defines.init.gradle')
+      ..writeAsStringSync(dartDefinesGradleInitScriptContents);
+    return file.path;
   }
 
   /// Verifies that Gradle will be able to locate the Android SDK before it is
@@ -497,11 +536,14 @@ class AndroidTestBackend {
               options.toGradleConnectedTestInvocation(
                 isWindows: _platform.isWindows,
                 onlyTestClass: onlyTestClass,
+                dartDefinesGradleInitScriptPath:
+                    _writeDartDefinesInitScriptIfNeeded(options),
               ),
               runInShell: true,
               environment: {
                 'ANDROID_SERIAL': device.id,
                 if (javaPath case final javaPath?) ...{'JAVA_HOME': javaPath},
+                ...options.toGradleDartDefinesEnvironment(),
               },
               workingDirectory: _rootDirectory.childDirectory('android').path,
             )

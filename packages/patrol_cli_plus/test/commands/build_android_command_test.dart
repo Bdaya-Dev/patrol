@@ -431,6 +431,11 @@ void main() {
 
         expect(result, equals(0));
 
+        // Gradle has no --dart-define-from-file equivalent (its only define
+        // channel is the `dart-defines` project property), so -- unlike
+        // every other platform -- this command DOES read the file's
+        // content, to deliver it to Gradle via AndroidAppOptions's own
+        // environment-based channel (toGradleDartDefinesEnvironment).
         verify(
           () => mockDartDefinesReader.extractDartDefineConfigJsonMap([
             'defines.json',
@@ -443,6 +448,36 @@ void main() {
         final opts = captured.first as AndroidAppOptions;
 
         expect(opts.flutter.dartDefineFromFilePaths, contains('defines.json'));
+
+        // SECURITY: the file's own key/value must never end up in
+        // `dartDefines` -- that map is what gets expanded into
+        // `--dart-define=K=V` on the flutter/gradle command line, which any
+        // local process (ps / Task Manager) can read. A previous revision
+        // merged the file's values into `dartDefines` and defeated that
+        // entirely.
+        expect(opts.flutter.dartDefines, isNot(contains('FILE_KEY')));
+        expect(opts.flutter.dartDefines.values, isNot(contains('file_value')));
+
+        // It must still reach Gradle somehow -- via extraDartDefinesFromFile
+        // and, from there, the environment (never argv). This is the fix
+        // for the regression the reviewer's own probe found on PR #67 at
+        // 552768a: "neither the file path nor its values reach any Gradle
+        // invocation."
+        expect(
+          opts.extraDartDefinesFromFile,
+          equals({'FILE_KEY': 'file_value'}),
+        );
+        final invocation = opts.toGradleAssembleTestInvocation(
+          isWindows: false,
+        );
+        expect(
+          invocation.any((arg) => arg.startsWith('-Pdart-defines=')),
+          isFalse,
+        );
+        expect(
+          opts.toGradleDartDefinesEnvironment()[dartDefinesGradleEnvVar],
+          isNotNull,
+        );
       });
 
       test('passes correct app and test server ports', () async {

@@ -7,7 +7,6 @@ import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:patrol_cli_plus/src/base/exceptions.dart';
 import 'package:patrol_cli_plus/src/base/extensions/core.dart';
 import 'package:patrol_cli_plus/src/base/logger.dart';
-import 'package:patrol_cli_plus/src/commands/dart_define_utils.dart';
 import 'package:patrol_cli_plus/src/commands/develop_options.dart';
 import 'package:patrol_cli_plus/src/compatibility_checker/compatibility_checker.dart';
 import 'package:patrol_cli_plus/src/crossplatform/app_options.dart';
@@ -206,7 +205,6 @@ class DevelopService {
     }
 
     final customDartDefines = {
-      ..._dartDefinesReader.fromFile(),
       ..._dartDefinesReader.fromCli(args: options.dartDefines),
     };
     final internalDartDefines = {
@@ -247,12 +245,6 @@ class DevelopService {
       );
     }
 
-    final mergedDartDefines = mergeDartDefines(
-      options.dartDefineFromFilePaths,
-      dartDefines,
-      _dartDefinesReader,
-    );
-
     final flavor = switch (device.targetPlatform) {
       TargetPlatform.android => androidFlavor,
       TargetPlatform.iOS => iosFlavor,
@@ -260,13 +252,23 @@ class DevelopService {
       _ => null,
     };
 
+    // SECURITY: see test.dart's identical comment -- the implicit
+    // .patrol.env file is forwarded by PATH, never read+merged into
+    // customDartDefines.
+    final dartDefineFromFilePaths = [
+      ...options.dartDefineFromFilePaths,
+      ?_dartDefinesReader.patrolEnvFilePathIfExists(),
+    ];
+
     final flutterOpts = FlutterAppOptions(
       command: options.flutterCommand,
       target: entrypoint.path,
       flavor: flavor,
       buildMode: options.buildMode,
-      dartDefines: mergedDartDefines,
-      dartDefineFromFilePaths: options.dartDefineFromFilePaths,
+      // SECURITY: see test.dart's identical comment — never the file's
+      // values, which must stay off this process's own argv.
+      dartDefines: dartDefines,
+      dartDefineFromFilePaths: dartDefineFromFilePaths,
       buildName: options.buildName,
       buildNumber: options.buildNumber,
     );
@@ -277,6 +279,12 @@ class DevelopService {
       appServerPort: options.appServerPort,
       testServerPort: options.testServerPort,
       uninstall: options.uninstall,
+      // See test.dart's identical comment -- Gradle has no
+      // --dart-define-from-file equivalent, so the file's values still
+      // need to reach it, via environment rather than argv.
+      extraDartDefinesFromFile: _dartDefinesReader
+          .extractDartDefineConfigJsonMap(dartDefineFromFilePaths)
+          .map((key, value) => MapEntry(key, value.toString())),
     );
 
     final iosOpts = IOSAppOptions(

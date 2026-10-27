@@ -6,7 +6,6 @@ import 'package:patrol_cli_plus/src/analytics/analytics.dart';
 import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:patrol_cli_plus/src/base/extensions/core.dart';
 import 'package:patrol_cli_plus/src/base/logger.dart';
-import 'package:patrol_cli_plus/src/commands/dart_define_utils.dart';
 import 'package:patrol_cli_plus/src/compatibility_checker/compatibility_checker.dart';
 import 'package:patrol_cli_plus/src/coverage/coverage_mode.dart';
 import 'package:patrol_cli_plus/src/coverage/coverage_tool.dart';
@@ -295,7 +294,6 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
     };
 
     final customDartDefines = {
-      ..._dartDefinesReader.fromFile(),
       ..._dartDefinesReader.fromCli(args: stringsArg('dart-define')),
     };
     final internalDartDefines = {
@@ -333,13 +331,19 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       );
     }
 
-    final dartDefineFromFilePaths = stringsArg('dart-define-from-file');
-
-    final mergedDartDefines = mergeDartDefines(
-      dartDefineFromFilePaths,
-      dartDefines,
-      _dartDefinesReader,
-    );
+    // SECURITY: the implicit .patrol.env file is forwarded by PATH, same as
+    // an explicit --dart-define-from-file -- never read+merged into
+    // customDartDefines above, which would put its values on argv for
+    // every non-Android platform (and, before the AndroidAppOptions fix
+    // below, on Gradle's argv too). .patrol.env uses the exact same
+    // key=value/quoting/#-comment grammar Flutter's own
+    // --dart-define-from-file already accepts for a non-JSON file, so
+    // handing Flutter this path directly parses identically to decoding it
+    // here (see DartDefinesReader.patrolEnvFilePathIfExists's doc comment).
+    final dartDefineFromFilePaths = [
+      ...stringsArg('dart-define-from-file'),
+      ?_dartDefinesReader.patrolEnvFilePathIfExists(),
+    ];
 
     final flavor = switch (device.targetPlatform) {
       TargetPlatform.android => androidFlavor,
@@ -353,7 +357,18 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       target: entrypoint.path,
       flavor: flavor,
       buildMode: buildMode,
-      dartDefines: mergedDartDefines,
+      // SECURITY: never the values read from either --dart-define-from-file
+      // or the implicit .patrol.env (dartDefines, built above, carries ONLY
+      // the CLI --dart-define args and patrol's own internal, non-secret
+      // defines — it is never merged with either file's contents). Flutter
+      // receives both via dartDefineFromFilePaths below, which it reads
+      // from the file itself; the whole point of using a file over
+      // --dart-define is to keep the value off this process's own command
+      // line, which any local process can read (ps / Task Manager). A
+      // previous revision merged the file's values into this map and
+      // expanded EVERY entry into --dart-define=K=V on argv, defeating
+      // that entirely.
+      dartDefines: dartDefines,
       dartDefineFromFilePaths: dartDefineFromFilePaths,
       buildName: buildName,
       buildNumber: buildNumber,
@@ -367,6 +382,15 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       testServerPort: super.testServerPort,
       uninstall: uninstall,
       emitTestManifest: emitTestManifest,
+      // Gradle has no `--dart-define-from-file` equivalent (its only define
+      // channel is the `dart-defines` project property), so the file's
+      // values must still reach it -- via AndroidAppOptions's own
+      // environment-based delivery (toGradleDartDefinesEnvironment), never
+      // by merging them into flutterOpts.dartDefines/argv the way the
+      // removed mergeDartDefines() used to.
+      extraDartDefinesFromFile: _dartDefinesReader
+          .extractDartDefineConfigJsonMap(dartDefineFromFilePaths)
+          .map((key, value) => MapEntry(key, value.toString())),
     );
 
     final iosOpts = IOSAppOptions(

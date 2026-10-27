@@ -56,6 +56,30 @@ void _test(Platform platform) {
       });
     });
 
+    group('patrolEnvFilePathIfExists()', () {
+      test('returns null when .patrol.env does not exist', () {
+        expect(reader.patrolEnvFilePathIfExists(), isNull);
+      });
+
+      test(
+        'returns a path to .patrol.env, resolvable from any cwd, when it exists',
+        () {
+          fs.file('.patrol.env').writeAsStringSync('EMAIL=email@example.com\n');
+
+          final result = reader.patrolEnvFilePathIfExists();
+          if (result == null) {
+            fail('expected a path, got null');
+          }
+
+          // Must be the project root's copy specifically, independent of
+          // whatever the CALLER's own cwd happens to be when it later hands
+          // this path to Flutter via --dart-define-from-file.
+          expect(fs.file(result).existsSync(), isTrue);
+          expect(fs.file(result).readAsStringSync(), contains('EMAIL='));
+        },
+      );
+    });
+
     group('fromFile()', () {
       late File file;
       setUp(() {

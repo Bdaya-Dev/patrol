@@ -140,7 +140,6 @@ class BuildMacOSCommand extends PatrolCommand {
     final displayLabel = boolArg('label');
 
     final customDartDefines = {
-      ..._dartDefinesReader.fromFile(),
       ..._dartDefinesReader.fromCli(args: stringsArg('dart-define')),
     };
     final internalDartDefines = {
@@ -168,7 +167,13 @@ class BuildMacOSCommand extends PatrolCommand {
       );
     }
 
-    final dartDefineFromFilePaths = stringsArg('dart-define-from-file');
+    // SECURITY: see test.dart's identical comment -- the implicit
+    // .patrol.env file is forwarded by PATH, never read+merged into
+    // customDartDefines.
+    final dartDefineFromFilePaths = [
+      ...stringsArg('dart-define-from-file'),
+      ?_dartDefinesReader.patrolEnvFilePathIfExists(),
+    ];
 
     final flutterOpts = FlutterAppOptions(
       command: flutterCommand,

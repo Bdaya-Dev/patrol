@@ -7,7 +7,6 @@ import 'package:patrol_cli_plus/src/analytics/analytics.dart';
 import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:patrol_cli_plus/src/base/extensions/core.dart';
 import 'package:patrol_cli_plus/src/base/logger.dart';
-import 'package:patrol_cli_plus/src/commands/dart_define_utils.dart';
 import 'package:patrol_cli_plus/src/compatibility_checker/compatibility_checker.dart';
 import 'package:patrol_cli_plus/src/crossplatform/app_options.dart';
 import 'package:patrol_cli_plus/src/dart_defines_reader.dart';
@@ -146,7 +145,6 @@ class BuildAndroidCommand extends PatrolCommand {
     final noTreeShakeIcons = boolArg('no-tree-shake-icons');
 
     final customDartDefines = {
-      ..._dartDefinesReader.fromFile(),
       ..._dartDefinesReader.fromCli(args: stringsArg('dart-define')),
     };
     final internalDartDefines = {
@@ -173,20 +171,22 @@ class BuildAndroidCommand extends PatrolCommand {
       );
     }
 
-    final dartDefineFromFilePaths = stringsArg('dart-define-from-file');
-
-    final mergedDartDefines = mergeDartDefines(
-      dartDefineFromFilePaths,
-      dartDefines,
-      _dartDefinesReader,
-    );
+    // SECURITY: see test.dart's identical comment -- the implicit
+    // .patrol.env file is forwarded by PATH, never read+merged into
+    // customDartDefines.
+    final dartDefineFromFilePaths = [
+      ...stringsArg('dart-define-from-file'),
+      ?_dartDefinesReader.patrolEnvFilePathIfExists(),
+    ];
 
     final flutterOpts = FlutterAppOptions(
       command: flutterCommand,
       target: entrypoint.path,
       flavor: flavor,
       buildMode: buildMode,
-      dartDefines: mergedDartDefines,
+      // SECURITY: see test.dart's identical comment — never the file's
+      // values, which must stay off this process's own argv.
+      dartDefines: dartDefines,
       dartDefineFromFilePaths: dartDefineFromFilePaths,
       buildName: buildName,
       buildNumber: buildNumber,
@@ -201,6 +201,12 @@ class BuildAndroidCommand extends PatrolCommand {
       uninstall: uninstall,
       emitTestManifest:
           optionalBoolArg('emit-test-manifest') ?? config.emitTestManifest,
+      // See test.dart's identical comment -- Gradle has no
+      // --dart-define-from-file equivalent, so the file's values still
+      // need to reach it, via environment rather than argv.
+      extraDartDefinesFromFile: _dartDefinesReader
+          .extractDartDefineConfigJsonMap(dartDefineFromFilePaths)
+          .map((key, value) => MapEntry(key, value.toString())),
     );
 
     try {
