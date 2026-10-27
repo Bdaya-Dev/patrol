@@ -88,7 +88,10 @@ export default defineConfig({
     acceptDownloads,
     launchOptions,
   },
-  globalSetup: require.resolve("./tests/setup"),
+  // F-URL: tests/globalSetup.ts dispatches between the normal,
+  // Patrol-instrumented bootstrap (tests/setup.ts) and a no-op for
+  // deployed-URL smoke mode (--web-base-url) — see its doc comment.
+  globalSetup: require.resolve("./tests/globalSetup"),
   outputDir,
   reporter,
   retries,

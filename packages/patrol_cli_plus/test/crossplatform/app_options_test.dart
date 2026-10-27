@@ -1110,6 +1110,51 @@ void main() {
       );
     });
 
+    group('carries the deployed-URL smoke mode config (F-URL)', () {
+      const flutterOpts = FlutterAppOptions(
+        command: flutterCommand,
+        target: 'patrol_test/app_test.dart',
+        buildMode: BuildMode.profile,
+        flavor: null,
+        buildName: null,
+        buildNumber: null,
+        dartDefines: {},
+        dartDefineFromFilePaths: [],
+      );
+
+      test('webBaseUrl defaults to null (the normal local build-and-serve flow '
+          'runs)', () {
+        options = const WebAppOptions(flutter: flutterOpts);
+        expect(options.webBaseUrl, isNull);
+      });
+
+      test('webBaseUrl is carried through (from --web-base-url)', () {
+        options = const WebAppOptions(
+          flutter: flutterOpts,
+          webBaseUrl: 'https://staging.example.com',
+        );
+        expect(options.webBaseUrl, 'https://staging.example.com');
+      });
+
+      test(
+        'webSmokeFlowModule defaults to null (only the built-in check runs)',
+        () {
+          options = const WebAppOptions(flutter: flutterOpts);
+          expect(options.webSmokeFlowModule, isNull);
+        },
+      );
+
+      test('webSmokeFlowModule is carried through (from '
+          '--web-smoke-flow-module)', () {
+        options = const WebAppOptions(
+          flutter: flutterOpts,
+          webBaseUrl: 'https://staging.example.com',
+          webSmokeFlowModule: 'patrol_test/ci/queue_smoke.ts',
+        );
+        expect(options.webSmokeFlowModule, 'patrol_test/ci/queue_smoke.ts');
+      });
+    });
+
     group('toEnvironmentVariables', () {
       const flutterOpts = FlutterAppOptions(
         command: flutterCommand,
@@ -1202,6 +1247,8 @@ void main() {
           authFlow: '{"loginUrlPattern":"https://idp.example"}',
           authStateFile: '.patrol_auth_state.json',
           authFlowModule: 'patrol_test/ci/flow.ts',
+          webBaseUrl: 'https://staging.example.com',
+          webSmokeFlowModule: 'patrol_test/ci/queue_smoke.ts',
         );
 
         expect(
@@ -1253,7 +1300,24 @@ void main() {
             'PATROL_WEB_AUTH_FLOW': '{"loginUrlPattern":"https://idp.example"}',
             'PATROL_WEB_AUTH_STATE_FILE': '.patrol_auth_state.json',
             'PATROL_WEB_AUTH_FLOW_MODULE': 'patrol_test/ci/flow.ts',
+            // webBaseUrl itself is NOT expected here — see the dedicated
+            // test below: it is passed as BASE_URL by the caller instead.
+            'PATROL_WEB_SMOKE_FLOW_MODULE': 'patrol_test/ci/queue_smoke.ts',
           }),
+        );
+      });
+
+      test('webBaseUrl is never emitted as an environment variable — it is '
+          'passed as BASE_URL by the caller instead, same as the locally-'
+          'served flow already does', () {
+        options = const WebAppOptions(
+          flutter: flutterOpts,
+          webBaseUrl: 'https://staging.example.com',
+        );
+
+        expect(
+          options.toEnvironmentVariables().keys,
+          isNot(contains('PATROL_WEB_BASE_URL')),
         );
       });
     });

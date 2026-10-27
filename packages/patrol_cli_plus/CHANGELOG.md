@@ -5,6 +5,15 @@
   (repeatable, JSON array), and `--web-redact-color`. See `patrol_plus`'s
   matching Unreleased entry for what artifact secret redaction does and
   why.
+- **FEAT**(patrol_cli_plus): deployed-URL smoke mode (F-URL) — add
+  `--web-base-url` and `--web-smoke-flow-module`. `--web-base-url` skips
+  building and serving a local Flutter web app and runs `patrol test` web
+  runs directly against the given, already-deployed URL instead; mutually
+  exclusive with `--coverage` (there is no local build to source-map).
+  `--web-smoke-flow-module` names a Node/TS module driving app-specific
+  assertions against it. See `patrol_plus`'s Unreleased entry for the full
+  rationale and the new `tests/smokeTest.spec.ts` web-runner spec this
+  selects instead of the normal, Patrol-instrumented one.
 
 ## 5.6.0
 
