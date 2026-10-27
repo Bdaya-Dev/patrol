@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:dispose_scope/dispose_scope.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
@@ -29,6 +30,28 @@ const _kDefaultWebServerTimeoutSeconds = 120;
 /// file.
 String _resolveRelativeToCwd(String path) {
   return p.isAbsolute(path) ? path : p.join(Directory.current.path, path);
+}
+
+/// Resolves `--web-results-dir`/`--web-report-dir` the same way as
+/// [_resolveRelativeToCwd]: a relative value must land inside the invoking
+/// project, not inside Playwright's own cwd (`web_runner/`). Extracted (and
+/// made public to this file's tests via [resolveTestResultsDir] /
+/// [resolveTestReportDir]) because the previous shape --
+/// `options.resultsDir ?? '${Directory.current.path}/test-results'` -- only
+/// ever anchored the DEFAULT to the invoking cwd; a caller-supplied relative
+/// value was forwarded to Playwright verbatim.
+@visibleForTesting
+String resolveTestResultsDir(WebAppOptions options) {
+  return options.resultsDir != null
+      ? _resolveRelativeToCwd(options.resultsDir!)
+      : '${Directory.current.path}/test-results';
+}
+
+@visibleForTesting
+String resolveTestReportDir(WebAppOptions options) {
+  return options.reportDir != null
+      ? _resolveRelativeToCwd(options.reportDir!)
+      : '${Directory.current.path}/playwright-report';
 }
 
 /// The `flutter run` command line that serves the app under test.
@@ -609,10 +632,8 @@ class WebTestBackend {
       // Install Node.js dependencies if needed
       await _ensureNodeDependencies(webRunnerPath);
 
-      final testResultsDir =
-          options.resultsDir ?? '${Directory.current.path}/test-results';
-      final testReportDir =
-          options.reportDir ?? '${Directory.current.path}/playwright-report';
+      final testResultsDir = resolveTestResultsDir(options);
+      final testReportDir = resolveTestReportDir(options);
 
       _logger
         ..detail('Test results will be saved to: $testResultsDir')
@@ -716,10 +737,8 @@ class WebTestBackend {
 
     await _ensureNodeDependencies(webRunnerPath);
 
-    final testResultsDir =
-        options.resultsDir ?? '${Directory.current.path}/test-results';
-    final testReportDir =
-        options.reportDir ?? '${Directory.current.path}/playwright-report';
+    final testResultsDir = resolveTestResultsDir(options);
+    final testReportDir = resolveTestReportDir(options);
 
     _logger
       ..detail('Test results will be saved to: $testResultsDir')
@@ -864,6 +883,42 @@ class WebTestBackend {
   }
 
   Future<void> _ensureNodeDependencies(String webRunnerPath) async {
+    // webRunnerPath is the patrol_plus package's OWN, persistent web_runner/
+    // directory (resolved via _getWebRunnerPath from the package config) --
+    // not a fresh temp dir per run. So `npm install` and
+    // `playwright install chromium` running unconditionally here pay their
+    // full cost on every single `patrol test -d chrome` invocation, even
+    // when nothing changed since the last one. Both are skipped once
+    // node_modules/package-lock.json's content exactly matches what the
+    // last successful install snapshotted -- if the lockfile (hence every
+    // pinned dependency version, including playwright's) is unchanged,
+    // whatever was installed for it last time still is.
+    final lockFile = File(p.join(webRunnerPath, 'package-lock.json'));
+    final nodeModulesDir = Directory(p.join(webRunnerPath, 'node_modules'));
+    final snapshotFile = File(
+      p.join(webRunnerPath, 'node_modules', _nodeDepsSnapshotFileName),
+    );
+
+    final currentLockFileBytes = lockFile.existsSync()
+        ? lockFile.readAsBytesSync()
+        : null;
+    final previousSnapshotBytes = snapshotFile.existsSync()
+        ? snapshotFile.readAsBytesSync()
+        : null;
+
+    if (nodeDependenciesUpToDate(
+      nodeModulesExists: nodeModulesDir.existsSync(),
+      currentLockFileBytes: currentLockFileBytes,
+      previousSnapshotBytes: previousSnapshotBytes,
+    )) {
+      _logger.detail(
+        'Node.js + Playwright browser dependencies already up to date '
+        '(package-lock.json unchanged since the last install) -- skipping '
+        'npm install and playwright install.',
+      );
+      return;
+    }
+
     _logger.info('Installing Node.js dependencies...');
 
     final nodeResult = await _processManager.run(
@@ -902,5 +957,40 @@ class WebTestBackend {
         result.exitCode,
       );
     }
+
+    // Snapshot the lockfile we just installed against, so the next
+    // invocation can detect "nothing changed" and skip both steps above.
+    // Written only on full success of BOTH installs -- a failed run must
+    // never be mistaken for an up-to-date one. node_modules is guaranteed
+    // to exist at this point (npm install just succeeded above).
+    if (currentLockFileBytes != null) {
+      snapshotFile.writeAsBytesSync(currentLockFileBytes);
+    }
   }
+}
+
+const _nodeDepsSnapshotFileName = '.patrol_lockfile_snapshot';
+
+/// Pure decision for [WebTestBackend._ensureNodeDependencies]: both
+/// `npm install` and `playwright install chromium` are skippable exactly
+/// when node_modules already exists AND the lockfile's current content is
+/// byte-identical to what the last successful install snapshotted. Either
+/// bytes being null (lockfile or snapshot missing) always means "install"
+/// -- never guess up-to-date from absence.
+@visibleForTesting
+bool nodeDependenciesUpToDate({
+  required bool nodeModulesExists,
+  required List<int>? currentLockFileBytes,
+  required List<int>? previousSnapshotBytes,
+}) {
+  if (!nodeModulesExists) {
+    return false;
+  }
+  if (currentLockFileBytes == null || previousSnapshotBytes == null) {
+    return false;
+  }
+  return const ListEquality<int>().equals(
+    currentLockFileBytes,
+    previousSnapshotBytes,
+  );
 }
