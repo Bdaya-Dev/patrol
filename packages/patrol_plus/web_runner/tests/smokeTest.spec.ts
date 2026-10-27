@@ -3,7 +3,7 @@ import { test } from "@playwright/test"
 import { enableCanvasKitSemantics, waitForFlutterEngineReady } from "./canvasKitSemantics"
 import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate"
 import { logger } from "./logger"
-import { loadSmokeFlowModule } from "./smokeFlow"
+import { loadSmokeFlowModule, runScenariosReportingAllFailures } from "./smokeFlow"
 
 /**
  * F-URL — deployed-URL smoke mode, selected by `patrol_cli_plus` instead of
@@ -75,19 +75,23 @@ test.describe("patrol web smoke (--web-base-url)", () => {
           await enableCanvasKitSemantics(page)
         }
 
-        for (const scenario of scenarios) {
-          // eslint-disable-next-line no-await-in-loop
-          await test.step(scenario.name, async () => {
-            await scenario.run({
-              page,
-              // pino 9 derives the allowed printf args from the message's
-              // literal type; the module contract forwards an opaque
-              // (msg, ...args) pair, so the spread is widened here.
-              log: (msg, ...args) => logger.info(msg, ...(args as [])),
-              baseUrl,
-            })
-          })
-        }
+        // See runScenariosReportingAllFailures's doc comment: plain
+        // test.step() re-throws on failure, which would abort every
+        // scenario listed AFTER the first failing one in
+        // --web-smoke-flow-module -- contradicting this file's own stated
+        // contract above ("one failing check doesn't hide the others").
+        await runScenariosReportingAllFailures(
+          scenarios,
+          {
+            page,
+            // pino 9 derives the allowed printf args from the message's
+            // literal type; the module contract forwards an opaque
+            // (msg, ...args) pair, so the spread is widened here.
+            log: (msg, ...args) => logger.info(msg, ...(args as [])),
+            baseUrl,
+          },
+          (name, fn) => test.step(name, fn),
+        )
       } finally {
         errorGate.dispose()
       }
