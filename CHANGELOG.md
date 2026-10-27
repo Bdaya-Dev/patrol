@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-10-27
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`patrol_cli_plus` - `v5.7.0`](#patrol_cli_plus---v570)
+ - [`patrol_plus` - `v5.8.0`](#patrol_plus---v580)
+
+---
+
+#### `patrol_cli_plus` - `v5.7.0`
+
+ - **FEAT**(patrol_plus,patrol_cli_plus): deployed-URL smoke mode (--web-base-url) ([#62](https://github.com/Bdaya-Dev/patrol/issues/62)). ([5fc9cf7d](https://github.com/Bdaya-Dev/patrol/commit/5fc9cf7db899d9f13aecf5288224483fceb63c59))
+
+#### `patrol_plus` - `v5.8.0`
+
+ - **FEAT**(patrol_plus,patrol_cli_plus): deployed-URL smoke mode (--web-base-url) ([#62](https://github.com/Bdaya-Dev/patrol/issues/62)). ([5fc9cf7d](https://github.com/Bdaya-Dev/patrol/commit/5fc9cf7db899d9f13aecf5288224483fceb63c59))
+
+
 ## 2026-09-07
 
 ### Changes

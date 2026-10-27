@@ -1,3 +1,7 @@
+## 5.7.0
+
+ - **FEAT**(patrol_plus,patrol_cli_plus): deployed-URL smoke mode (--web-base-url) ([#62](https://github.com/Bdaya-Dev/patrol/issues/62)). ([5fc9cf7d](https://github.com/Bdaya-Dev/patrol/commit/5fc9cf7db899d9f13aecf5288224483fceb63c59))
+
 ## Unreleased
 
 - **FEAT**(patrol_cli_plus): deployed-URL smoke mode (F-URL) — add
