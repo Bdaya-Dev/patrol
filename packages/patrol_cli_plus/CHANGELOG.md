@@ -5,6 +5,11 @@
 
 ## Unreleased
 
+- **FEAT**(patrol_cli_plus): add `--web-redact-artifacts` (default on;
+  disable with `--no-web-redact-artifacts`), `--web-redact-selector`
+  (repeatable, JSON array), and `--web-redact-color`. See `patrol_plus`'s
+  matching Unreleased entry for what artifact secret redaction does and
+  why.
 - **FEAT**(patrol_cli_plus): deployed-URL smoke mode (F-URL) — add
   `--web-base-url` and `--web-smoke-flow-module`. `--web-base-url` skips
   building and serving a local Flutter web app and runs `patrol test` web

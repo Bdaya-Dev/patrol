@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:patrol_cli_plus/src/analytics/analytics.dart';
 import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:patrol_cli_plus/src/base/extensions/core.dart';
@@ -453,6 +454,9 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       // in web_runner + web_test_backend PATROL_WEB_ERROR_* env forwarding).
       errorDetection: boolArg('web-error-detection'),
       errorAllow: stringArg('web-error-allow'),
+      redactArtifacts: boolArg('web-redact-artifacts'),
+      redactSelectors: stringArg('web-redact-selector'),
+      redactColor: stringArg('web-redact-color'),
       // Auto-enables CanvasKit semantics on every page before its test body
       // runs (see canvasKitSemantics.ts in web_runner). On by default; set
       // to false via --no-web-auto-semantics.
@@ -476,6 +480,31 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       webBaseUrl: webBaseUrl,
       webSmokeFlowModule: stringArg('web-smoke-flow-module'),
     );
+
+    // SECURITY: redaction only covers captured PIXELS (screenshot/video);
+    // Playwright's trace records action arguments and DOM snapshots
+    // verbatim, so a password typed during --web-auth-flow(-module) --
+    // or during a --web-smoke-flow-module run against a real, often
+    // signed-in deployed URL -- can still land in a --web-trace in
+    // plaintext even though the same screenshot/video is correctly masked.
+    // Warn loudly rather than silently ship an artifact that
+    // claims-by-omission to be safe -- narrowing the --web-redact-artifacts
+    // help text alone is easy to miss.
+    if (shouldWarnTraceAuthFlowCombo(
+      trace: webOpts.trace,
+      authFlow: webOpts.authFlow,
+      authFlowModule: webOpts.authFlowModule,
+      smokeFlowModule: webOpts.webSmokeFlowModule,
+    )) {
+      _logger.warn(
+        '--web-trace is combined with --web-auth-flow(-module) or '
+        '--web-smoke-flow-module: the resulting trace will contain any '
+        'password typed during that flow in PLAINTEXT (Playwright records '
+        'action arguments and DOM snapshots verbatim -- '
+        '--web-redact-artifacts only masks pixels in screenshots/video). '
+        'Handle this trace file accordingly.',
+      );
+    }
 
     // No need to build web app for testing. It's done in the execute method.
     if (device.targetPlatform != TargetPlatform.web) {
@@ -764,4 +793,31 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
         defaultsTo: 'context',
       );
   }
+}
+
+/// Whether a REAL `--web-trace` (i.e. not explicitly `off`, the default
+/// meaning "no trace is produced at all") is combined with a mechanism that
+/// types or otherwise handles a real secret on the page -- `--web-auth-flow`,
+/// `--web-auth-flow-module`, or `--web-smoke-flow-module` -- the case where
+/// `--web-redact-artifacts`'s pixel-only masking does not reach a secret
+/// that Playwright's own trace still records verbatim. Extracted as a pure
+/// function because [TestCommand] has no existing unit-test harness (it is
+/// the one command with no `test/commands/test_command_test.dart`, and
+/// building a full mocktail harness for it is out of scope for this one
+/// warning condition).
+///
+/// `trace == 'off'` must NOT warn: `off` is one of `--web-trace`'s own
+/// allowed values (`patrol_command.dart`'s `allowed: ['off', 'on',
+/// 'only-on-failure', 'on-first-failure']`) and means no trace file is
+/// produced at all, so there is nothing for a secret to leak into.
+@visibleForTesting
+bool shouldWarnTraceAuthFlowCombo({
+  required String? trace,
+  required String? authFlow,
+  required String? authFlowModule,
+  String? smokeFlowModule,
+}) {
+  return trace != null &&
+      trace != 'off' &&
+      (authFlow != null || authFlowModule != null || smokeFlowModule != null);
 }

@@ -18,6 +18,7 @@ import { initialise } from "./initialise"
 import { logger } from "./logger"
 import { PageManager } from "./pageManager"
 import { exposePatrolPlatformHandler } from "./patrolPlatformHandler"
+import { DEFAULT_REDACT_COLOR, installSensitiveRedaction, parseRedactSelectors } from "./sensitiveRedaction"
 import { resolveSourceMaps } from "./sourceMapResolver"
 import { PatrolTestEntry } from "./types"
 import { appendZeroFillLcov } from "./zeroFillLcov"
@@ -109,6 +110,17 @@ const isolationMode = process.env.PATROL_WEB_ISOLATION || "context"
 const errorGateConfig = {
   enabled: process.env.PATROL_WEB_ERROR_DETECTION === "true",
   allowlist: parseAllowList(process.env.PATROL_WEB_ERROR_ALLOW),
+}
+
+// Artifact secret redaction. On by default — PATROL_WEB_REDACT_ARTIFACTS is
+// always emitted as an explicit "true"/"false", same reasoning as the
+// error-gate flag above. Parsed once at module load, same fail-fast posture
+// as the error-gate allowlist: a malformed --web-redact-selector must break
+// the run loudly, not silently redact fewer elements than asked.
+const redactConfig = {
+  enabled: process.env.PATROL_WEB_REDACT_ARTIFACTS !== "false",
+  selectors: parseRedactSelectors(process.env.PATROL_WEB_REDACT_SELECTORS),
+  maskColor: process.env.PATROL_WEB_REDACT_COLOR || DEFAULT_REDACT_COLOR,
 }
 
 // Auto-enable CanvasKit semantics before every test body runs. On by default
@@ -225,6 +237,16 @@ async function setupPage(page: Page, canvasKitSemanticsCache: CanvasKitSemantics
   if (cachedSession) {
     logger.info("Auth flow: restoring cached session from %s (skipping login)", authStateFile)
     await restoreCachedSession(page, cachedSession)
+  }
+
+  // Registered BEFORE navigation (addInitScript re-runs on every
+  // navigation/reload, but must be registered at least once before the
+  // first page.goto below for that first load to be covered too).
+  if (redactConfig.enabled) {
+    await installSensitiveRedaction(page, {
+      selectors: redactConfig.selectors,
+      maskColor: redactConfig.maskColor,
+    })
   }
 
   await page.addInitScript(() => {

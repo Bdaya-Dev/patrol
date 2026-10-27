@@ -597,6 +597,9 @@ class WebAppOptions {
     this.grepInvert,
     this.errorDetection = false,
     this.errorAllow,
+    this.redactArtifacts = true,
+    this.redactSelectors,
+    this.redactColor,
     this.autoSemantics = true,
     this.authFlow,
     this.authStateFile,
@@ -706,6 +709,35 @@ class WebAppOptions {
   /// [errorDetection] whose text contains any of these (case-insensitively)
   /// is allowlisted rather than failing the test. Set by `--web-error-allow`.
   final String? errorAllow;
+
+  /// Whether to redact sensitive elements (every `input[type="password"]`
+  /// plus any [redactSelectors]) out of captured PIXELS — screenshot and
+  /// video frames. On by default; set to false via
+  /// `--no-web-redact-artifacts`. See `sensitiveRedaction.ts` (web_runner)
+  /// for why this needs a live DOM overlay rather than Playwright's own
+  /// `page.screenshot({ mask })` — that option has no equivalent for video,
+  /// and does not exist at all for the automatic on-failure screenshot.
+  /// Also installed on the deployed-URL smoke path ([webBaseUrl] /
+  /// `smokeTest.spec.ts`), so a `--web-smoke-flow-module` run against a
+  /// real, often signed-in deployed site gets the same masking.
+  ///
+  /// Does NOT reach a `--web-trace`: Playwright records action arguments
+  /// (e.g. a typed password) and DOM snapshots verbatim, so a value typed
+  /// into a redacted field can still appear in the trace in plaintext even
+  /// though every screenshot/video masks it. `test.dart` warns when
+  /// `--web-trace` is combined with `--web-auth-flow`/`--web-auth-flow-module`/
+  /// `--web-smoke-flow-module` for this reason.
+  final bool redactArtifacts;
+
+  /// JSON array of additional CSS selectors to redact, beyond the built-in
+  /// `input[type="password"]`. Set by `--web-redact-selector`. Has no
+  /// effect when [redactArtifacts] is false.
+  final String? redactSelectors;
+
+  /// CSS color for the redaction overlay (default `#FF00FF`, matching
+  /// Playwright's own `page.screenshot({ mask })` default). Set by
+  /// `--web-redact-color`.
+  final String? redactColor;
 
   /// Whether to automatically dispatch a click on the CanvasKit
   /// `flt-semantics-placeholder` host element before every test's body runs,
@@ -819,6 +851,9 @@ class WebAppOptions {
       'PATROL_WEB_ERROR_DETECTION': errorDetection,
       'PATROL_WEB_ERROR_ALLOW': errorAllow,
       // Always emitted, same reasoning as PATROL_WEB_ERROR_DETECTION above.
+      'PATROL_WEB_REDACT_ARTIFACTS': redactArtifacts,
+      'PATROL_WEB_REDACT_SELECTORS': redactSelectors,
+      'PATROL_WEB_REDACT_COLOR': redactColor,
       'PATROL_WEB_AUTO_SEMANTICS': autoSemantics,
       'PATROL_WEB_AUTH_FLOW': authFlow,
       // Emitted as given; the web backend re-resolves these two paths

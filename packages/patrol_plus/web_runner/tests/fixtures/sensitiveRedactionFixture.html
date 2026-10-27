@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Patrol sensitive-redaction fixture</title>
+    <!--
+      Minimal fixture for sensitiveRedaction.browser.test.ts. Loaded via
+      `page.goto('file://...')`, NOT `page.setContent(...)` -- the latter
+      never fires `page.addInitScript` at all (confirmed live), which is
+      how `installSensitiveRedaction` and the real web_runner both reach a
+      page. The full patrol harness cannot run standalone here regardless
+      (see inFlowFixture.html's doc comment for why).
+
+      This fixture models THREE distinct ways a secret can be visually
+      rendered, because they need different redaction strategies and a CSS
+      rule that only happens to work on one of them is not proof it works
+      on the others:
+
+        - a real `<input type="password">` -- redaction here must survive
+          the browser's OWN default password masking already being active,
+          so the test's baseline/control run deliberately reveals the
+          typed VALUE via a sibling live-text echo, not the dot-masked
+          input itself, or an already-dotted baseline would look identical
+          to a redacted one and the control would prove nothing.
+        - a plain `<div>` directly rendering secret text -- the common case
+          for a displayed API key / OTP / token.
+        - a `<canvas>` with secret text PAINTED onto its pixels, with a
+          separate, normally-invisible positioning `<div>` placed exactly
+          over the painted region. This stands in for Flutter's CanvasKit
+          renderer: the real pixels are Skia-painted onto one big canvas,
+          and the only DOM node at that screen position is an
+          accessibility-only semantics node carrying no visual content of
+          its own. A redaction technique that works by styling the MATCHED
+          element's own `color`/`background` (ordinary CSS) is invisible to
+          this case -- the canvas keeps painting underneath it regardless --
+          which is exactly the gap a position-tracking DOM overlay (drawn
+          ON TOP, sized from `getBoundingClientRect()`) closes. Proving
+          redaction here is proving it would work against a real Flutter
+          web app, not just against ordinary HTML.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #displayed-secret {
+        position: absolute;
+        top: 100px;
+        left: 0;
+        font-family: monospace;
+        font-size: 20px;
+        color: #000000;
+        background: #ffffff;
+      }
+      #pw-echo {
+        position: absolute;
+        top: 150px;
+        left: 0;
+        font-family: monospace;
+        font-size: 20px;
+      }
+      #pw {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      #canvas-secret {
+        position: absolute;
+        top: 200px;
+        left: 0;
+      }
+      /* Normally invisible -- its only job is to carry the sensitive
+         selector at the screen position the canvas paints the secret at,
+         standing in for a Flutter semantics node. */
+      #canvas-proxy {
+        position: absolute;
+        top: 200px;
+        left: 0;
+        width: 220px;
+        height: 40px;
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <input type="password" id="pw" value="pw-secret-xyz" />
+    <!-- Echoes the input's real value as plain text, standing in for
+         "what a password manager preview / autofill dropdown / assistive
+         tooling can reveal even though the input itself renders dots". -->
+    <div id="pw-echo"></div>
+
+    <div id="displayed-secret" data-patrol-sensitive>DISPLAYED-SECRET-ABC</div>
+
+    <canvas id="canvas-secret" width="220" height="40"></canvas>
+    <div id="canvas-proxy" data-patrol-sensitive></div>
+
+    <script>
+      document.getElementById("pw-echo").textContent = document.getElementById("pw").value
+
+      const ctx = document.getElementById("canvas-secret").getContext("2d")
+      ctx.font = "20px monospace"
+      ctx.fillStyle = "#000000"
+      ctx.fillText("CANVAS-PAINTED-SECRET", 0, 25)
+    </script>
+  </body>
+</html>

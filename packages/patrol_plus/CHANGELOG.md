@@ -5,6 +5,32 @@
 
 ## Unreleased
 
+- **FEAT**(patrol_plus): on-by-default artifact secret redaction. Every
+  `input[type="password"]` plus any selector added via
+  `--web-redact-selector` is covered by a live, position-tracking DOM
+  overlay for the whole page lifetime, so it is masked in every captured
+  PIXEL artifact — screenshot (automatic or manual) and video frames —
+  not just one-off `page.screenshot({ mask })` calls, which have no
+  equivalent for video and don't exist at all for the automatic
+  on-failure screenshot. Works even when the real pixels are painted
+  onto a `<canvas>` (Flutter's CanvasKit renderer) rather than styled
+  DOM, since the overlay is drawn on top using the matched element's own
+  `getBoundingClientRect()` rather than relying on that element's own
+  visual rendering. Also covers the deployed-URL smoke path
+  (`--web-base-url` / `smokeTest.spec.ts`), so a signed-in smoke flow
+  driven by `--web-smoke-flow-module` gets the same masking as the normal
+  instrumented flow. Does NOT reach a `--web-trace` — Playwright records
+  action arguments and DOM snapshots verbatim, so a typed password can
+  still appear there in plaintext; combining `--web-trace` with
+  `--web-auth-flow`/`--web-auth-flow-module`/`--web-smoke-flow-module` now
+  logs a warning for this reason. Also fixed: an invalid
+  `--web-redact-selector` entry now fails the run loudly instead of
+  silently disabling masking for every selector, including the default
+  password one. Verified with a real-screenshot, real-pixel test
+  (`sensitiveRedaction.browser.test.ts`) against a password input, a
+  displayed-text secret, and a canvas-painted secret. On by default;
+  disable with `--no-web-redact-artifacts`. New file:
+  `web_runner/tests/sensitiveRedaction.ts`.
 - **FEAT**(patrol_plus): deployed-URL smoke mode (F-URL) — `--web-base-url`
   skips building and serving a local Flutter web app and instead runs web
   tests directly against an already-deployed site (e.g. a production bundle
