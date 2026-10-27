@@ -525,6 +525,34 @@ abstract class PatrolCommand extends Command<int> {
         valueHelp: 'patrol_test/ci/real_dev_register_flow.ts',
       )
       ..addOption(
+        'web-base-url',
+        help:
+            'Skip building and serving a local Flutter web app; run web '
+            'tests directly against this ALREADY-DEPLOYED URL instead (e.g. '
+            'a production site or a preview/staging deployment) — useful for '
+            'a canary that verifies the bundle a real hosting/CDN actually '
+            'serves. Because the deployed build was almost certainly not '
+            r'compiled with the Patrol test harness, native finders ($.tap() '
+            'etc.) are UNAVAILABLE in this mode. Patrol instead waits for the '
+            'Flutter engine to mount, auto-enables CanvasKit semantics, '
+            'applies --web-error-detection if set, and — if given — hands '
+            'the real Playwright page to --web-smoke-flow-module for '
+            'app-specific assertions. Mutually exclusive with running a '
+            'local Patrol test suite: --coverage is not supported together '
+            'with this flag.',
+        valueHelp: 'https://staging.example.com',
+      )
+      ..addOption(
+        'web-smoke-flow-module',
+        help:
+            "Path to a Node/TS module (exporting an async 'default' "
+            "function taking {page, log, baseUrl}, or a 'scenarios'/"
+            "'default' array of {name, run} entries) that drives "
+            'app-specific assertions against --web-base-url. Has no effect '
+            'unless --web-base-url is also set.',
+        valueHelp: 'patrol_test/ci/queue_smoke.ts',
+      )
+      ..addOption(
         'web-channel',
         help:
             'Browser distribution channel, e.g. a branded build instead of '

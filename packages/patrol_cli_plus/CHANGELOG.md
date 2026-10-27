@@ -1,3 +1,15 @@
+## Unreleased
+
+- **FEAT**(patrol_cli_plus): deployed-URL smoke mode (F-URL) — add
+  `--web-base-url` and `--web-smoke-flow-module`. `--web-base-url` skips
+  building and serving a local Flutter web app and runs `patrol test` web
+  runs directly against the given, already-deployed URL instead; mutually
+  exclusive with `--coverage` (there is no local build to source-map).
+  `--web-smoke-flow-module` names a Node/TS module driving app-specific
+  assertions against it. See `patrol_plus`'s Unreleased entry for the full
+  rationale and the new `tests/smokeTest.spec.ts` web-runner spec this
+  selects instead of the normal, Patrol-instrumented one.
+
 ## 5.6.0
 
  - **FEAT**: sync upstream leancodepl/patrol to 4e19760bd (2026-08-31) ([#53](https://github.com/Bdaya-Dev/patrol/issues/53)). ([68a4712d](https://github.com/Bdaya-Dev/patrol/commit/68a4712d08a74c013499d2ba9f77a6271023efa5))
