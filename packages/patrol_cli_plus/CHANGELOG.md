@@ -9,6 +9,9 @@
   assertions against it. See `patrol_plus`'s Unreleased entry for the full
   rationale and the new `tests/smokeTest.spec.ts` web-runner spec this
   selects instead of the normal, Patrol-instrumented one.
+- **FEAT**(patrol_cli_plus): add `--web-auto-semantics` (default on; disable
+  with `--no-web-auto-semantics`) — see `patrol_plus`'s matching Unreleased
+  entry for what it does and why.
 
 ## 5.6.0
 

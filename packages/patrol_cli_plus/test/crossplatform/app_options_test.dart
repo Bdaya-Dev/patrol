@@ -1001,6 +1001,33 @@ void main() {
       });
     });
 
+    group('carries the auto-semantics config for the Playwright runner', () {
+      const flutterOpts = FlutterAppOptions(
+        command: flutterCommand,
+        target: 'patrol_test/app_test.dart',
+        buildMode: BuildMode.profile,
+        flavor: null,
+        buildName: null,
+        buildNumber: null,
+        dartDefines: {},
+        dartDefineFromFilePaths: [],
+      );
+
+      test('autoSemantics defaults to true (on by default)', () {
+        options = const WebAppOptions(flutter: flutterOpts);
+        expect(options.autoSemantics, isTrue);
+      });
+
+      test('autoSemantics is carried through (from '
+          '--no-web-auto-semantics)', () {
+        options = const WebAppOptions(
+          flutter: flutterOpts,
+          autoSemantics: false,
+        );
+        expect(options.autoSemantics, isFalse);
+      });
+    });
+
     group('carries the cross-origin auth-flow spec for the Playwright '
         'runner (F-A)', () {
       const flutterOpts = FlutterAppOptions(
@@ -1128,17 +1155,17 @@ void main() {
         dartDefineFromFilePaths: [],
       );
 
-      test(
-        'omits unset options (only the always-on error-gate flag remains)',
-        () {
-          options = const WebAppOptions(flutter: flutterOpts);
+      test('omits unset options (only the always-on flags remain)', () {
+        options = const WebAppOptions(flutter: flutterOpts);
 
-          expect(
-            options.toEnvironmentVariables(),
-            equals({'PATROL_WEB_ERROR_DETECTION': 'false'}),
-          );
-        },
-      );
+        expect(
+          options.toEnvironmentVariables(),
+          equals({
+            'PATROL_WEB_ERROR_DETECTION': 'false',
+            'PATROL_WEB_AUTO_SEMANTICS': 'true',
+          }),
+        );
+      });
 
       test('includes only the options that were set', () {
         options = const WebAppOptions(
@@ -1155,6 +1182,7 @@ void main() {
             'PATROL_WEB_HEADLESS': 'true',
             'PATROL_WEB_CHANNEL': 'chrome',
             'PATROL_WEB_ERROR_DETECTION': 'false',
+            'PATROL_WEB_AUTO_SEMANTICS': 'true',
           }),
         );
       });
@@ -1201,6 +1229,7 @@ void main() {
           grepInvert: '@slow',
           errorDetection: true,
           errorAllow: 'is unimplemented,UNIMPLEMENTED',
+          autoSemantics: false,
           authFlow: '{"loginUrlPattern":"https://idp.example"}',
           authStateFile: '.patrol_auth_state.json',
           authFlowModule: 'patrol_test/ci/flow.ts',
@@ -1251,6 +1280,7 @@ void main() {
             'PATROL_WEB_GREP_INVERT': '@slow',
             'PATROL_WEB_ERROR_DETECTION': 'true',
             'PATROL_WEB_ERROR_ALLOW': 'is unimplemented,UNIMPLEMENTED',
+            'PATROL_WEB_AUTO_SEMANTICS': 'false',
             'PATROL_WEB_AUTH_FLOW': '{"loginUrlPattern":"https://idp.example"}',
             'PATROL_WEB_AUTH_STATE_FILE': '.patrol_auth_state.json',
             'PATROL_WEB_AUTH_FLOW_MODULE': 'patrol_test/ci/flow.ts',
