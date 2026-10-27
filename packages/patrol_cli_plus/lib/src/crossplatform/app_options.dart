@@ -600,6 +600,7 @@ class WebAppOptions {
     this.redactArtifacts = true,
     this.redactSelectors,
     this.redactColor,
+    this.autoSemantics = true,
     this.authFlow,
     this.authStateFile,
     this.authFlowModule,
@@ -716,13 +717,16 @@ class WebAppOptions {
   /// for why this needs a live DOM overlay rather than Playwright's own
   /// `page.screenshot({ mask })` — that option has no equivalent for video,
   /// and does not exist at all for the automatic on-failure screenshot.
+  /// Also installed on the deployed-URL smoke path ([webBaseUrl] /
+  /// `smokeTest.spec.ts`), so a `--web-smoke-flow-module` run against a
+  /// real, often signed-in deployed site gets the same masking.
   ///
   /// Does NOT reach a `--web-trace`: Playwright records action arguments
   /// (e.g. a typed password) and DOM snapshots verbatim, so a value typed
   /// into a redacted field can still appear in the trace in plaintext even
   /// though every screenshot/video masks it. `test.dart` warns when
-  /// `--web-trace` is combined with `--web-auth-flow`/`--web-auth-flow-module`
-  /// for this reason.
+  /// `--web-trace` is combined with `--web-auth-flow`/`--web-auth-flow-module`/
+  /// `--web-smoke-flow-module` for this reason.
   final bool redactArtifacts;
 
   /// JSON array of additional CSS selectors to redact, beyond the built-in
@@ -734,6 +738,14 @@ class WebAppOptions {
   /// Playwright's own `page.screenshot({ mask })` default). Set by
   /// `--web-redact-color`.
   final String? redactColor;
+
+  /// Whether to automatically dispatch a click on the CanvasKit
+  /// `flt-semantics-placeholder` host element before every test's body runs,
+  /// switching on Flutter's accessibility/semantics tree (otherwise off by
+  /// default, so `page.getByRole()` etc. see nothing). A no-op on the HTML
+  /// renderer. On by default; set by `--web-auto-semantics` /
+  /// `--no-web-auto-semantics`. See `canvasKitSemantics.ts` (web_runner).
+  final bool autoSemantics;
 
   /// JSON spec for the cross-origin auth prelude (F-A): drives a real
   /// identity-provider login by selector, on the same page/context the
@@ -842,6 +854,7 @@ class WebAppOptions {
       'PATROL_WEB_REDACT_ARTIFACTS': redactArtifacts,
       'PATROL_WEB_REDACT_SELECTORS': redactSelectors,
       'PATROL_WEB_REDACT_COLOR': redactColor,
+      'PATROL_WEB_AUTO_SEMANTICS': autoSemantics,
       'PATROL_WEB_AUTH_FLOW': authFlow,
       // Emitted as given; the web backend re-resolves these two paths
       // relative to the current working directory before spawning Playwright.

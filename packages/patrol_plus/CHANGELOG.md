@@ -1,3 +1,8 @@
+## 5.8.0
+
+ - **FEAT**(patrol_plus,patrol_cli_plus): auto-enable CanvasKit semantics for every web test ([#64](https://github.com/Bdaya-Dev/patrol/issues/64)). ([74406bfe](https://github.com/Bdaya-Dev/patrol/commit/74406bfe46346395c08401bb732273c3e6f0e35a))
+ - **FEAT**(patrol_plus,patrol_cli_plus): deployed-URL smoke mode (--web-base-url) ([#62](https://github.com/Bdaya-Dev/patrol/issues/62)). ([5fc9cf7d](https://github.com/Bdaya-Dev/patrol/commit/5fc9cf7db899d9f13aecf5288224483fceb63c59))
+
 ## Unreleased
 
 - **FEAT**(patrol_plus): on-by-default artifact secret redaction. Every
@@ -39,6 +44,13 @@
   load). Also auto-enables the CanvasKit semantics/accessibility tree before
   handing control to the caller's module. New files: `web_runner/tests/
   canvasKitSemantics.ts`, `smokeFlow.ts`, `smokeTest.spec.ts`.
+- **FEAT**(patrol_plus): auto-enable CanvasKit semantics in the normal web
+  flow too — every `patrol test` web run now dispatches a click on the
+  `flt-semantics-placeholder` host element before each test's body runs,
+  switching on Flutter's accessibility/semantics tree (otherwise off by
+  default, so `page.getByRole()` etc. previously saw nothing until a consumer
+  hand-rolled this click themselves). A no-op on the HTML renderer. On by
+  default; disable with `--no-web-auto-semantics`.
 
 ## 5.7.0
 

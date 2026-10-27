@@ -5,6 +5,11 @@ import { type BrowserContext, type Page, chromium, test as base } from "@playwri
 import { assertNotBothAuthFlowMechanismsSet, loadAuthFlowModule } from "./authFlows/module"
 import { DEFAULT_TIMEOUT_MS, parseAuthFlowSpec, runAuthFlow } from "./authFlows/oidc"
 import { hasSessionData, loadCachedSession, restoreCachedSession, saveCachedSession } from "./authFlows/sessionCache"
+import {
+  type CanvasKitSemanticsCache,
+  createCanvasKitSemanticsCache,
+  enableCanvasKitSemanticsCached,
+} from "./canvasKitSemantics"
 import { isExcludedCoverageEntry } from "./coverageEntryFilter"
 import { writeCoverageSummary } from "./coverageSummary"
 import { assertNoViolations, attachErrorGate, parseAllowList } from "./errorGate"
@@ -49,13 +54,7 @@ function parseShard(): { current: number; total: number } | null {
   const raw = process.env.PATROL_WEB_SHARD
   if (!raw) return null
   const [current, total] = raw.split("/").map(Number)
-  if (
-    !Number.isInteger(current) ||
-    !Number.isInteger(total) ||
-    total < 1 ||
-    current < 1 ||
-    current > total
-  ) {
+  if (!Number.isInteger(current) || !Number.isInteger(total) || total < 1 || current < 1 || current > total) {
     logger.warn("Invalid PATROL_WEB_SHARD '%s' — ignoring and running all discovered tests", raw)
     return null
   }
@@ -124,6 +123,13 @@ const redactConfig = {
   maskColor: process.env.PATROL_WEB_REDACT_COLOR || DEFAULT_REDACT_COLOR,
 }
 
+// Auto-enable CanvasKit semantics before every test body runs. On by default
+// — PATROL_WEB_AUTO_SEMANTICS is always emitted as an explicit "true"/"false"
+// by WebAppOptions.toEnvironmentVariables, same reasoning as the error-gate
+// flag above. See canvasKitSemantics.ts for why this is safe unconditionally
+// (a no-op on the HTML renderer).
+const autoSemanticsEnabled = process.env.PATROL_WEB_AUTO_SEMANTICS !== "false"
+
 // Cross-origin auth prelude (F-A). Unset for every mocked run (the default —
 // FakeAuthService needs no real IdP round-trip); set by --web-auth-flow for
 // real-dev runs. Parsed once at module load so a malformed spec fails the
@@ -186,7 +192,7 @@ async function closeSecondaryPages(pages: Page[], page: Page) {
   }
 }
 
-async function setupPage(page: Page) {
+async function setupPage(page: Page, canvasKitSemanticsCache: CanvasKitSemanticsCache) {
   page.on("console", message => {
     const text = message.text()
     if (text.startsWith("PATROL_LOG")) {
@@ -301,86 +307,116 @@ async function setupPage(page: Page) {
     }
   }
 
+  // Runs AFTER every branch above (including a post-auth re-navigation), so
+  // whichever page state the test body is about to see is the one this acts
+  // on — placed last deliberately, not before the auth prelude, since an
+  // auth flow navigates the page itself and could otherwise be enabling
+  // semantics on a page about to be torn down by that navigation.
+  if (autoSemanticsEnabled) {
+    await enableCanvasKitSemanticsCached(page, canvasKitSemanticsCache)
+  }
+
   return { errorGate, pageManager }
 }
 
 export const patrolTest = base.extend<
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   {},
-  { sharedContext: BrowserContext; coverageReporter: CoverageReporter | null }
+  {
+    sharedContext: BrowserContext
+    coverageReporter: CoverageReporter | null
+    canvasKitSemanticsCache: CanvasKitSemanticsCache
+  }
 >({
-  coverageReporter: [async ({}, use) => {
-    if (!collectCoverage) {
-      await use(null)
-      return
-    }
-    const mod = await import("monocart-coverage-reports")
-    const customFilter = process.env.PATROL_WEB_COVERAGE_FILTER
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    const reporter: CoverageReporter = new (mod.default as any)({
-      outputDir: coverageDir,
-      reports: ["v8", "lcovonly"],
-      name: "patrol_lcov",
-      entryFilter: (entry: { url: string }) => {
-        if (isExcludedCoverageEntry(entry.url)) return false
-        if (customFilter) return new RegExp(customFilter).test(entry.url)
-        return true
-      },
-    })
-    await use(reporter)
-    await reporter.generate()
-    logger.info("Generated LCOV coverage report in %s", coverageDir)
+  // Shared across every test in this worker so enableCanvasKitSemantics's
+  // full timeout (paid on the HTML renderer, where the placeholder never
+  // attaches) is paid at most once per worker instead of once per test —
+  // see canvasKitSemantics.ts's enableCanvasKitSemanticsCached doc comment.
+  canvasKitSemanticsCache: [
+    async ({}, use) => {
+      await use(createCanvasKitSemanticsCache())
+    },
+    { scope: "worker" },
+  ],
 
-    // Append zero-fill stanzas for Dart files that V8 never loaded.
-    // This gives accurate LF (total lines) and LH (hit lines) counts,
-    // matching what `flutter test --coverage` produces via getSourceReport.
-    //
-    // F-E invariant: [zeroFillFilter] is derived ONLY from
-    // PATROL_WEB_COVERAGE_FILTER (customFilter), never from the test-selection
-    // tag filters (PATROL_WEB_GREP / PATROL_WEB_GREP_INVERT / includeTags /
-    // excludeTags above). So the zero-fill walk — and therefore the LF/LH
-    // denominator — covers the FULL app's package_config.json even on a
-    // change-scoped (tag-filtered) run that only executed a subset of flows.
-    // Do not thread includeTags/excludeTags into this filter.
-    const projectRoot = coverageDir ? path.dirname(coverageDir) : process.cwd()
-    const lcovFile = path.join(coverageDir, "lcov.info")
-    const zeroFillFilter = customFilter ? new RegExp(customFilter) : null
-    appendZeroFillLcov(projectRoot, lcovFile, zeroFillFilter)
+  coverageReporter: [
+    async ({}, use) => {
+      if (!collectCoverage) {
+        await use(null)
+        return
+      }
+      const mod = await import("monocart-coverage-reports")
+      const customFilter = process.env.PATROL_WEB_COVERAGE_FILTER
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      const reporter: CoverageReporter = new (mod.default as any)({
+        outputDir: coverageDir,
+        reports: ["v8", "lcovonly"],
+        name: "patrol_lcov",
+        entryFilter: (entry: { url: string }) => {
+          if (isExcludedCoverageEntry(entry.url)) return false
+          if (customFilter) return new RegExp(customFilter).test(entry.url)
+          return true
+        },
+      })
+      await use(reporter)
+      await reporter.generate()
+      logger.info("Generated LCOV coverage report in %s", coverageDir)
 
-    // F-E: emit a machine-readable per-run summary (covered/total lines per
-    // source) from the final, whole-app zero-filled lcov.info, alongside it.
-    // Downstream tooling (the flow<->source manifest gap detector, §5b) reads
-    // this instead of re-parsing LCOV.
-    const summaryFile = path.join(coverageDir, "coverage-summary.json")
-    const summary = writeCoverageSummary(lcovFile, summaryFile)
-    logger.info(
-      "Coverage summary: %d/%d lines (%s%%) across %d source(s) — %s",
-      summary.totals.linesCovered,
-      summary.totals.linesTotal,
-      (summary.totals.lineRate * 100).toFixed(2),
-      summary.sources.length,
-      summaryFile,
-    )
-  }, { scope: "worker" }],
+      // Append zero-fill stanzas for Dart files that V8 never loaded.
+      // This gives accurate LF (total lines) and LH (hit lines) counts,
+      // matching what `flutter test --coverage` produces via getSourceReport.
+      //
+      // F-E invariant: [zeroFillFilter] is derived ONLY from
+      // PATROL_WEB_COVERAGE_FILTER (customFilter), never from the test-selection
+      // tag filters (PATROL_WEB_GREP / PATROL_WEB_GREP_INVERT / includeTags /
+      // excludeTags above). So the zero-fill walk — and therefore the LF/LH
+      // denominator — covers the FULL app's package_config.json even on a
+      // change-scoped (tag-filtered) run that only executed a subset of flows.
+      // Do not thread includeTags/excludeTags into this filter.
+      const projectRoot = coverageDir ? path.dirname(coverageDir) : process.cwd()
+      const lcovFile = path.join(coverageDir, "lcov.info")
+      const zeroFillFilter = customFilter ? new RegExp(customFilter) : null
+      appendZeroFillLcov(projectRoot, lcovFile, zeroFillFilter)
 
-  sharedContext: [async ({ browser }, use) => {
-    if (isolationMode === "page") {
-      const context = await browser.newContext()
-      await use(context)
-      await context.close()
-    } else {
-      await use(null as unknown as BrowserContext)
-    }
-  }, { scope: "worker" }],
+      // F-E: emit a machine-readable per-run summary (covered/total lines per
+      // source) from the final, whole-app zero-filled lcov.info, alongside it.
+      // Downstream tooling (the flow<->source manifest gap detector, §5b) reads
+      // this instead of re-parsing LCOV.
+      const summaryFile = path.join(coverageDir, "coverage-summary.json")
+      const summary = writeCoverageSummary(lcovFile, summaryFile)
+      logger.info(
+        "Coverage summary: %d/%d lines (%s%%) across %d source(s) — %s",
+        summary.totals.linesCovered,
+        summary.totals.linesTotal,
+        (summary.totals.lineRate * 100).toFixed(2),
+        summary.sources.length,
+        summaryFile,
+      )
+    },
+    { scope: "worker" },
+  ],
 
-  page: async ({ page: defaultPage, sharedContext, coverageReporter }, use) => {
+  sharedContext: [
+    async ({ browser }, use) => {
+      if (isolationMode === "page") {
+        const context = await browser.newContext()
+        await use(context)
+        await context.close()
+      } else {
+        await use(null as unknown as BrowserContext)
+      }
+    },
+    { scope: "worker" },
+  ],
+
+  page: async ({ page: defaultPage, sharedContext, coverageReporter, canvasKitSemanticsCache }, use) => {
     let page: Page = defaultPage
 
     if (debuggerPort) {
       logger.info("Connecting to Flutter Chrome via CDP on port %s", debuggerPort)
       const cdpBrowser = await chromium.connectOverCDP(`http://localhost:${debuggerPort}`)
       const context = cdpBrowser.contexts()[0]
-      page = context.pages()[0] ?? await context.newPage()
+      page = context.pages()[0] ?? (await context.newPage())
 
       const pageManager = await attachPageManager(context, page)
 
@@ -415,7 +451,10 @@ export const patrolTest = base.extend<
 
       // Attached Chrome: only close pages this test opened (the ones the
       // PageManager registered), never other tabs that already existed there.
-      await closeSecondaryPages(pageManager.ids.map(id => pageManager.resolve(id)), page)
+      await closeSecondaryPages(
+        pageManager.ids.map(id => pageManager.resolve(id)),
+        page,
+      )
       pageManager.dispose()
       return
     }
@@ -424,7 +463,7 @@ export const patrolTest = base.extend<
       page = await sharedContext.newPage()
     }
 
-    const { errorGate, pageManager } = await setupPage(page)
+    const { errorGate, pageManager } = await setupPage(page, canvasKitSemanticsCache)
 
     if (coverageReporter) await page.coverage.startJSCoverage()
     await use(page)

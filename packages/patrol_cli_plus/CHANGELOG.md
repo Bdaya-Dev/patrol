@@ -1,3 +1,8 @@
+## 5.7.0
+
+ - **FEAT**(patrol_plus,patrol_cli_plus): auto-enable CanvasKit semantics for every web test ([#64](https://github.com/Bdaya-Dev/patrol/issues/64)). ([74406bfe](https://github.com/Bdaya-Dev/patrol/commit/74406bfe46346395c08401bb732273c3e6f0e35a))
+ - **FEAT**(patrol_plus,patrol_cli_plus): deployed-URL smoke mode (--web-base-url) ([#62](https://github.com/Bdaya-Dev/patrol/issues/62)). ([5fc9cf7d](https://github.com/Bdaya-Dev/patrol/commit/5fc9cf7db899d9f13aecf5288224483fceb63c59))
+
 ## Unreleased
 
 - **FEAT**(patrol_cli_plus): add `--web-redact-artifacts` (default on;
@@ -14,6 +19,9 @@
   assertions against it. See `patrol_plus`'s Unreleased entry for the full
   rationale and the new `tests/smokeTest.spec.ts` web-runner spec this
   selects instead of the normal, Patrol-instrumented one.
+- **FEAT**(patrol_cli_plus): add `--web-auto-semantics` (default on; disable
+  with `--no-web-auto-semantics`) — see `patrol_plus`'s matching Unreleased
+  entry for what it does and why.
 
 ## 5.6.0
 

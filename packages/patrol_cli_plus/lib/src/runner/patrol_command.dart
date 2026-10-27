@@ -464,6 +464,19 @@ abstract class PatrolCommand extends Command<int> {
             '--web-error-allow to allowlist expected errors.',
         negatable: false,
       )
+      ..addFlag(
+        'web-auto-semantics',
+        defaultsTo: true,
+        help:
+            'Automatically enable the CanvasKit semantics/accessibility '
+            "tree on every page before a test's body runs, by dispatching a "
+            'click on the flt-semantics-placeholder host element Flutter '
+            'inserts for it. Closes a workaround every consumer of this '
+            'fork has had to hand-roll (the tree is otherwise off by '
+            'default, so queries like page.getByRole() see nothing). '
+            'A no-op on the HTML renderer, where real DOM already exists. '
+            'On by default; use --no-web-auto-semantics to disable.',
+      )
       ..addOption(
         'web-error-allow',
         help:

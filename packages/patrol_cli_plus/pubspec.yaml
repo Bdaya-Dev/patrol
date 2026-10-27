@@ -2,7 +2,7 @@
 name: patrol_cli_plus
 description: >
   Command-line tool for patrol_plus, a fork of the Patrol Flutter UI testing framework.
-version: 5.6.0  # Must be kept in sync with constants.dart
+version: 5.7.0  # Must be kept in sync with constants.dart
 homepage: https://github.com/Bdaya-Dev/patrol
 repository: https://github.com/Bdaya-Dev/patrol/tree/master/packages/patrol_cli_plus
 issue_tracker: https://github.com/Bdaya-Dev/patrol/issues?q=is%3Aopen+is%3Aissue+label%3A%22package%3A+patrol_cli_plus%22
