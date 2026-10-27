@@ -431,16 +431,16 @@ void main() {
 
         expect(result, equals(0));
 
-        // SECURITY: this command must never read the file's own contents
-        // into memory at all -- it only needs to pass the PATH through so
-        // Flutter reads the file itself. The mock above is primed to return
-        // a secret precisely so this assertion proves the value was never
-        // fetched, let alone merged into dartDefines/argv. (Before the fix,
-        // this call site existed -- via `mergeDartDefines` -- and this
-        // `verifyNever` would fail.)
-        verifyNever(
-          () => mockDartDefinesReader.extractDartDefineConfigJsonMap(any()),
-        );
+        // Gradle has no --dart-define-from-file equivalent (its only define
+        // channel is the `dart-defines` project property), so -- unlike
+        // every other platform -- this command DOES read the file's
+        // content, to deliver it to Gradle via AndroidAppOptions's own
+        // environment-based channel (toGradleDartDefinesEnvironment).
+        verify(
+          () => mockDartDefinesReader.extractDartDefineConfigJsonMap([
+            'defines.json',
+          ]),
+        ).called(1);
 
         final captured = verify(
           () => mockAndroidTestBackend.build(captureAny()),
@@ -452,13 +452,32 @@ void main() {
         // SECURITY: the file's own key/value must never end up in
         // `dartDefines` -- that map is what gets expanded into
         // `--dart-define=K=V` on the flutter/gradle command line, which any
-        // local process (ps / Task Manager) can read. Flutter reads
-        // `--dart-define-from-file`'s contents directly from the file via
-        // `dartDefineFromFilePaths` above; that's the whole point of using a
-        // file over `--dart-define`. A previous revision merged the file's
-        // values into `dartDefines` and defeated that entirely.
+        // local process (ps / Task Manager) can read. A previous revision
+        // merged the file's values into `dartDefines` and defeated that
+        // entirely.
         expect(opts.flutter.dartDefines, isNot(contains('FILE_KEY')));
         expect(opts.flutter.dartDefines.values, isNot(contains('file_value')));
+
+        // It must still reach Gradle somehow -- via extraDartDefinesFromFile
+        // and, from there, the environment (never argv). This is the fix
+        // for the regression the reviewer's own probe found on PR #67 at
+        // 552768a: "neither the file path nor its values reach any Gradle
+        // invocation."
+        expect(
+          opts.extraDartDefinesFromFile,
+          equals({'FILE_KEY': 'file_value'}),
+        );
+        final invocation = opts.toGradleAssembleTestInvocation(
+          isWindows: false,
+        );
+        expect(
+          invocation.any((arg) => arg.startsWith('-Pdart-defines=')),
+          isFalse,
+        );
+        expect(
+          opts.toGradleDartDefinesEnvironment()['ORG_GRADLE_PROJECT_dart-defines'],
+          isNotNull,
+        );
       });
 
       test('passes correct app and test server ports', () async {

@@ -141,9 +141,12 @@ class AndroidTestBackend {
               ),
               runInShell: true,
               workingDirectory: _rootDirectory.childDirectory('android').path,
-              environment: switch (javaPath) {
-                final String javaPath => {'JAVA_HOME': javaPath},
-                _ => {},
+              environment: {
+                ...switch (javaPath) {
+                  final String javaPath => {'JAVA_HOME': javaPath},
+                  _ => <String, String>{},
+                },
+                ...options.toGradleDartDefinesEnvironment(),
               },
             )
             ..disposedBy(scope);
@@ -169,9 +172,12 @@ class AndroidTestBackend {
               ),
               runInShell: true,
               workingDirectory: _rootDirectory.childDirectory('android').path,
-              environment: switch (javaPath) {
-                final String javaPath => {'JAVA_HOME': javaPath},
-                _ => {},
+              environment: {
+                ...switch (javaPath) {
+                  final String javaPath => {'JAVA_HOME': javaPath},
+                  _ => <String, String>{},
+                },
+                ...options.toGradleDartDefinesEnvironment(),
               },
             )
             ..disposedBy(scope);
@@ -502,6 +508,7 @@ class AndroidTestBackend {
               environment: {
                 'ANDROID_SERIAL': device.id,
                 if (javaPath case final javaPath?) ...{'JAVA_HOME': javaPath},
+                ...options.toGradleDartDefinesEnvironment(),
               },
               workingDirectory: _rootDirectory.childDirectory('android').path,
             )

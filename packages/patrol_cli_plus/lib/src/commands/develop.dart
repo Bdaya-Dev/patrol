@@ -198,7 +198,6 @@ class DevelopCommand extends PatrolCommand {
     }
 
     final customDartDefines = {
-      ..._dartDefinesReader.fromFile(),
       ..._dartDefinesReader.fromCli(args: stringsArg('dart-define')),
     };
     final internalDartDefines = {
@@ -233,7 +232,13 @@ class DevelopCommand extends PatrolCommand {
       );
     }
 
-    final dartDefineFromFilePaths = stringsArg('dart-define-from-file');
+    // SECURITY: see test.dart's identical comment -- the implicit
+    // .patrol.env file is forwarded by PATH, never read+merged into
+    // customDartDefines.
+    final dartDefineFromFilePaths = [
+      ...stringsArg('dart-define-from-file'),
+      ?_dartDefinesReader.patrolEnvFilePathIfExists(),
+    ];
 
     final flutterOpts = FlutterAppOptions(
       command: flutterCommand,
@@ -254,6 +259,12 @@ class DevelopCommand extends PatrolCommand {
       appServerPort: super.appServerPort,
       testServerPort: super.testServerPort,
       uninstall: uninstall,
+      // See test.dart's identical comment -- Gradle has no
+      // --dart-define-from-file equivalent, so the file's values still
+      // need to reach it, via environment rather than argv.
+      extraDartDefinesFromFile: _dartDefinesReader
+          .extractDartDefineConfigJsonMap(dartDefineFromFilePaths)
+          .map((key, value) => MapEntry(key, value.toString())),
     );
 
     final iosOpts = IOSAppOptions(

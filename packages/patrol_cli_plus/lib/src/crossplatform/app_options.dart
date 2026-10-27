@@ -103,6 +103,7 @@ class AndroidAppOptions {
     required this.testServerPort,
     required this.uninstall,
     this.emitTestManifest = false,
+    this.extraDartDefinesFromFile = const {},
   });
 
   final FlutterAppOptions flutter;
@@ -116,7 +117,53 @@ class AndroidAppOptions {
   /// individually-selectable native test. Experimental, opt-in.
   final bool emitTestManifest;
 
+  /// The contents of `--dart-define-from-file` (and, separately, the
+  /// implicit `.patrol.env`), decoded. SEPARATE from [flutter]'s own
+  /// `dartDefines` -- which is the map every OTHER platform (iOS, macOS,
+  /// web, desktop, `flutter attach`, host test discovery) forwards to
+  /// Flutter's own `--dart-define`/`--dart-define-from-file` flags, where
+  /// Flutter itself reads the file and these values never touch patrol's
+  /// argv. Gradle has no equivalent of `--dart-define-from-file`: its ONLY
+  /// define channel is the `dart-defines` project property (see
+  /// [toGradleDartDefinesEnvironment]), so these values must be folded in
+  /// there instead, delivered via environment rather than argv.
+  final Map<String, String> extraDartDefinesFromFile;
+
   String get description => 'apk with entrypoint ${basename(flutter.target)}';
+
+  /// The `ORG_GRADLE_PROJECT_dart-defines` environment variable Gradle
+  /// needs to receive the same `dart-defines` project property that used to
+  /// be passed as `-Pdart-defines=<base64>` on this process's own argv
+  /// (readable by any local process via `ps`/Task Manager). Gradle resolves
+  /// a project property from either `-P<name>=value` on its command line OR
+  /// an `ORG_GRADLE_PROJECT_<name>` environment variable -- see
+  /// https://docs.gradle.org/current/userguide/build_environment.html#sec:project_properties
+  /// -- this uses the latter. The caller must merge this into the
+  /// environment of whatever process runs a Gradle invocation returned by
+  /// [toGradleAssembleInvocation] / [toGradleAssembleTestInvocation] /
+  /// [toGradleConnectedTestInvocation]; none of those three add
+  /// `-Pdart-defines` to argv any more.
+  Map<String, String> toGradleDartDefinesEnvironment() {
+    final effectiveDartDefines = {
+      ...flutter.dartDefines,
+      ...extraDartDefinesFromFile,
+    };
+    if (effectiveDartDefines.isEmpty) {
+      return const {};
+    }
+
+    final dartDefinesString = StringBuffer();
+    for (var i = 0; i < effectiveDartDefines.length; i++) {
+      final entry = effectiveDartDefines.entries.elementAt(i);
+      final pair = utf8.encode('${entry.key}=${entry.value}');
+      dartDefinesString.write(base64Encode(pair));
+      if (i != effectiveDartDefines.length - 1) {
+        dartDefinesString.write(',');
+      }
+    }
+
+    return {'ORG_GRADLE_PROJECT_dart-defines': dartDefinesString.toString()};
+  }
 
   List<String> toGradleAssembleInvocation({required bool isWindows}) {
     // for example: assembleDevDebug, assembleRelease
@@ -196,23 +243,9 @@ class AndroidAppOptions {
     final target = '-Ptarget=${flutter.target}';
     cmd.add(target);
 
-    // Create modifiable Map
-    final effectiveDartDefines = Map<String, String>.of(flutter.dartDefines);
-
-    // Add Dart defines encoded in base64
-    if (effectiveDartDefines.isNotEmpty) {
-      final dartDefinesString = StringBuffer();
-      for (var i = 0; i < effectiveDartDefines.length; i++) {
-        final entry = effectiveDartDefines.entries.elementAt(i);
-        final pair = utf8.encode('${entry.key}=${entry.value}');
-        dartDefinesString.write(base64Encode(pair));
-        if (i != effectiveDartDefines.length - 1) {
-          dartDefinesString.write(',');
-        }
-      }
-
-      cmd.add('-Pdart-defines=$dartDefinesString');
-    }
+    // SECURITY: dart-defines are deliberately NOT added to argv here --
+    // see toGradleDartDefinesEnvironment's doc comment. The caller must
+    // merge that into this invocation's environment instead.
 
     /// In Android Gradle Plugin 8.1.0 default behaviour has been changed
     /// and the application is uninstalled after integration tests.

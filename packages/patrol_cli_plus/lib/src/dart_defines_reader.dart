@@ -14,6 +14,26 @@ class DartDefinesReader {
 
   Map<String, String> fromCli({required List<String> args}) => _parse(args);
 
+  /// The implicit `.patrol.env` file's path at the project root, if it
+  /// exists, else null.
+  ///
+  /// SECURITY: a caller that cares about keeping define VALUES off this
+  /// process's own argv must forward this path through
+  /// `--dart-define-from-file` (or, on Android, through whatever reads
+  /// `extractDartDefineConfigJsonMap` for Gradle's environment) rather than
+  /// calling [fromFile] and merging its decoded values into a map that then
+  /// gets expanded into `--dart-define=K=V` flags. `.patrol.env` uses the
+  /// exact same `key=value`/quoting/`#`-comment grammar Flutter's own
+  /// `--dart-define-from-file` accepts for a non-JSON file
+  /// (`flutter_tools/lib/src/runner/flutter_command.dart`'s
+  /// `convertEnvFileToJsonRaw`/`_parseProperty`, which this class's own
+  /// [fromFile] was modeled on) -- so handing Flutter this path directly
+  /// parses identically to decoding it here.
+  String? patrolEnvFilePathIfExists() {
+    final filePath = _fs.path.join(_projectRoot.path, '.patrol.env');
+    return _fs.file(filePath).existsSync() ? filePath : null;
+  }
+
   Map<String, String> fromFile() {
     final filePath = _fs.path.join(_projectRoot.path, '.patrol.env');
     final file = _fs.file(filePath);
