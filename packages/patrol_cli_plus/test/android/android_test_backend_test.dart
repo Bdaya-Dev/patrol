@@ -280,6 +280,65 @@ void main() {
       });
     });
 
+    group('writeDartDefinesInitScriptIfNeeded', () {
+      test('returns null and writes nothing when there are no dart-defines '
+          'to deliver', () {
+        const flutterOptions = FlutterAppOptions(
+          command: FlutterCommand('flutter'),
+          target: 'patrol_test/test_bundle.dart',
+          buildMode: BuildMode.debug,
+          flavor: null,
+          buildName: null,
+          buildNumber: null,
+          dartDefines: {},
+          dartDefineFromFilePaths: [],
+        );
+        const options = AndroidAppOptions(
+          flutter: flutterOptions,
+          appServerPort: 1,
+          testServerPort: 2,
+          uninstall: false,
+        );
+
+        final path = androidTestBackend.writeDartDefinesInitScriptIfNeeded(
+          options,
+        );
+
+        expect(path, isNull);
+      });
+
+      test('writes a Gradle init script reading dartDefinesGradleEnvVar when '
+          'there are dart-defines to deliver', () {
+        const flutterOptions = FlutterAppOptions(
+          command: FlutterCommand('flutter'),
+          target: 'patrol_test/test_bundle.dart',
+          buildMode: BuildMode.debug,
+          flavor: null,
+          buildName: null,
+          buildNumber: null,
+          dartDefines: {'FOO': 'bar'},
+          dartDefineFromFilePaths: [],
+        );
+        const options = AndroidAppOptions(
+          flutter: flutterOptions,
+          appServerPort: 1,
+          testServerPort: 2,
+          uninstall: false,
+        );
+
+        final path = androidTestBackend.writeDartDefinesInitScriptIfNeeded(
+          options,
+        );
+
+        if (path == null) {
+          fail('expected a path, got null');
+        }
+        final contents = fs.file(path).readAsStringSync();
+        expect(contents, contains(dartDefinesGradleEnvVar));
+        expect(contents, contains('project.ext.set("dart-defines"'));
+      });
+    });
+
     group('verifyAndroidSdkResolved', () {
       void writeLocalProperties(String contents) {
         rootDirectory.childDirectory('android').childFile('local.properties')

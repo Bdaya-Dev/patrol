@@ -475,7 +475,7 @@ void main() {
           isFalse,
         );
         expect(
-          opts.toGradleDartDefinesEnvironment()['ORG_GRADLE_PROJECT_dart-defines'],
+          opts.toGradleDartDefinesEnvironment()[dartDefinesGradleEnvVar],
           isNotNull,
         );
       });

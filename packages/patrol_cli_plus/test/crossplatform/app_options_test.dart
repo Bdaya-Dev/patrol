@@ -176,7 +176,7 @@ void main() {
         expect(
           options.toGradleDartDefinesEnvironment(),
           equals({
-            'ORG_GRADLE_PROJECT_dart-defines':
+            dartDefinesGradleEnvVar:
                 'RU1BSUw9dXNlckBleGFtcGxlLmNvbQ==,UEFTU1dPUkQ9bnk0bmNhdA==,Zm9vPWJhcg==',
           }),
         );
@@ -221,7 +221,7 @@ void main() {
         expect(
           options.toGradleDartDefinesEnvironment(),
           equals({
-            'ORG_GRADLE_PROJECT_dart-defines':
+            dartDefinesGradleEnvVar:
                 'RU1BSUw9dXNlckBleGFtcGxlLmNvbQ==,UEFTU1dPUkQ9bnk0bmNhdA==,Zm9vPWJhcg==',
           }),
         );
@@ -267,7 +267,7 @@ void main() {
         expect(
           options.toGradleDartDefinesEnvironment(),
           equals({
-            'ORG_GRADLE_PROJECT_dart-defines':
+            dartDefinesGradleEnvVar:
                 'RU1BSUw9dXNlckBleGFtcGxlLmNvbQ==,UEFTU1dPUkQ9bnk0bmNhdA==,Zm9vPWJhcg==',
           }),
         );
@@ -307,13 +307,151 @@ void main() {
           isFalse,
         );
         final env = options.toGradleDartDefinesEnvironment();
-        final decoded = env['ORG_GRADLE_PROJECT_dart-defines']!
+        final decoded = env[dartDefinesGradleEnvVar]!
             .split(',')
             .map(base64Decode)
             .map(utf8.decode)
             .toList();
         expect(decoded, containsAll(['PATROL_WAIT=0', 'FILE_KEY=file_value']));
       });
+
+      test('a --dart-define/internal key wins over a file entry with the same '
+          "key, matching Flutter's own --dart-define-from-file precedence", () {
+        // Reproduces the reviewer's exact probe on PR #67 (NEEDS-CHANGES at
+        // 182aa42): a file entry must NOT override a same-keyed CLI/internal
+        // define -- Flutter's own flutter_command.dart documents "Entries
+        // from '--dart-define' with identical keys take precedence over
+        // entries from these files", so Android must behave the same way as
+        // every other platform.
+        const flutterOpts = FlutterAppOptions(
+          command: flutterCommand,
+          target: '/Users/john/app/patrol_test/app_test.dart',
+          buildMode: BuildMode.debug,
+          flavor: null,
+          buildName: null,
+          buildNumber: null,
+          dartDefines: {
+            'API_URL': 'from-cli',
+            'PATROL_APP_PACKAGE_NAME': 'com.example.app',
+          },
+          dartDefineFromFilePaths: ['defines.json'],
+        );
+        options = const AndroidAppOptions(
+          flutter: flutterOpts,
+          appServerPort: 1,
+          testServerPort: 2,
+          uninstall: false,
+          extraDartDefinesFromFile: {
+            'API_URL': 'from-file',
+            'PATROL_APP_PACKAGE_NAME': 'oops',
+          },
+        );
+
+        final env = options.toGradleDartDefinesEnvironment();
+        final decoded = env[dartDefinesGradleEnvVar]!
+            .split(',')
+            .map(base64Decode)
+            .map(utf8.decode)
+            .toList();
+        expect(
+          decoded,
+          containsAll([
+            'API_URL=from-cli',
+            'PATROL_APP_PACKAGE_NAME=com.example.app',
+          ]),
+        );
+        expect(decoded, isNot(contains('API_URL=from-file')));
+        expect(decoded, isNot(contains('PATROL_APP_PACKAGE_NAME=oops')));
+      });
+
+      test('toGradleDartDefinesEnvironment never returns a key with an invalid '
+          'shell/environment-variable identifier name', () {
+        // Cheap unit guard the reviewer suggested on PR #67's round-2
+        // review: ORG_GRADLE_PROJECT_dart-defines broke on dash precisely
+        // because its name wasn't a valid identifier. Assert the property
+        // holds for every key this method can ever emit, not just today's
+        // single dartDefinesGradleEnvVar literal.
+        const flutterOpts = FlutterAppOptions(
+          command: flutterCommand,
+          target: '/Users/john/app/patrol_test/app_test.dart',
+          buildMode: BuildMode.debug,
+          flavor: null,
+          buildName: null,
+          buildNumber: null,
+          dartDefines: {'PATROL_WAIT': '0'},
+          dartDefineFromFilePaths: [],
+        );
+        options = const AndroidAppOptions(
+          flutter: flutterOpts,
+          appServerPort: 1,
+          testServerPort: 2,
+          uninstall: false,
+        );
+
+        final env = options.toGradleDartDefinesEnvironment();
+        final validIdentifier = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$');
+        expect(env.keys, isNotEmpty);
+        for (final key in env.keys) {
+          expect(
+            validIdentifier.hasMatch(key),
+            isTrue,
+            reason: '"$key" is not a valid shell identifier',
+          );
+        }
+      });
+
+      test(
+        'toGradleAssembleInvocation/toGradleAssembleTestInvocation/'
+        'toGradleConnectedTestInvocation add --init-script when given a path',
+        () {
+          const flutterOpts = FlutterAppOptions(
+            command: flutterCommand,
+            target: '/Users/john/app/patrol_test/app_test.dart',
+            buildMode: BuildMode.debug,
+            flavor: null,
+            buildName: null,
+            buildNumber: null,
+            dartDefines: {},
+            dartDefineFromFilePaths: [],
+          );
+          options = const AndroidAppOptions(
+            flutter: flutterOpts,
+            appServerPort: 1,
+            testServerPort: 2,
+            uninstall: false,
+          );
+
+          const path = '/tmp/patrol_dart_defines.init.gradle';
+
+          expect(
+            options.toGradleAssembleInvocation(
+              isWindows: false,
+              dartDefinesGradleInitScriptPath: path,
+            ),
+            containsAllInOrder(['--init-script', path]),
+          );
+          expect(
+            options.toGradleAssembleTestInvocation(
+              isWindows: false,
+              dartDefinesGradleInitScriptPath: path,
+            ),
+            containsAllInOrder(['--init-script', path]),
+          );
+          expect(
+            options.toGradleConnectedTestInvocation(
+              isWindows: false,
+              dartDefinesGradleInitScriptPath: path,
+            ),
+            containsAllInOrder(['--init-script', path]),
+          );
+
+          // null (the default -- nothing to deliver) adds nothing.
+          expect(
+            options.toGradleAssembleInvocation(isWindows: false),
+            isNot(contains('--init-script')),
+          );
+        },
+      );
     });
   });
 
