@@ -4,14 +4,20 @@
   `input[type="password"]` plus any selector added via
   `--web-redact-selector` is covered by a live, position-tracking DOM
   overlay for the whole page lifetime, so it is masked in every captured
-  artifact — screenshot (automatic or manual), video, and the visual
-  reconstruction of a trace's DOM snapshots — not just one-off
-  `page.screenshot({ mask })` calls, which have no equivalent for video or
-  trace and don't exist at all for the automatic on-failure screenshot.
-  Works even when the real pixels are painted onto a `<canvas>` (Flutter's
-  CanvasKit renderer) rather than styled DOM, since the overlay is drawn
-  on top using the matched element's own `getBoundingClientRect()` rather
-  than relying on that element's own visual rendering. Verified with a
+  PIXEL artifact — screenshot (automatic or manual) and video frames —
+  not just one-off `page.screenshot({ mask })` calls, which have no
+  equivalent for video and don't exist at all for the automatic
+  on-failure screenshot. Works even when the real pixels are painted
+  onto a `<canvas>` (Flutter's CanvasKit renderer) rather than styled
+  DOM, since the overlay is drawn on top using the matched element's own
+  `getBoundingClientRect()` rather than relying on that element's own
+  visual rendering. Does NOT reach a `--web-trace` — Playwright records
+  action arguments and DOM snapshots verbatim, so a typed password can
+  still appear there in plaintext; combining `--web-trace` with
+  `--web-auth-flow`/`--web-auth-flow-module` now logs a warning for this
+  reason. Also fixed: an invalid `--web-redact-selector` entry now fails
+  the run loudly instead of silently disabling masking for every
+  selector, including the default password one. Verified with a
   real-screenshot, real-pixel test (`sensitiveRedaction.browser.test.ts`)
   against a password input, a displayed-text secret, and a
   canvas-painted secret. On by default; disable with

@@ -708,13 +708,19 @@ class WebAppOptions {
   final String? errorAllow;
 
   /// Whether to redact sensitive elements (every `input[type="password"]`
-  /// plus any [redactSelectors]) out of every captured artifact —
-  /// screenshot, video, and the visual reconstruction of a trace's DOM
-  /// snapshots. On by default; set to false via `--no-web-redact-artifacts`.
-  /// See `sensitiveRedaction.ts` (web_runner) for why this needs a live DOM
-  /// overlay rather than Playwright's own `page.screenshot({ mask })` —
-  /// that option has no equivalent for video or trace, and does not exist
-  /// at all for the automatic on-failure screenshot.
+  /// plus any [redactSelectors]) out of captured PIXELS — screenshot and
+  /// video frames. On by default; set to false via
+  /// `--no-web-redact-artifacts`. See `sensitiveRedaction.ts` (web_runner)
+  /// for why this needs a live DOM overlay rather than Playwright's own
+  /// `page.screenshot({ mask })` — that option has no equivalent for video,
+  /// and does not exist at all for the automatic on-failure screenshot.
+  ///
+  /// Does NOT reach a `--web-trace`: Playwright records action arguments
+  /// (e.g. a typed password) and DOM snapshots verbatim, so a value typed
+  /// into a redacted field can still appear in the trace in plaintext even
+  /// though every screenshot/video masks it. `test.dart` warns when
+  /// `--web-trace` is combined with `--web-auth-flow`/`--web-auth-flow-module`
+  /// for this reason.
   final bool redactArtifacts;
 
   /// JSON array of additional CSS selectors to redact, beyond the built-in

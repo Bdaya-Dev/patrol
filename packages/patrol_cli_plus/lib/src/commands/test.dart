@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:patrol_cli_plus/src/analytics/analytics.dart';
 import 'package:patrol_cli_plus/src/android/android_test_backend.dart';
 import 'package:patrol_cli_plus/src/base/extensions/core.dart';
@@ -439,6 +440,27 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
       authFlowModule: stringArg('web-auth-flow-module'),
     );
 
+    // SECURITY: redaction only covers captured PIXELS (screenshot/video);
+    // Playwright's trace records action arguments and DOM snapshots
+    // verbatim, so a password typed during --web-auth-flow(-module) can
+    // still land in a --web-trace in plaintext even though the same
+    // screenshot/video is correctly masked. Warn loudly rather than
+    // silently ship an artifact that claims-by-omission to be safe --
+    // narrowing the --web-redact-artifacts help text alone is easy to miss.
+    if (shouldWarnTraceAuthFlowCombo(
+      trace: webOpts.trace,
+      authFlow: webOpts.authFlow,
+      authFlowModule: webOpts.authFlowModule,
+    )) {
+      _logger.warn(
+        '--web-trace is combined with --web-auth-flow(-module): the '
+        'resulting trace will contain any password typed during the auth '
+        'flow in PLAINTEXT (Playwright records action arguments and DOM '
+        'snapshots verbatim -- --web-redact-artifacts only masks pixels in '
+        'screenshots/video). Handle this trace file accordingly.',
+      );
+    }
+
     // No need to build web app for testing. It's done in the execute method.
     if (device.targetPlatform != TargetPlatform.web) {
       await _build(
@@ -726,4 +748,21 @@ See https://github.com/leancodepl/patrol/issues/1316 to learn more.
         defaultsTo: 'context',
       );
   }
+}
+
+/// Whether `--web-trace` is combined with either auth-flow mechanism
+/// (`--web-auth-flow` or `--web-auth-flow-module`) -- the case where
+/// `--web-redact-artifacts`'s pixel-only masking does not reach a secret
+/// that Playwright's own trace still records verbatim. Extracted as a pure
+/// function because [TestCommand] has no existing unit-test harness (it is
+/// the one command with no `test/commands/test_command_test.dart`, and
+/// building a full mocktail harness for it is out of scope for this one
+/// warning condition).
+@visibleForTesting
+bool shouldWarnTraceAuthFlowCombo({
+  required String? trace,
+  required String? authFlow,
+  required String? authFlowModule,
+}) {
+  return trace != null && (authFlow != null || authFlowModule != null);
 }

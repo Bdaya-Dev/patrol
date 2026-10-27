@@ -3,7 +3,7 @@ import * as path from "node:path"
 import { test } from "node:test"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import { chromium, type Page } from "playwright"
-import { installSensitiveRedaction } from "./sensitiveRedaction.ts"
+import { installSensitiveRedaction, validateSelectorsOrThrow } from "./sensitiveRedaction.ts"
 
 /**
  * Drives a REAL Chromium page (same `playwright` dependency `tests/setup.ts`
@@ -140,3 +140,71 @@ test("installSensitiveRedaction: selectors=[] is a true no-op (no overlay host i
   const hostExists = await page.evaluate(() => document.getElementById("__patrol_redaction_host__") !== null)
   assert.equal(hostExists, false)
 })
+
+test("validateSelectorsOrThrow: rejects a malformed selector before the run, naming it in the error", async t => {
+  const browser = await chromium.launch()
+  t.after(() => browser.close())
+  const page = await browser.newPage()
+  t.after(() => page.close())
+
+  // Playwright's own `text=...` selector syntax is exactly what a caller is
+  // likely to pass, and is NOT valid native CSS -- this is the reviewer's
+  // own PROBE1b case on PR #66 (NEEDS-CHANGES at c56de2f).
+  await assert.rejects(
+    () => validateSelectorsOrThrow(page, ['input[type="password"]', "[data-patrol-sensitive]", "text=Account number"]),
+    (err: Error) => {
+      assert.match(err.message, /invalid CSS selector/)
+      assert.match(err.message, /text=Account number/)
+      return true
+    },
+  )
+})
+
+test("validateSelectorsOrThrow: resolves cleanly when every selector is valid CSS", async t => {
+  const browser = await chromium.launch()
+  t.after(() => browser.close())
+  const page = await browser.newPage()
+  t.after(() => page.close())
+
+  await assert.doesNotReject(() =>
+    validateSelectorsOrThrow(page, ['input[type="password"]', "[data-patrol-sensitive]"]),
+  )
+})
+
+test(
+  "installSensitiveRedaction: rejects the exact selector set from the reviewer's PROBE1b " +
+    "on PR #66 (NEEDS-CHANGES at c56de2f) -- before this fix, that set reached the page and " +
+    "silently disabled masking for #pw and #displayed-secret too (boxes:0 pwMasked:false)",
+  async t => {
+    const browser = await chromium.launch()
+    t.after(() => browser.close())
+    const page = await browser.newPage({ viewport: { width: 400, height: 300 } })
+    t.after(() => page.close())
+
+    // PROBE1a baseline (still works): no malformed selector -- both #pw and
+    // #displayed-secret are masked.
+    await installSensitiveRedaction(page, {
+      selectors: ['input[type="password"]', "[data-patrol-sensitive]"],
+      maskColor: MASK_COLOR,
+    })
+    await page.goto(fixtureUrl, { waitUntil: "load" })
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+    assert.ok(isUniformMaskColor(await pixelsOf(page, "#pw")), "PROBE1a: #pw should be masked")
+    assert.ok(
+      isUniformMaskColor(await pixelsOf(page, "#displayed-secret")),
+      "PROBE1a: #displayed-secret should be masked",
+    )
+
+    // PROBE1b: adding the malformed "text=Account number" selector must now
+    // reject loudly (validateSelectorsOrThrow runs before anything is
+    // installed), not silently disable masking for the other two.
+    const page2 = await browser.newPage({ viewport: { width: 400, height: 300 } })
+    t.after(() => page2.close())
+    await assert.rejects(() =>
+      installSensitiveRedaction(page2, {
+        selectors: ['input[type="password"]', "[data-patrol-sensitive]", "text=Account number"],
+        maskColor: MASK_COLOR,
+      }),
+    )
+  },
+)

@@ -478,11 +478,16 @@ abstract class PatrolCommand extends Command<int> {
         'web-redact-artifacts',
         defaultsTo: true,
         help:
-            'Redact sensitive elements out of every captured artifact — '
-            'screenshot, video, and the visual reconstruction of a '
-            "trace's DOM snapshots. Always covers every "
+            'Redact sensitive elements out of captured PIXELS — '
+            'screenshot and video frames. Always covers every '
             'input[type="password"]; add more with --web-redact-selector. '
-            'On by default; use --no-web-redact-artifacts to disable.',
+            'Does NOT scrub a --web-trace: Playwright records action '
+            'arguments (e.g. a typed password) and DOM snapshots verbatim, '
+            'so a value typed into a redacted field can still appear in '
+            'the trace in plaintext even though every screenshot/video '
+            'masks it. Combining --web-trace with --web-auth-flow(-module) '
+            'logs a warning for this reason. On by default; use '
+            '--no-web-redact-artifacts to disable.',
       )
       ..addOption(
         'web-redact-selector',

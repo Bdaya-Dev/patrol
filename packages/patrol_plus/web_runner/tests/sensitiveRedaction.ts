@@ -4,32 +4,40 @@ import type { Page } from "playwright"
 /**
  * On-by-default artifact secret redaction. A `--web-auth-flow` /
  * `--web-auth-flow-module` run types REAL credentials into a real login
- * page, and that page is captured in the SAME screenshot/video/trace the
- * run produces for debugging — nothing masked it before this.
+ * page, and that page is captured in the SAME screenshot/video the run
+ * produces for debugging — nothing masked it before this.
  *
  * Playwright's own `page.screenshot({ mask })` only covers explicit,
  * one-shot screenshot calls: there is no `mask` for the automatic
  * on-failure screenshot (`use.screenshot`'s object form takes only
  * `mode`/`fullPage`/`omitBackground` — confirmed against the installed
- * `playwright-core` type definitions, 2026-10-27), none for video, and none
- * for a trace's DOM snapshots. Ordinary CSS styling of the matched element
- * (`color`, `background`, a `::after` overlay) is ALSO not a general
- * solution: Flutter's CanvasKit renderer paints real pixels onto one big
- * `<canvas>`, and the DOM node at that screen position (if any — a
- * semantics node, only present once accessibility is enabled) carries no
- * visual content of its own for CSS to touch. Styling it changes nothing
- * about what the canvas keeps painting underneath.
+ * `playwright-core` type definitions, 2026-10-27), and none for video.
+ * Ordinary CSS styling of the matched element (`color`, `background`, a
+ * `::after` overlay) is ALSO not a general solution: Flutter's CanvasKit
+ * renderer paints real pixels onto one big `<canvas>`, and the DOM node at
+ * that screen position (if any — a semantics node, only present once
+ * accessibility is enabled) carries no visual content of its own for CSS to
+ * touch. Styling it changes nothing about what the canvas keeps painting
+ * underneath.
  *
  * What DOES work regardless of renderer: a SEPARATE, newly-created DOM
  * element, absolutely positioned over the matched element's own
  * `getBoundingClientRect()`, with a solid opaque background and a z-index
  * above everything else. That overlay is real, on-screen, composited
- * content — it appears in every screenshot (automatic or manual), every
- * video frame, and every trace DOM snapshot, because all three capture
- * what the browser actually renders, not what any one element's own CSS
- * says. A `requestAnimationFrame` loop keeps each overlay box's position
- * synced to its target (handles scroll, resize, and re-layout) and prunes
- * boxes for elements that disappear.
+ * content — it appears in every screenshot (automatic or manual) and every
+ * video frame, because both capture what the browser actually renders, not
+ * what any one element's own CSS says. A `requestAnimationFrame` loop keeps
+ * each overlay box's position synced to its target (handles scroll, resize,
+ * and re-layout) and prunes boxes for elements that disappear.
+ *
+ * Deliberately does NOT cover `--web-trace`: Playwright's trace records
+ * action arguments (e.g. a `fill()` call's string value) and DOM snapshots
+ * verbatim, as structured JSON/HTML in the trace archive, not as rendered
+ * pixels — there is no supported way to intercept or redact those from
+ * inside the page, which is all this overlay technique has access to. A
+ * password typed during `--web-auth-flow(-module)` is masked in every
+ * screenshot/video but still appears in a `--web-trace` in plaintext.
+ * `test.dart` warns when the two are combined.
  */
 
 export const DEFAULT_SENSITIVE_SELECTORS = ['input[type="password"]']
@@ -64,6 +72,41 @@ export function parseRedactSelectors(customSelectorsJson: string | undefined): s
 }
 
 /**
+ * Validates every entry in [selectors] as real CSS by asking the PAGE to try
+ * `querySelectorAll` on each one individually (document.querySelectorAll
+ * throws SyntaxError on invalid selector syntax regardless of what's in the
+ * DOM — this works even on `about:blank`, before any real navigation).
+ *
+ * Throws, naming every invalid entry, if any selector is malformed — this is
+ * the fail-fast behaviour `test.spec.ts`'s own comment already promises
+ * ("a malformed --web-redact-selector must break the run loudly"), which
+ * nothing previously enforced: a bad selector used to reach the page and
+ * silently disable ALL masking there (see [installSensitiveRedaction]'s own
+ * per-selector querying for the second half of that fix).
+ */
+export async function validateSelectorsOrThrow(page: Page, selectors: string[]): Promise<void> {
+  const invalid = await page.evaluate(selectors => {
+    const bad: string[] = []
+    for (const selector of selectors) {
+      try {
+        document.querySelectorAll(selector)
+      } catch (err) {
+        bad.push(`"${selector}" (${String(err)})`)
+      }
+    }
+    return bad
+  }, selectors)
+
+  if (invalid.length > 0) {
+    throw new Error(
+      `--web-redact-selector contains invalid CSS selector(s): ${invalid.join(", ")}. ` +
+        "Fix or remove the invalid entry/entries -- a malformed selector must break the run, " +
+        "not silently disable redaction for the valid ones.",
+    )
+  }
+}
+
+/**
  * Installs the redaction overlay on [page]. Registered via
  * `page.addInitScript`, so it re-runs on every navigation/reload — same
  * mechanism `tests/setup.ts` and `tests/test.spec.ts` already use for
@@ -82,6 +125,8 @@ export async function installSensitiveRedaction(
   if (selectors.length === 0) {
     return
   }
+
+  await validateSelectorsOrThrow(page, selectors)
 
   await page.addInitScript(
     ({ selectors, maskColor }) => {
@@ -110,27 +155,34 @@ export async function installSensitiveRedaction(
         return host
       }
 
-      let selectorList = ""
-      try {
-        selectorList = selectors.join(", ")
-      } catch {
-        selectorList = ""
-      }
-
       function sync() {
-        if (!selectorList) {
+        if (selectors.length === 0) {
           requestAnimationFrame(sync)
           return
         }
 
         const host = ensureHost()
-        let matched: Element[] = []
-        try {
-          matched = Array.from(document.querySelectorAll(selectorList))
-        } catch {
-          // An invalid selector (should not happen — validated before
-          // reaching the page) must not crash the app under test.
-          matched = []
+        // Query each selector SEPARATELY, not joined into one
+        // `querySelectorAll` call: a single bad entry must never suppress
+        // masking for the other, valid selectors -- including the default
+        // password selector. validateSelectorsOrThrow already rejects a
+        // malformed selector before this init script is ever registered;
+        // this is defense-in-depth for that invariant, not the primary
+        // enforcement of it.
+        const seen = new Set<Element>()
+        const matched: Element[] = []
+        for (const selector of selectors) {
+          try {
+            for (const el of Array.from(document.querySelectorAll(selector))) {
+              if (!seen.has(el)) {
+                seen.add(el)
+                matched.push(el)
+              }
+            }
+          } catch {
+            // Should not happen (validated upfront) -- never let it crash
+            // the app under test or block the other selectors.
+          }
         }
 
         // One overlay box per matched element, reused across frames by
